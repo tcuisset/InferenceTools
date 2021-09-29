@@ -2,7 +2,11 @@
 <use name="HHTools/HHbtag"/>
 <use name="TauAnalysis/ClassicSVfit"/>
 <use name="TauAnalysis/SVfitTF"/>
+<use name="HHKinFit2/HHKinFit2Core"/>
+<use name="HHKinFit2/HHKinFit2Scenarios"/>
 <use name="tensorflow" />
 <use name="tensorflow-cc" />
+<use name="cms_hh_proc_interface/processing"/>
+<use name="cms_hh_tf_inference/inference"/>
 <export><lib name="1"/></export>
 
