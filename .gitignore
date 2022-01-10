@@ -1,1 +1,3 @@
+python/*.pyc
+python/__init__.py*
 *.d
