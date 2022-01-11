@@ -40,6 +40,7 @@ using namespace classic_svFit;
 class SVfitinterface {
 
   public:
+  SVfitinterface ();
     SVfitinterface (
       int verbosity, int pairType, int DM1, int DM2,
       Float_t tau1_pt, Float_t tau1_eta, Float_t tau1_phi, Float_t tau1_mass,
@@ -49,6 +50,11 @@ class SVfitinterface {
     );
     ~SVfitinterface ();
 
+    void SetInputs(int verbosity, int pairType, int DM1, int DM2,
+      Float_t tau1_pt, Float_t tau1_eta, Float_t tau1_phi, Float_t tau1_mass,
+      Float_t tau2_pt, Float_t tau2_eta, Float_t tau2_phi, Float_t tau2_mass,
+      Float_t met_pt, Float_t met_phi,
+      Float_t met_covXX, Float_t met_covXY, Float_t met_covYY);
     std::vector<double> FitAndGetResult();
 
   private:
