@@ -68,7 +68,6 @@ class SVFitRDFProducer(JetLepMetSyst):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/SVfitinterface.h".format(base))
         ROOT.gInterpreter.Declare("""
-            // #include "Tools/Tools/interface/SVfitinterface.h"
             using Vfloat = const ROOT::RVec<float>&;
             ROOT::RVec<double> compute_svfit(
                     int pairType, int dau1_index, int dau2_index, int DM1, int DM2,

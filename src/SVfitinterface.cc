@@ -1,7 +1,12 @@
 #include "Tools/Tools/interface/SVfitinterface.h"
 
 
-// Constructor
+
+
+// Constructors
+
+SVfitinterface::SVfitinterface () {};
+
 SVfitinterface::SVfitinterface (
   int verbosity, int pairType, int DM1, int DM2,
   Float_t tau1_pt, Float_t tau1_eta, Float_t tau1_phi, Float_t tau1_mass,
@@ -10,7 +15,21 @@ SVfitinterface::SVfitinterface (
   Float_t met_covXX, Float_t met_covXY, Float_t met_covYY
   )
 {
+  SetInputs(verbosity, pairType, DM1, DM2,
+    tau1_pt, tau1_eta, tau1_phi, tau1_mass,
+    tau2_pt, tau2_eta, tau2_phi, tau2_mass,
+    met_pt, met_phi, met_covXX, met_covXY, met_covYY);
+}
 
+
+// Destructor
+SVfitinterface::~SVfitinterface() {}
+
+void SVfitinterface::SetInputs(int verbosity, int pairType, int DM1, int DM2,
+    Float_t tau1_pt, Float_t tau1_eta, Float_t tau1_phi, Float_t tau1_mass,
+    Float_t tau2_pt, Float_t tau2_eta, Float_t tau2_phi, Float_t tau2_mass,
+    Float_t met_pt, Float_t met_phi,
+    Float_t met_covXX, Float_t met_covXY, Float_t met_covYY) {
   // verbosity
   verbosity_ = verbosity;
 
@@ -65,11 +84,6 @@ SVfitinterface::SVfitinterface (
   measuredTauLeptons_.push_back(classic_svFit::MeasuredTauLepton(l1Type, tau1_pt, tau1_eta, tau1_phi, mass1, decay1));
   measuredTauLeptons_.push_back(classic_svFit::MeasuredTauLepton(l2Type, tau2_pt, tau2_eta, tau2_phi, mass2, decay2));
 }
-
-
-// Destructor
-SVfitinterface::~SVfitinterface() {}
-
 
 // FitAndGetResult
 std::vector<double> SVfitinterface::FitAndGetResult()
