@@ -125,3 +125,7 @@ class SVFitRDFProducer(JetLepMetSyst):
 
 def SVFit(**kwargs):
     return lambda: SVFitProducer(**kwargs)
+
+
+def SVFitRDF(*args, **kwargs):
+    return lambda: SVFitRDFProducer(*args, **kwargs)

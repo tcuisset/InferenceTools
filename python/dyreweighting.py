@@ -18,9 +18,9 @@ class DYstitchingProducer(Module):
 
         base = "{}/{}/src/Tools/Tools".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        ROOT.gROOT.ProcessLine(".L {}/interface/DYreweighting.h".format(base))
+        ROOT.gROOT.ProcessLine(".L {}/interface/DYstitching.h".format(base))
 
-        self.dy_reweighter = ROOT.DYreweighting(year)
+        self.dy_reweighter = ROOT.DYstitching(year)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -48,13 +48,13 @@ class DYstitchingRDFProducer():
 
             base = "{}/{}/src/Tools/Tools".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            ROOT.gROOT.ProcessLine(".L {}/interface/DYreweighting.h".format(base))
-            ROOT.gInterpreter.Declare('auto dy_reweighter = DYreweighting(%s);' % year)
+            ROOT.gROOT.ProcessLine(".L {}/interface/DYstitching.h".format(base))
+            ROOT.gInterpreter.Declare('auto dy_stitcher = DYstitching(%s);' % year)
 
     def run(self, df):
         if self.isDY:
             df = df.Define("DYstitchWeight",
-                "dy_reweighter.get_stitching_weight(LHE_Nb, LHE_Njets, LHE_HT)")
+                "dy_stitcher.get_stitching_weight(LHE_Nb, LHE_Njets, LHE_HT)")
                 # "50.")
         else:
             df = df.Define("DYstitchWeight", "1")
@@ -75,3 +75,39 @@ def DYstitchingRDF(*args, **kwargs):
     year = kwargs.pop("year")
 
     return lambda: DYstitchingRDFProducer(year=year, isDY=isDY, *args, **kwargs)
+
+
+class DYscalingRDFProducer():
+    def __init__(self, year, isDY, *args, **kwargs):
+        self.isDY = isDY
+        if self.isDY:
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+
+            base = "{}/{}/src/Tools/Tools".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            ROOT.gROOT.ProcessLine(".L {}/interface/DYscaling.h".format(base))
+            ROOT.gInterpreter.Declare('auto dy_scaler = DYscaling(%s);' % year)
+
+    def run(self, df):
+        branches = ["DYscale_LL", "DYscale_MM", "DYscale_MH", "DYscale_MTT",
+            "DYscale_MTT_up", "DYscale_MTT_down"]
+        if self.isDY:
+            df = df.Define("dyscalingweights",
+                "dy_scaler.get_dy_scale(GenJet_pt, GetJet_eta, GenJet_phi, GenJet_mass,"
+                    "GenJet_hadronFlavour, LHE_Nb, GenPart_pt, GenPart_eta, GenPart_phi,"
+                    " GenPart_mass, GenPart_statusFlags, GenPart_pdgId)")
+
+            for ib, branch in enumerate(branches):
+                df = df.Define(branch, "dyscalingweights[%s]" % ib)
+        else:
+            for branch in branches:
+                df = df.Define(branch, "1")
+        return df, branches
+
+
+def DYscalingRDF(*args, **kwargs):
+    isDY = kwargs.pop("isDY", False)
+    year = kwargs.pop("year")
+
+    return lambda: DYscalingRDFProducer(year=year, isDY=isDY, *args, **kwargs)
