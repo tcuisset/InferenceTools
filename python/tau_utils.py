@@ -42,15 +42,19 @@ class LeptonPair:
         else:
             return False
 
-  
+
 class LeptonTauPair(LeptonPair):
-  def __gt__(self, opair):
-    """Override for tau isolation."""
-    if   self.pt1  != opair.pt1:  return self.pt1  > opair.pt1  # greater = higher pT
-    elif self.pt2  != opair.pt2:  return self.pt2  > opair.pt2  # greater = higher pT
-    elif self.iso1 != opair.iso1: return self.iso1 < opair.iso1 # greater = smaller lepton isolation
-    elif self.iso2 != opair.iso2: return self.iso2 > opair.iso2 # greater = larger tau isolation
-    return True
+    def __gt__(self, opair):
+        """Override for tau isolation."""
+        if self.iso1 != opair.iso1:
+            return self.iso1 < opair.iso1 # greater = smaller lepton isolation
+        elif self.pt1 != opair.pt1:
+            return self.pt1 > opair.pt1  # greater = higher pT
+        elif self.iso2 != opair.iso2:
+            return self.iso2 < opair.iso2 # greater = smaller tau isolation
+        elif self.pt2 != opair.pt2:
+            return self.pt2 > opair.pt2  # greater = higher pT
+        return True
 
 
 class TriggerChecker:

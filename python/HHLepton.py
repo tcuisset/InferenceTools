@@ -1,7 +1,10 @@
-from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
+import os
+
 from analysis_tools.utils import import_root
-from cmt.modules.tau_utils import LeptonTauPair, TriggerChecker, lepton_veto
-from cmt.modules.baseModules import JetLepMetModule
+
+from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
+from Tools.Tools.tau_utils import LeptonTauPair, TriggerChecker, lepton_veto
+from Base.Modules.baseModules import JetLepMetSyst, JetLepMetModule
 
 ROOT = import_root()
 
@@ -452,3 +455,43 @@ def HHLepton(**kwargs):
 
 def HHLeptonVariable(**kwargs):
     return lambda: HHLeptonVariableProducer(**kwargs)
+
+
+class HHLeptonRDFProducer(JetLepMetSyst):
+    def __init__(self, isMC, year, runPeriod, *args, **kwargs):
+        super(HHLeptonRDFProducer, self).__init__(*args, **kwargs)
+        self.isMC = isMC
+        self.year = year
+        self.runPeriod = runPeriod
+
+        if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+            ROOT.gSystem.Load("libToolsTools.so")
+
+        base = "{}/{}/src/Tools/Tools".format(
+            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        ROOT.gROOT.ProcessLine(".L {}/interface/HHLeptonInterface.h".format(base))
+        ROOT.gInterpreter.Declare("""
+            auto HHLepton = HHLeptonInterface();
+        """)
+
+    def run(self, df):
+        branches = ["pairTypeBis", "hhbbtt_dau1index", "hhbbtt_dau2index", "isVBFtriggerBis"]
+        df = df.Define("hh_lepton_results", "HHLepton.get_dau_indexes("
+            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
+            "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, "
+            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
+            "Electron_mvaFall17V2Iso_WP80, Electron_mvaFall17V2noIso_WP90, "
+            "Electron_mvaFall17V2Iso_WP90, Electron_pfRelIso03_all, "
+            "Electron_dxy, Electron_dz, "
+            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
+            "Tau_idDeepTau2017v2p1VSmu, Tau_idDeepTau2017v2p1VSe, "
+            "Tau_idDeepTau2017v2p1VSjet, Tau_rawDeepTau2017v2p1VSjet, "
+            "Tau_dz, Tau_decayMode)".format(self.muon_syst, self.electron_syst, self.tau_syst))
+        for ib, branch in enumerate(branches):
+            df = df.Define(branch, "hh_lepton_results[%s]" % ib)
+        return df, branches
+ 
+
+
+def HHLeptonRDF(**kwargs):
+    return lambda: HHLeptonRDFProducer(**kwargs)
