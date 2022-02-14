@@ -16,18 +16,30 @@
 #include <TLorentzVector.h>
 #include <ROOT/RVec.hxx>
 
+// CMSSW
+#include "DataFormats/Math/interface/deltaPhi.h"
+
 typedef ROOT::VecOps::RVec<float> fRVec;
 typedef ROOT::VecOps::RVec<bool> bRVec;
 typedef ROOT::VecOps::RVec<int> iRVec;
 
 struct tau_pair {
   int index1;
-  int iso1;
+  float iso1;
   float pt1;
   int index2;
-  int iso2;
+  float iso2;
   float pt2;
   int isVBFtrigger;
+};
+
+struct trig_req {
+  bool pass;
+  float pt1;
+  float eta1;
+  float pt2;
+  float eta2;
+  std::vector<std::vector<int>> bits;  
 };
 
 bool pairSort (const tau_pair& pA, const tau_pair& pB)
@@ -77,7 +89,10 @@ class HHLeptonInterface {
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
       iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
       iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-      iRVec Tau_dz, iRVec Tau_decayMode    
+      iRVec Tau_dz, iRVec Tau_decayMode,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+      std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
+      std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers
     ); // triggers missing
     bool lepton_veto(int muon_index, int electron_index,
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_dz, fRVec Muon_dxy,
@@ -85,6 +100,16 @@ class HHLeptonInterface {
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_dz, fRVec Electron_dxy,
       bRVec Electron_mvaFall17V2noIso_WP90, bRVec Electron_mvaFall17V2Iso_WP90,
       fRVec Electron_pfRelIso03_all);
+    
+    bool pass_trigger(
+      float off_pt1, float off_eta1, float off_phi1, int obj_id1,
+      float off_pt2, float off_eta2, float off_phi2, int obj_id2,
+      std::vector<trig_req> triggers, 
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi);
+    
+    bool match_trigger_object(float off_eta, float off_phi, int obj_id,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+      std::vector<int> bits);
 
   private:
 

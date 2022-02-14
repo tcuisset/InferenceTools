@@ -17,9 +17,9 @@ def deltaR(obj1_eta, obj1_phi, obj2_eta, obj2_phi):
 
 
 # extracted from https://github.com/cms-tau-pog/TauFW/blob/master/PicoProducer/python/analysis/utils.py
-class LeptonPair:
+class LeptonTauPair:
     """Container class to pair and order tau decay candidates."""
-    def __init__(self, obj1, iso1, pt1, obj2, iso2, pt2):
+    def __init__(self, obj1, pt1, iso1, obj2, pt2, iso2):
         self.obj1 = obj1
         self.obj2 = obj2
         self.pt1  = pt1
@@ -29,11 +29,14 @@ class LeptonPair:
         self.pair = [obj1, obj2]
       
     def __gt__(self, opair):
-        """Order dilepton pairs according to the pT of both objects first, then in isolation."""
-        if   self.pt1  != opair.pt1:  return self.pt1  > opair.pt1  # greater = higher pT
-        elif self.pt2  != opair.pt2:  return self.pt2  > opair.pt2  # greater = higher pT
-        elif self.iso1 != opair.iso1: return self.iso1 < opair.iso1 # greater = smaller isolation
-        elif self.iso2 != opair.iso2: return self.iso2 < opair.iso2 # greater = smaller isolation
+        if self.iso1 != opair.iso1:
+            return self.iso1 > opair.iso1 # greater = smaller lepton isolation
+        elif self.pt1 != opair.pt1:
+            return self.pt1 > opair.pt1  # greater = higher pT
+        elif self.iso2 != opair.iso2:
+            return self.iso2 > opair.iso2 # greater = smaller tau isolation
+        elif self.pt2 != opair.pt2:
+            return self.pt2 > opair.pt2  # greater = higher pT
         return True
 
     def check_charge(self):
@@ -43,27 +46,14 @@ class LeptonPair:
             return False
 
 
-class LeptonTauPair(LeptonPair):
-    def __gt__(self, opair):
-        """Override for tau isolation."""
-        if self.iso1 != opair.iso1:
-            return self.iso1 < opair.iso1 # greater = smaller lepton isolation
-        elif self.pt1 != opair.pt1:
-            return self.pt1 > opair.pt1  # greater = higher pT
-        elif self.iso2 != opair.iso2:
-            return self.iso2 < opair.iso2 # greater = smaller tau isolation
-        elif self.pt2 != opair.pt2:
-            return self.pt2 > opair.pt2  # greater = higher pT
-        return True
-
-
 class TriggerChecker:
     """Class to check whether the event passed certain HLT trigger paths"""
-    def __init__(self, year, path="$CMT_BASE/cmt/modules/tau_triggers/tau_triggers_{}.json"):
+    def __init__(self, year,
+            path="$CMSSW_BASE/src/Tools/Tools/python/tau_triggers/tau_triggers_{}.json"):
         self.year = year
         self.path = os.path.expandvars(path.format(year))
         self.json = self.load_json(self.path)
-    
+
     def load_json(self, path):
         import json
         with open(path) as f:

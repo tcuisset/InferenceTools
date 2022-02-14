@@ -474,8 +474,106 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             auto HHLepton = HHLeptonInterface();
         """)
 
+        self.mutau_triggers = ["HLT_IsoMu22", "HLT_IsoMu22_eta2p1",
+            "HLT_IsoTkMu22", "HLT_IsoTkMu22_eta2p1", "HLT_IsoMu24", "HLT_IsoMu27",
+            "HLT_IsoMu19_eta2p1_LooseIsoPFTau20", "HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1",
+            "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1",
+            "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1"]
+        self.etau_triggers = ["HLT_Ele25_eta2p1_WPTight_Gsf", "HLT_Ele32_WPTight_Gsf_L1DoubleEG",
+            "HLT_Ele32_WPTight_Gsf", "HLT_Ele35_WPTight_Gsf",
+            "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1",
+            "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1"]
+        self.tautau_triggers = ["HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg",
+            "HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg",
+            "HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg",
+            "HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg",
+            "HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg",
+            "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg"]
+        self.vbf_triggers = ["HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg",
+            "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
+            "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
+
+        if self.year == 2018:
+            ROOT.gInterpreter.Declare("""
+                using Vbool = const ROOT::RVec<Bool_t>&;  
+                std::vector<trig_req> get_mutau_triggers(
+                        Vbool triggers, bool isMC, int run, int runPeriod) {
+                    std::vector<trig_req> trigger_reqs;
+                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                    trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                    if (!isMC && run < 317509)
+                        trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 20, 2.1, {{64}, {1, 256}}}));
+                    else
+                        trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 20, 2.1, {{4}, {1, 16}}}));
+                    return trigger_reqs;
+                }
+                std::vector<trig_req> get_etau_triggers(
+                        Vbool triggers, bool isMC, int run, int runPeriod) {
+                    std::vector<trig_req> trigger_reqs;
+                    trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
+                    trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
+                    if (!isMC && run < 317509)
+                        trigger_reqs.push_back(trig_req({triggers[4], 21, 2.1, 20, 2.1, {{64}, {1, 128}}}));
+                    else
+                        trigger_reqs.push_back(trig_req({triggers[5], 21, 2.1, 20, 2.1, {{8}, {1, 16}}}));
+                    return trigger_reqs;
+                }
+                std::vector<trig_req> get_tautau_triggers(
+                        Vbool triggers, bool isMC, int run, int runPeriod) {
+                    std::vector<trig_req> trigger_reqs;
+                    trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                    trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                    if (!isMC && run < 317509)
+                        trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
+                    else
+                        trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 16}, {2, 16}}}));
+                    return trigger_reqs;
+                }
+                std::vector<trig_req> get_vbf_triggers(
+                        Vbool triggers, bool isMC, int run, int runPeriod) {
+                    std::vector<trig_req> trigger_reqs;
+                    if (!isMC && run < 317509)
+                        trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                    else
+                        trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{512, 1, 16}, {512, 1, 16}}}));
+                    return trigger_reqs;
+                }
+            """)
+
     def run(self, df):
         branches = ["pairTypeBis", "hhbbtt_dau1index", "hhbbtt_dau2index", "isVBFtriggerBis"]
+
+        all_branches = df.GetColumnNames()
+        for ib, branch in enumerate(self.mutau_triggers):
+            if branch not in all_branches:
+                self.mutau_triggers[ib] = "false"
+        for ib, branch in enumerate(self.etau_triggers):
+            if branch not in all_branches:
+                self.etau_triggers[ib] = "false"
+        for ib, branch in enumerate(self.tautau_triggers):
+            if branch not in all_branches:
+                self.tautau_triggers[ib] = "false"
+        for ib, branch in enumerate(self.vbf_triggers):
+            if branch not in all_branches:
+                self.vbf_triggers[ib] = "false"
+
+        runPeriods = ["dum", "A", "B", "C", "D", "E", "F", "G", "H"]
+        runPeriod = None
+        for irun, runPeriod in enumerate(runPeriods):
+            if self.runPeriod == runPeriod:
+                runPeriod = irun
+                break
+        assert runPeriod != None
+
+        df = df.Define("mutau_triggers", "get_mutau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.mutau_triggers), ("true" if self.isMC else "false"), runPeriod))
+        df = df.Define("etau_triggers", "get_etau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.etau_triggers), ("true" if self.isMC else "false"), runPeriod))
+        df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"), runPeriod))
+        df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runPeriod))
+
         df = df.Define("hh_lepton_results", "HHLepton.get_dau_indexes("
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, "
@@ -486,11 +584,16 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "Tau_idDeepTau2017v2p1VSmu, Tau_idDeepTau2017v2p1VSe, "
             "Tau_idDeepTau2017v2p1VSjet, Tau_rawDeepTau2017v2p1VSjet, "
-            "Tau_dz, Tau_decayMode)".format(self.muon_syst, self.electron_syst, self.tau_syst))
+            "Tau_dz, Tau_decayMode,"
+            "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
+            "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
+        ")".format(self.muon_syst, self.electron_syst, self.tau_syst))
+
         for ib, branch in enumerate(branches):
             df = df.Define(branch, "hh_lepton_results[%s]" % ib)
         return df, branches
- 
+        # return df, []
+
 
 
 def HHLeptonRDF(**kwargs):

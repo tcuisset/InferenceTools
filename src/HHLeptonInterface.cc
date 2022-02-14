@@ -21,7 +21,10 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
     fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
     iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
     iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-    iRVec Tau_dz, iRVec Tau_decayMode    
+    iRVec Tau_dz, iRVec Tau_decayMode,
+    iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+    std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
+    std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers 
   )
 {
   // mutau channel
@@ -61,12 +64,14 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
         if (tau_tlv.DeltaR(muon_tlv) < 0.5)
           continue;
 
-        // ******************** //
-        // MISSING: TRIGGER REQ //
-        // ******************** //
+        if (!pass_trigger(
+            muon_tlv.Pt(), muon_tlv.Eta(), muon_tlv.Phi(), 13,
+            tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
+            mutau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
+          continue;
 
-        tau_pairs.push_back(tau_pair({imuon, (int) Muon_pfRelIso04_all[imuon], Muon_pt[imuon],
-          itau, (int) Tau_idDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
+        tau_pairs.push_back(tau_pair({imuon, Muon_pfRelIso04_all[imuon], Muon_pt[imuon],
+          itau, Tau_rawDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
 
       } // loop over goodtaus
     } // loop over goodmuons
@@ -123,12 +128,14 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
         if (tau_tlv.DeltaR(electron_tlv) < 0.5)
           continue;
 
-        // ******************** //
-        // MISSING: TRIGGER REQ //
-        // ******************** //
+        if (!pass_trigger(
+            electron_tlv.Pt(), electron_tlv.Eta(), electron_tlv.Phi(), 11,
+            tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
+            etau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
+          continue;
 
-        tau_pairs.push_back(tau_pair({iele, (int) Electron_pfRelIso03_all[iele], Electron_pt[iele],
-          itau, (int) Tau_idDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
+        tau_pairs.push_back(tau_pair({iele, Electron_pfRelIso03_all[iele], Electron_pt[iele],
+          itau, Tau_rawDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
 
       } // loop over goodtaus
     } // loop over goodelectrons
@@ -177,11 +184,19 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
           continue;
 
         int pass_vbf = 0;
-        // ********************************** //
-        // MISSING: DITAU AND VBF TRIGGER REQ //
-        // ********************************** //
-        tau_pairs.push_back(tau_pair({itau1, (int) Tau_rawDeepTau2017v2p1VSjet[itau1], Tau_pt[itau1],
-          itau2, (int) Tau_rawDeepTau2017v2p1VSjet[itau2], Tau_pt[itau2], pass_vbf}));
+        if (!pass_trigger(
+            tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
+            tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
+            tautau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi)) {
+          if (pass_trigger(
+              tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
+              tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
+              vbf_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
+            pass_vbf = 1;
+          else continue;
+        }
+        tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTau2017v2p1VSjet[itau1], Tau_pt[itau1],
+          itau2, Tau_rawDeepTau2017v2p1VSjet[itau2], Tau_pt[itau2], pass_vbf}));
       }
     }
     if (tau_pairs.size() > 0) {
@@ -232,4 +247,56 @@ bool HHLeptonInterface::lepton_veto(int muon_index, int electron_index,
     nleps++;
   }
   return (nleps > 0);
+}
+
+bool HHLeptonInterface::pass_trigger(
+    float off_pt1, float off_eta1, float off_phi1, int obj_id1,
+    float off_pt2, float off_eta2, float off_phi2, int obj_id2,
+    std::vector<trig_req> triggers, 
+    iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi)
+{
+  for (auto &trigger: triggers) {
+    if (!trigger.pass)
+      continue;
+    if (off_pt1 < trigger.pt1 || off_pt2 < trigger.pt2
+        || abs(off_eta1) > trigger.eta1 || abs(off_eta2) > trigger.eta2)
+      continue;
+    if (trigger.bits[0].size() > 0) {
+      if (!match_trigger_object(off_eta1, off_phi1, obj_id1,
+          TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, trigger.bits[0]))
+        continue;
+    }
+    if (trigger.bits[1].size() > 0) {
+      if (!match_trigger_object(off_eta2, off_phi2, obj_id2,
+          TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, trigger.bits[1]))
+        continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+bool HHLeptonInterface::match_trigger_object(float off_eta, float off_phi, int obj_id,
+    iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+    std::vector<int> bits)
+{
+  for (size_t iobj = 0; iobj < TrigObj_id.size(); iobj++) {
+    if (TrigObj_id[iobj] != obj_id) continue;
+    auto const dPhi(std::abs(reco::deltaPhi(off_phi, TrigObj_phi[iobj])));
+    auto const dEta(std::abs(off_eta - TrigObj_eta[iobj]));
+    auto const delR2(dPhi * dPhi + dEta * dEta);
+    if (delR2 > 0.5 * 0.5)
+      continue;
+    bool matched_bits = true;
+    for (auto & bit : bits) {
+      if ((TrigObj_filterBits[iobj] & bit) == 0) {
+        matched_bits = false;
+        break;
+      }
+    }
+    if (!matched_bits)
+      continue;
+    return true;
+  }
+  return false;
 }
