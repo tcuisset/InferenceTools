@@ -20,6 +20,8 @@ std::vector<float> HHJetsInterface::GetHHJets(
     unsigned long long int event, int pairType,
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
+    fRVec SubJet_pt, fRVec SubJet_eta, fRVec SubJet_phi, fRVec SubJet_mass,
+    fRVec FatJet_msoftdrop, iRVec FatJet_subJetIdx1, iRVec FatJet_subJetIdx2,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
     float met_pt, float met_phi)
@@ -145,6 +147,35 @@ std::vector<float> HHJetsInterface::GetHHJets(
         set_vbfjet_indexes(vbfjet1_idx, vbfjet2_idx);
       }
     }
+    
+    // is the event boosted?
+    // we loop over the fat AK8 jets, apply a mass cut and verify that its subjets match
+    // the jets we selected before.
+    auto bjet1_tlv = TLorentzVector();
+    auto bjet2_tlv = TLorentzVector();
+    bjet1_tlv.SetPtEtaPhiM(Jet_pt[bjet1_idx], Jet_eta[bjet1_idx],
+      Jet_phi[bjet1_idx], Jet_mass[bjet1_idx]);
+    bjet2_tlv.SetPtEtaPhiM(Jet_pt[bjet2_idx], Jet_eta[bjet2_idx],
+      Jet_phi[bjet2_idx], Jet_mass[bjet2_idx]);
+    for (size_t ifatjet = 0; ifatjet < FatJet_msoftdrop.size(); ifatjet++) {
+      if (FatJet_msoftdrop[ifatjet] < 30)
+        continue;
+      if (FatJet_subJetIdx1[ifatjet] == -1 || FatJet_subJetIdx2[ifatjet] == -1)
+        continue;
+      auto subidx1 = FatJet_subJetIdx1[ifatjet];
+      auto subidx2 = FatJet_subJetIdx2[ifatjet];
+      auto subj1_tlv = TLorentzVector();
+      auto subj2_tlv = TLorentzVector();
+      subj1_tlv.SetPtEtaPhiM(SubJet_pt[subidx1], SubJet_eta[subidx1],
+        SubJet_phi[subidx1], SubJet_mass[subidx1]);
+      subj2_tlv.SetPtEtaPhiM(SubJet_pt[subidx2], SubJet_eta[subidx2],
+        SubJet_phi[subidx2], SubJet_mass[subidx2]);
+      if ((fabs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj2_tlv)) > 0.4) &&
+          (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
+        continue;
+      setBoosted(1);
+    }
+    
   }
   return all_HHbtag_scores;
 }

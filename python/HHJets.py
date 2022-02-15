@@ -276,6 +276,8 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 unsigned long long int event,
                 Vfloat Jet_pt, Vfloat Jet_eta, Vfloat Jet_phi, Vfloat Jet_mass,
                 VInt Jet_puId, Vfloat Jet_jetId, Vfloat Jet_btagDeepFlavB,
+                Vfloat SubJet_pt, Vfloat SubJet_eta, Vfloat SubJet_phi, Vfloat SubJet_mass,
+                Vfloat FatJet_msoftdrop, VInt FatJet_subJetIdx1, VInt FatJet_subJetIdx2,
                 int pairType, int dau1_index, int dau2_index,
                 Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
                 Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
@@ -308,18 +310,20 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 return HHJets.GetHHJets(event, pairType,
                     Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                     Jet_puId, Jet_jetId, Jet_btagDeepFlavB,
+                    SubJet_pt, SubJet_eta, SubJet_phi, SubJet_mass,
+                    FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2,
                     dau1_pt, dau1_eta, dau1_phi, dau1_mass,
                     dau2_pt, dau2_eta, dau2_phi, dau2_mass,
                     met_pt, met_phi);
             }
         """)
 
-        pass
-
     def run(self, df):
         df = df.Define("hhbbtt_HHbtag", "get_hh_jets(event, "
             "Jet_pt{5}, Jet_eta, Jet_phi, Jet_mass{5}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
+            "SubJet_pt, SubJet_eta, SubJet_phi, SubJet_mass, "
+            "FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2, "
             "pairTypeBis, hhbbtt_dau1index, hhbbtt_dau2index, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
@@ -333,9 +337,11 @@ class HHJetsRDFProducer(JetLepMetSyst):
         df = df.Define("vbfjet_indexes", "HHJets.get_vbfjet_indexes()")
         df = df.Define("vbfjet_idx1", "vbfjet_indexes.at(0)")
         df = df.Define("vbfjet_idx2", "vbfjet_indexes.at(1)")
-        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2"]
+        df = df.Define("isBoostedBis", "HHJets.isBoosted()")
+        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2", "isBoostedBis"]
         # return df, []
 
 
 def HHJetsRDF(**kwargs):
+    # df_filter = 
     return lambda: HHJetsRDFProducer(**kwargs)
