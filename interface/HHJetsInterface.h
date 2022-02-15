@@ -1,9 +1,9 @@
-#ifndef HHbtagInterface_h
-#define HHbtagInterface_h
+#ifndef HHJetsInterface_h
+#define HHJetsInterface_h
 
 // -------------------------------------------------------------------------------------------------------------- //
 //                                                                                                                //
-//   class HHbtagInterface                                                                                        //
+//   class HHJetsInterface                                                                                        //
 //                                                                                                                //
 //   Class to compute HHbtag output.                                                                              //
 //                                                                                                                //
@@ -26,13 +26,41 @@
 // HHbtag libraries
 #include "HHTools/HHbtag/interface/HH_BTag.h"
 
+// ROOT libraries
+#include <TLorentzVector.h>
+#include <ROOT/RVec.hxx>
+#include <Math/VectorUtil.h>
 
-// HHbtagInterface class
-class HHbtagInterface {
+// CMSSW
+#include "DataFormats/Math/interface/deltaPhi.h"
+
+typedef ROOT::VecOps::RVec<float> fRVec;
+typedef ROOT::VecOps::RVec<bool> bRVec;
+typedef ROOT::VecOps::RVec<int> iRVec;
+
+struct jet_idx_btag {
+  size_t idx;
+  float btag;
+};
+
+bool jetSort (const jet_idx_btag& jA, const jet_idx_btag& jB)
+{
+  return (jA.btag > jB.btag);
+}
+
+// HHJetsInterface class
+class HHJetsInterface {
 
   public:
-    HHbtagInterface (std::string model_0, std::string model_1, int year);
-    ~HHbtagInterface ();
+    HHJetsInterface (std::string model_0, std::string model_1, int year);
+    ~HHJetsInterface ();
+    
+  std::vector<float> GetHHJets(unsigned long long int event, int pairType,
+    fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
+    iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
+    float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
+    float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
+    float met_pt, float met_phi);
 
     std::vector<float> GetScore(
       std::vector<float> HHbtag_jet_pt_, std::vector<float> HHbtag_jet_eta_, std::vector<float> HHbtag_rel_jet_M_pt_,
@@ -42,6 +70,8 @@ class HHbtagInterface {
 
   private:
     hh_btag::HH_BTag HHbtagger_;
+    int year_;
+    std::vector <int> bjet_indexes;
 };
 
-#endif // HHbtagInterface
+#endif // HHJetsInterface
