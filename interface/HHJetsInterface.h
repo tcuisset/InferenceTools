@@ -43,10 +43,23 @@ struct jet_idx_btag {
   float btag;
 };
 
+struct jet_pair_mass {
+  int idx1;
+  int idx2;
+  float inv_mass;
+};
+
+
 bool jetSort (const jet_idx_btag& jA, const jet_idx_btag& jB)
 {
   return (jA.btag > jB.btag);
 }
+
+bool jetPairSort (const jet_pair_mass& jA, const jet_pair_mass& jB)
+{
+  return (jA.inv_mass > jB.inv_mass);
+}
+
 
 // HHJetsInterface class
 class HHJetsInterface {
@@ -67,11 +80,39 @@ class HHJetsInterface {
       std::vector<float> HHbtag_rel_jet_E_pt_, std::vector<float> HHbtag_jet_htt_deta_, std::vector<float> HHbtag_jet_deepFlavour_,
       std::vector<float> HHbtag_jet_htt_dphi_, int HHbtag_year_, int HHbtag_channel_, float HHbtag_tauH_pt_, float HHbtag_tauH_eta_,
       float HHbtag_htt_met_dphi_, float HHbtag_rel_met_pt_htt_pt_, float HHbtag_htt_scalar_pt_, unsigned long long int HHbtag_evt_);
+  
+    void set_bjet_indexes(int idx1, int idx2) {
+      bjet_indexes[0] = idx1;
+      bjet_indexes[1] = idx2;
+    }
+
+    std::vector <int> get_bjet_indexes() {
+      return bjet_indexes;
+    }
+
+    void set_vbfjet_indexes(int idx1, int idx2) {
+      vbfjet_indexes[0] = idx1;
+      vbfjet_indexes[1] = idx2;
+    }
+
+    std::vector <int> get_vbfjet_indexes() {
+      return vbfjet_indexes;
+    }
+
+    void setBoosted(int isBoosted) {
+      isBoosted_ = isBoosted;
+    }
+
+    int isBoosted() {
+      return isBoosted_;
+    }
 
   private:
     hh_btag::HH_BTag HHbtagger_;
     int year_;
     std::vector <int> bjet_indexes;
+    std::vector <int> vbfjet_indexes;
+    int isBoosted_;
 };
 
 #endif // HHJetsInterface

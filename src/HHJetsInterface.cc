@@ -5,6 +5,9 @@ HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int 
   HHbtagger_(std::array<std::string, 2> { {model_0, model_1} })
 {
   year_ = year;
+  bjet_indexes = {-1, -1};
+  vbfjet_indexes = {-1, -1};
+  isBoosted_ = 0;
 }
 
 
@@ -25,6 +28,9 @@ std::vector<float> HHJetsInterface::GetHHJets(
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
     all_HHbtag_scores.push_back(-999.);
   }
+  set_bjet_indexes(-1, -1);
+  set_vbfjet_indexes(-1, -1);
+  setBoosted(0);
   
   auto dau1_tlv = TLorentzVector();
   auto dau2_tlv = TLorentzVector();
@@ -88,6 +94,56 @@ std::vector<float> HHJetsInterface::GetHHJets(
 
     for (size_t ijet = 0; ijet < jet_indexes.size(); ijet++) {
       all_HHbtag_scores[jet_indexes[ijet].idx] = HHbtag_scores[ijet];
+    }
+    std::vector <jet_idx_btag> jet_indexes_hhbtag;
+    for (size_t ijet = 0; ijet < jet_indexes.size(); ijet++) {
+      jet_indexes_hhbtag.push_back(jet_idx_btag({jet_indexes[ijet].idx, HHbtag_scores[ijet]}));
+    }
+    std::stable_sort(jet_indexes_hhbtag.begin(), jet_indexes_hhbtag.end(), jetSort);
+    auto bjet1_idx = jet_indexes_hhbtag[0].idx;
+    auto bjet2_idx = jet_indexes_hhbtag[1].idx;
+
+    if (Jet_pt[bjet1_idx] < Jet_pt[bjet2_idx]) {
+      auto aux = bjet1_idx;
+      bjet1_idx = bjet2_idx;
+      bjet2_idx = aux;      
+    }
+    set_bjet_indexes(bjet1_idx, bjet2_idx);
+    
+    if (all_jet_indexes.size() >= 4) {
+      std::vector <jet_pair_mass> vbfjet_indexes;
+      for (size_t ijet = 0; ijet < all_jet_indexes.size(); ijet++) {
+        auto jet1_index = all_jet_indexes[ijet];
+        if (jet1_index == (int) bjet1_idx || jet1_index == (int) bjet2_idx)
+          continue;
+        for (size_t jjet = ijet + 1; jjet < all_jet_indexes.size(); jjet++) {
+          auto jet2_index = all_jet_indexes[jjet];
+          if (jet2_index == (int) bjet1_idx || jet2_index == (int) bjet2_idx)
+            continue;
+          if (Jet_pt[jet1_index] < 30 || Jet_pt[jet2_index] < 30)
+            continue;
+          auto jet1_tlv = TLorentzVector();
+          auto jet2_tlv = TLorentzVector();
+          jet1_tlv.SetPtEtaPhiM(Jet_pt[jet1_index], Jet_eta[jet1_index],
+            Jet_phi[jet1_index], Jet_mass[jet1_index]);
+          jet2_tlv.SetPtEtaPhiM(Jet_pt[jet2_index], Jet_eta[jet2_index],
+            Jet_phi[jet2_index], Jet_mass[jet2_index]);
+          auto jj_tlv = jet1_tlv + jet2_tlv;
+          vbfjet_indexes.push_back(jet_pair_mass({jet1_index, jet2_index, (float) jj_tlv.M()}));
+        }
+      }
+      if (vbfjet_indexes.size() > 0) {
+        std::stable_sort(vbfjet_indexes.begin(), vbfjet_indexes.end(), jetPairSort);
+        auto vbfjet1_idx = vbfjet_indexes[0].idx1;
+        auto vbfjet2_idx = vbfjet_indexes[0].idx2;
+
+        if (Jet_pt[vbfjet1_idx] < Jet_pt[vbfjet2_idx]) {
+          auto aux = vbfjet1_idx;
+          vbfjet1_idx = vbfjet2_idx;
+          vbfjet2_idx = aux;      
+        }
+        set_vbfjet_indexes(vbfjet1_idx, vbfjet2_idx);
+      }
     }
   }
   return all_HHbtag_scores;

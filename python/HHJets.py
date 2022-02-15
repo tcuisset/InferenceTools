@@ -327,7 +327,13 @@ class HHJetsRDFProducer(JetLepMetSyst):
             "MET{4}_pt{3}, MET{4}_phi{3})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                 self.met_smear_tag, self.jet_syst))
-        return df, ["hhbbtt_HHbtag"]
+        df = df.Define("bjet_indexes", "HHJets.get_bjet_indexes()")
+        df = df.Define("bjet_idx1", "bjet_indexes.at(0)")
+        df = df.Define("bjet_idx2", "bjet_indexes.at(1)")
+        df = df.Define("vbfjet_indexes", "HHJets.get_vbfjet_indexes()")
+        df = df.Define("vbfjet_idx1", "vbfjet_indexes.at(0)")
+        df = df.Define("vbfjet_idx2", "vbfjet_indexes.at(1)")
+        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2"]
         # return df, []
 
 
