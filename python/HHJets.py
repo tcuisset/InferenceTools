@@ -11,7 +11,7 @@ ROOT = import_root()
 class HHJetsProducer(JetLepMetModule):
     def __init__(self, *args, **kwargs):
         super(HHJetsProducer, self).__init__(self, *args, **kwargs)
-        
+
         # print ROOT.gSystem.GetLibraries()
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -244,8 +244,10 @@ def HHJets(**kwargs):
 
 
 class HHJetsRDFProducer(JetLepMetSyst):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, df_filter, *args, **kwargs):
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
+
+        self.df_filter = df_filter
         
         # print ROOT.gSystem.GetLibraries()
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
@@ -272,7 +274,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         ROOT.gInterpreter.Declare("""
             using Vfloat = const ROOT::RVec<float>&;
             using VInt = const ROOT::RVec<int>&;
-            std::vector<float> get_hh_jets (
+            output get_hh_jets (
                 unsigned long long int event,
                 Vfloat Jet_pt, Vfloat Jet_eta, Vfloat Jet_phi, Vfloat Jet_mass,
                 VInt Jet_puId, Vfloat Jet_jetId, Vfloat Jet_btagDeepFlavB,
@@ -301,6 +303,11 @@ class HHJetsRDFProducer(JetLepMetSyst):
                     dau1_eta = tau_eta.at(dau1_index);
                     dau1_phi = tau_phi.at(dau1_index);
                     dau1_mass = tau_mass.at(dau1_index);
+                } else {
+                    dau1_pt = -999.;
+                    dau1_eta = -999.;
+                    dau1_phi = -999.;
+                    dau1_mass = -999.;
                 }
                 dau2_pt = tau_pt.at(dau2_index);
                 dau2_eta = tau_eta.at(dau2_index);
@@ -319,29 +326,38 @@ class HHJetsRDFProducer(JetLepMetSyst):
         """)
 
     def run(self, df):
-        df = df.Define("hhbbtt_HHbtag", "get_hh_jets(event, "
+        # df = df.Define("hhbbtt_HHbtag", "get_hh_jets(event, "
+        df = df.Define("HHJets", "get_hh_jets(event, "
             "Jet_pt{5}, Jet_eta, Jet_phi, Jet_mass{5}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
             "SubJet_pt, SubJet_eta, SubJet_phi, SubJet_mass, "
             "FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2, "
-            "pairTypeBis, hhbbtt_dau1index, hhbbtt_dau2index, "
+            "pairType, hhbbtt_dau1index, hhbbtt_dau2index, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "MET{4}_pt{3}, MET{4}_phi{3})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                 self.met_smear_tag, self.jet_syst))
-        df = df.Define("bjet_indexes", "HHJets.get_bjet_indexes()")
-        df = df.Define("bjet_idx1", "bjet_indexes.at(0)")
-        df = df.Define("bjet_idx2", "bjet_indexes.at(1)")
-        df = df.Define("vbfjet_indexes", "HHJets.get_vbfjet_indexes()")
-        df = df.Define("vbfjet_idx1", "vbfjet_indexes.at(0)")
-        df = df.Define("vbfjet_idx2", "vbfjet_indexes.at(1)")
-        df = df.Define("isBoostedBis", "HHJets.isBoosted()")
-        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2", "isBoostedBis"]
+        df = df.Define("hhbbtt_HHbtag", "HHJets.hhbtag")
+        # df = df.Define("bjet_idx1", "HHJets.get_bjet_index1()")
+        df = df.Define("bjet_idx1", "HHJets.bjet_idx1")
+        # df = df.Define("bjet_idx2", "HHJets.get_bjet_index2()")
+        df = df.Define("bjet_idx2", "HHJets.bjet_idx2")
+
+        # df = df.Define("vbfjet_indexes", "HHJets.get_vbfjet_indexes()")
+        df = df.Define("vbfjet_idx1", "HHJets.bjet_idx1")
+        # df = df.Define("vbfjet_idx1", "HHJets.get_vbfjet_index1()")
+        df = df.Define("vbfjet_idx2", "HHJets.bjet_idx2")
+        # df = df.Define("vbfjet_idx2", "HHJets.get_vbfjet_index2()")
+        df = df.Define("isBoosted", "HHJets.isBoosted")
+
+        if self.df_filter:
+            df = df.Filter("bjet_idx1 >= 0")
+        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2", "isBoosted"]
         # return df, []
 
 
 def HHJetsRDF(**kwargs):
-    # df_filter = 
-    return lambda: HHJetsRDFProducer(**kwargs)
+    df_filter = kwargs.pop("filter")
+    return lambda: HHJetsRDFProducer(df_filter=df_filter, **kwargs)

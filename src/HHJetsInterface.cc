@@ -5,9 +5,9 @@ HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int 
   HHbtagger_(std::array<std::string, 2> { {model_0, model_1} })
 {
   year_ = year;
-  bjet_indexes = {-1, -1};
-  vbfjet_indexes = {-1, -1};
-  isBoosted_ = 0;
+  // set_bjet_indexes(-1, -1);
+  // set_vbfjet_indexes(-1, -1);
+  // setBoosted(0);
 }
 
 
@@ -16,7 +16,7 @@ HHJetsInterface::~HHJetsInterface() {}
 
 
 
-std::vector<float> HHJetsInterface::GetHHJets(
+output HHJetsInterface::GetHHJets(
     unsigned long long int event, int pairType,
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
@@ -30,10 +30,17 @@ std::vector<float> HHJetsInterface::GetHHJets(
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
     all_HHbtag_scores.push_back(-999.);
   }
-  set_bjet_indexes(-1, -1);
-  set_vbfjet_indexes(-1, -1);
-  setBoosted(0);
-  
+
+  int bjet1_idx = -1;
+  int bjet2_idx = -1;
+  int vbfjet1_idx = -1;
+  int vbfjet2_idx = -1;
+  int isBoosted_ = 0;
+
+  if (pairType < 0) {
+    return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx, isBoosted_});
+  }
+
   auto dau1_tlv = TLorentzVector();
   auto dau2_tlv = TLorentzVector();
   auto met_tlv = TLorentzVector();
@@ -51,7 +58,7 @@ std::vector<float> HHJetsInterface::GetHHJets(
     if (jet_tlv.DeltaR(dau1_tlv) < 0.5 || jet_tlv.DeltaR(dau2_tlv) < 0.5)
       continue;
     if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < 2.4)
-      jet_indexes.push_back(jet_idx_btag({ijet, Jet_btagDeepFlavB[ijet]}));
+      jet_indexes.push_back(jet_idx_btag({(int) ijet, Jet_btagDeepFlavB[ijet]}));
     if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < 4.7)
       all_jet_indexes.push_back(ijet);
   }
@@ -102,16 +109,16 @@ std::vector<float> HHJetsInterface::GetHHJets(
       jet_indexes_hhbtag.push_back(jet_idx_btag({jet_indexes[ijet].idx, HHbtag_scores[ijet]}));
     }
     std::stable_sort(jet_indexes_hhbtag.begin(), jet_indexes_hhbtag.end(), jetSort);
-    auto bjet1_idx = jet_indexes_hhbtag[0].idx;
-    auto bjet2_idx = jet_indexes_hhbtag[1].idx;
+    bjet1_idx = jet_indexes_hhbtag[0].idx;
+    bjet2_idx = jet_indexes_hhbtag[1].idx;
 
     if (Jet_pt[bjet1_idx] < Jet_pt[bjet2_idx]) {
       auto aux = bjet1_idx;
       bjet1_idx = bjet2_idx;
       bjet2_idx = aux;      
     }
-    set_bjet_indexes(bjet1_idx, bjet2_idx);
-    
+    // set_bjet_indexes(bjet1_idx, bjet2_idx);
+
     if (all_jet_indexes.size() >= 4) {
       std::vector <jet_pair_mass> vbfjet_indexes;
       for (size_t ijet = 0; ijet < all_jet_indexes.size(); ijet++) {
@@ -136,18 +143,18 @@ std::vector<float> HHJetsInterface::GetHHJets(
       }
       if (vbfjet_indexes.size() > 0) {
         std::stable_sort(vbfjet_indexes.begin(), vbfjet_indexes.end(), jetPairSort);
-        auto vbfjet1_idx = vbfjet_indexes[0].idx1;
-        auto vbfjet2_idx = vbfjet_indexes[0].idx2;
+        vbfjet1_idx = vbfjet_indexes[0].idx1;
+        vbfjet2_idx = vbfjet_indexes[0].idx2;
 
         if (Jet_pt[vbfjet1_idx] < Jet_pt[vbfjet2_idx]) {
           auto aux = vbfjet1_idx;
           vbfjet1_idx = vbfjet2_idx;
           vbfjet2_idx = aux;      
         }
-        set_vbfjet_indexes(vbfjet1_idx, vbfjet2_idx);
+        // set_vbfjet_indexes(vbfjet1_idx, vbfjet2_idx);
       }
     }
-    
+
     // is the event boosted?
     // we loop over the fat AK8 jets, apply a mass cut and verify that its subjets match
     // the jets we selected before.
@@ -173,11 +180,12 @@ std::vector<float> HHJetsInterface::GetHHJets(
       if ((fabs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj2_tlv)) > 0.4) &&
           (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
         continue;
-      setBoosted(1);
+      // setBoosted(1);
+      isBoosted_ = 1;
     }
-    
+
   }
-  return all_HHbtag_scores;
+  return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx, isBoosted_});
 }
 
 
