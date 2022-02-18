@@ -150,7 +150,6 @@ class HHLeptonProducer(JetLepMetModule):
         # muon-tau channels
         goodmuons = []
         for imuon, muon in enumerate(muons):
-            # print muon.pt, muon.eta, muon.pfRelIso04_all, muon.dxy, muon.dz, muon.tightId
             if (abs(muon.eta) > 2.1 or muon.pfRelIso04_all > 0.15 or abs(muon.dxy) > 0.045
                     or abs(muon.dz) > 0.2 or not muon.tightId):
                 continue
@@ -169,7 +168,6 @@ class HHLeptonProducer(JetLepMetModule):
                 # common tau pt req for both single and cross triggers
                 if eval("tau.pt%s" % self.tau_syst) <= 20.:
                     continue
-                # print tau.pt, tau.eta
                 goodtaus.append((itau, tau))
             muontaupairs = []
             for (imuon, muon) in goodmuons:
@@ -258,17 +256,11 @@ class HHLeptonProducer(JetLepMetModule):
                     self.histo.Fill(6)
                     if tau.DeltaR(electron) < 0.5: continue
                     self.histo.Fill(7)
-                    # print electron.pt, tau.pt, electron.eta, tau.eta
-                    # print event.HLT_Ele32_WPTight_Gsf,
-                    # print event.HLT_Ele35_WPTight_Gsf,
-                    # print event.HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
-        
                     if not self.trigger_checker.check_etau(event,
                             eval("electron.pt%s" % self.electron_syst), electron.eta, electron.phi,
                             eval("tau.pt%s" % self.tau_syst), tau.eta, tau.phi, th1=1, th2=5):
                         continue
                     self.histo.Fill(8)
-                    # print electron.pt, tau.pt
                     electrontaupair = LeptonTauPair(
                         electron, eval("electron.pt%s" % self.electron_syst), electron.pfRelIso03_all,
                         tau, eval("tau.pt%s" % self.tau_syst), tau.rawDeepTau2017v2p1VSjet)
@@ -348,17 +340,11 @@ class HHLeptonProducer(JetLepMetModule):
                 pass_vbf = (not pass_ditau) and self.trigger_checker.check_vbftautau(event,
                     eval("tau1.pt%s" % self.tau_syst), tau1.eta, tau1.phi,
                     eval("tau2.pt%s" % self.tau_syst), tau2.eta, tau2.phi, abs_th1=25, abs_th2=25)
-                #print tau1.pt, tau2.pt, tau1.rawDeepTau2017v2p1VSjet, tau2.rawDeepTau2017v2p1VSjet, pass_ditau, pass_vbf
 
                 if not (pass_ditau or pass_vbf):
                     continue
                 self.histo.Fill(12)
                 pass_vbf = int(pass_vbf)
-                
-                # print "ditau", event.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
-                # print "vbf", event.HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1
-                # print pass_ditau, pass_vbf, tau1.pt, tau2.pt
-
                 tautaupair = LeptonTauPair(
                     tau1, eval("tau1.pt%s" % self.tau_syst), tau1.rawDeepTau2017v2p1VSjet,
                     tau2, eval("tau2.pt%s" % self.tau_syst), tau2.rawDeepTau2017v2p1VSjet)
@@ -368,7 +354,6 @@ class HHLeptonProducer(JetLepMetModule):
         if len(tautaupairs) != 0:
             tautaupairs.sort(key=lambda x: x[2], reverse=True)
             tau1, tau2 = tautaupairs[0][2].pair
-            # print "FINAL TAU", tau1.pt, tau1.eta, tau2.pt, tau2.eta
 
             fail_lepton_veto, _ = lepton_veto(electrons, muons, taus)
             if fail_lepton_veto:
@@ -458,11 +443,12 @@ def HHLeptonVariable(**kwargs):
 
 
 class HHLeptonRDFProducer(JetLepMetSyst):
-    def __init__(self, isMC, year, runPeriod, *args, **kwargs):
+    def __init__(self, isMC, year, runPeriod, df_filter, *args, **kwargs):
         super(HHLeptonRDFProducer, self).__init__(*args, **kwargs)
         self.isMC = isMC
         self.year = year
         self.runPeriod = runPeriod
+        self.df_filter = df_filter
 
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -541,7 +527,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = ["pairTypeBis", "hhbbtt_dau1index", "hhbbtt_dau2index", "isVBFtriggerBis"]
+        branches = ["pairType", "hhbbtt_dau1index", "hhbbtt_dau2index", "isVBFtrigger"]
 
         all_branches = df.GetColumnNames()
         for ib, branch in enumerate(self.mutau_triggers):
@@ -591,10 +577,14 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         for ib, branch in enumerate(branches):
             df = df.Define(branch, "hh_lepton_results[%s]" % ib)
+
+        if self.df_filter:
+            df = df.Filter("pairType >= 0")
+
         return df, branches
         # return df, []
 
 
-
 def HHLeptonRDF(**kwargs):
-    return lambda: HHLeptonRDFProducer(**kwargs)
+    df_filter = kwargs.pop("filter")
+    return lambda: HHLeptonRDFProducer(df_filter=df_filter, **kwargs)

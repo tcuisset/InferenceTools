@@ -89,7 +89,7 @@ class HHLeptonInterface {
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
       iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
       iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-      iRVec Tau_dz, iRVec Tau_decayMode,
+      fRVec Tau_dz, iRVec Tau_decayMode,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
       std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers
