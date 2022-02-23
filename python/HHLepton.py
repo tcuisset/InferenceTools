@@ -527,7 +527,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = ["pairType", "hhbbtt_dau1index", "hhbbtt_dau2index", "isVBFtrigger"]
+        branches = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger"]
 
         all_branches = df.GetColumnNames()
         for ib, branch in enumerate(self.mutau_triggers):

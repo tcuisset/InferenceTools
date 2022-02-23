@@ -24,7 +24,7 @@ class HHJetsProducer(JetLepMetModule):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
         ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
-        
+
         self.year = kwargs.pop("year")
         base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
@@ -33,7 +33,7 @@ class HHJetsProducer(JetLepMetModule):
         self.HHJets = ROOT.HHJetsInterface(models[0], models[1], self.year)
 
         pass
-    
+
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
         
@@ -41,9 +41,9 @@ class HHJetsProducer(JetLepMetModule):
         self.out.branch('bjet2_JetIdx', 'I')
         self.out.branch('VBFjet1_JetIdx', 'I')
         self.out.branch('VBFjet2_JetIdx', 'I')
-        
+
         self.out.branch('Jet_HHbtag', "F", lenVar='nJet')
-        
+
         self.out.branch('isBoosted', 'I')
         pass
 
@@ -64,11 +64,8 @@ class HHJetsProducer(JetLepMetModule):
 
         bjets = []
         all_jet_indexes = []
-        #print "** JETS **"
         for ijet, jet in enumerate(jets):
-            # print eval("jet.pt%s" % self.jet_syst), jet.eta, jet.puId, jet.jetId
             if (jet.puId < 4 and eval("jet.pt%s" % self.jet_syst) <= 50) or jet.jetId < 2:
-                # print "does not pass id"
                 continue
             jet_tlv = ROOT.TLorentzVector()
             jet_tlv.SetPtEtaPhiM(
@@ -78,10 +75,7 @@ class HHJetsProducer(JetLepMetModule):
                 eval("jet.mass%s" % self.jet_syst)
             )
             if abs(jet_tlv.DeltaR(dau1_tlv)) < 0.5 or abs(jet.DeltaR(dau2_tlv)) < 0.5:
-                # print "does not pass deltaR with leptons"
                 continue
-            # print jet.pt, jet.eta
-            # print "passes everything"
             if eval("jet.pt%s" % self.jet_syst) > 20 and abs(jet.eta) < 2.4:
                 bjets.append((ijet, jet))
             # store also jets w/ eta < 4.7 for vbf analysis
@@ -248,7 +242,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
 
         self.df_filter = df_filter
-        
+
         # print ROOT.gSystem.GetLibraries()
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -270,7 +264,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         ROOT.gInterpreter.Declare("""
             auto HHJets = HHJetsInterface("%s", "%s", %s);
         """ % (models[0], models[1], int(self.year)))
-        
+
         ROOT.gInterpreter.Declare("""
             using Vfloat = const ROOT::RVec<float>&;
             using VInt = const ROOT::RVec<int>&;
@@ -313,7 +307,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 dau2_eta = tau_eta.at(dau2_index);
                 dau2_phi = tau_phi.at(dau2_index);
                 dau2_mass = tau_mass.at(dau2_index);
-                
+
                 return HHJets.GetHHJets(event, pairType,
                     Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                     Jet_puId, Jet_jetId, Jet_btagDeepFlavB,
@@ -326,7 +320,6 @@ class HHJetsRDFProducer(JetLepMetSyst):
         """)
 
     def run(self, df):
-        # df = df.Define("hhbbtt_HHbtag", "get_hh_jets(event, "
         df = df.Define("HHJets", "get_hh_jets(event, "
             "Jet_pt{5}, Jet_eta, Jet_phi, Jet_mass{5}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
@@ -339,23 +332,18 @@ class HHJetsRDFProducer(JetLepMetSyst):
             "MET{4}_pt{3}, MET{4}_phi{3})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                 self.met_smear_tag, self.jet_syst))
-        df = df.Define("hhbbtt_HHbtag", "HHJets.hhbtag")
-        # df = df.Define("bjet_idx1", "HHJets.get_bjet_index1()")
-        df = df.Define("bjet_idx1", "HHJets.bjet_idx1")
-        # df = df.Define("bjet_idx2", "HHJets.get_bjet_index2()")
-        df = df.Define("bjet_idx2", "HHJets.bjet_idx2")
+        df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
+        df = df.Define("bjet1_JetIdx", "HHJets.bjet_idx1")
+        df = df.Define("bjet2_JetIdx", "HHJets.bjet_idx2")
 
-        # df = df.Define("vbfjet_indexes", "HHJets.get_vbfjet_indexes()")
-        df = df.Define("vbfjet_idx1", "HHJets.bjet_idx1")
-        # df = df.Define("vbfjet_idx1", "HHJets.get_vbfjet_index1()")
-        df = df.Define("vbfjet_idx2", "HHJets.bjet_idx2")
-        # df = df.Define("vbfjet_idx2", "HHJets.get_vbfjet_index2()")
+        df = df.Define("VBFjet1_JetIdx", "HHJets.bjet_idx1")
+        df = df.Define("VBFjet2_JetIdx", "HHJets.bjet_idx2")
         df = df.Define("isBoosted", "HHJets.isBoosted")
 
         if self.df_filter:
-            df = df.Filter("bjet_idx1 >= 0")
-        return df, ["hhbbtt_HHbtag", "bjet_idx1", "bjet_idx2", "vbfjet_idx1", "vbfjet_idx2", "isBoosted"]
-        # return df, []
+            df = df.Filter("bjet1_JetIdx >= 0")
+        return df, ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
+            "VBFjet1_JetIdx", "VBFjet2_JetIdx", "isBoosted"]
 
 
 def HHJetsRDF(**kwargs):
