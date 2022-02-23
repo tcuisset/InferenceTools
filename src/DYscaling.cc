@@ -110,7 +110,7 @@ std::vector<float> DYscaling::get_dy_scale(std::vector<float> GenJet_pt, std::ve
   
   if (idx >= 0) {
     TLorentzVector genZ;
-    genZ.SetPtEtaPhiM(GenJet_pt.at(idx), GenJet_eta.at(idx), GenJet_phi.at(idx), GenJet_mass.at(idx));
+    genZ.SetPtEtaPhiM(GenPart_pt.at(idx), GenPart_eta.at(idx), GenPart_phi.at(idx), GenPart_mass.at(idx));
     float genZ_pt = genZ.Pt();
 
     if (genZ_pt <= 10.) {
