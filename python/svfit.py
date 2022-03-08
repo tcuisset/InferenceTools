@@ -69,13 +69,15 @@ class SVFitRDFProducer(JetLepMetSyst):
         ROOT.gROOT.ProcessLine(".L {}/interface/SVfitinterface.h".format(base))
         ROOT.gInterpreter.Declare("""
             using Vfloat = const ROOT::RVec<float>&;
+            using Vint = const ROOT::RVec<int>&;
             ROOT::RVec<double> compute_svfit(
-                    int pairType, int dau1_index, int dau2_index, int DM1, int DM2,
+                    int pairType, int dau1_index, int dau2_index,
                     Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
                     Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass, Vint Tau_decayMode,
                     float met_pt, float met_phi, float met_covXX, float met_covXY, float met_covYY) {
                 float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
+                int DM1=-1, DM2=-1;
                 if (pairType == 0) {
                     dau1_pt = muon_pt.at(dau1_index);
                     dau1_eta = muon_eta.at(dau1_index);
@@ -91,11 +93,13 @@ class SVFitRDFProducer(JetLepMetSyst):
                     dau1_eta = tau_eta.at(dau1_index);
                     dau1_phi = tau_phi.at(dau1_index);
                     dau1_mass = tau_mass.at(dau1_index);
+                    DM1 = Tau_decayMode.at(dau1_index);
                 }
                 dau2_pt = tau_pt.at(dau2_index);
                 dau2_eta = tau_eta.at(dau2_index);
                 dau2_phi = tau_phi.at(dau2_index);
                 dau2_mass = tau_mass.at(dau2_index);
+                DM2 = Tau_decayMode.at(dau2_index);
 
                 auto svfit = SVfitinterface();
                 svfit.SetInputs(0, pairType, DM1, DM2,
@@ -108,10 +112,10 @@ class SVFitRDFProducer(JetLepMetSyst):
         """)
 
         df = df.Define("svfit_result",
-            "compute_svfit(pairType, dau1_index, dau2_index, dau1_decayMode, dau2_decayMode, "
+            "compute_svfit(pairType, dau1_index, dau2_index, "
                 "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
                 "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-                "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
+                "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, Tau_decayMode, "
                 "MET{4}_pt{3}, MET{4}_phi{3}, MET_covXX, MET_covXY, MET_covYY)".format(
                     self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                     self.met_smear_tag)).Define(
