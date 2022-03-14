@@ -42,6 +42,31 @@ struct trig_req {
   std::vector<std::vector<int>> bits;  
 };
 
+struct lepton_output {
+    int pairType;
+    int dau1_index;
+    int dau2_index;
+    int isVBFtrigger;
+    int isOS;
+
+    float dau1_eta;
+    float dau1_phi;
+    float dau1_iso;
+    int dau1_decayMode;
+    bool dau1_idDecayModeNewDMs;
+    int dau1_idDeepTau2017v2p1VSe;
+    int dau1_idDeepTau2017v2p1VSmu;
+    int dau1_idDeepTau2017v2p1VSjet;
+
+    float dau2_eta;
+    float dau2_phi;
+    int dau2_decayMode;
+    bool dau2_idDecayModeNewDMs;
+    int dau2_idDeepTau2017v2p1VSe;
+    int dau2_idDeepTau2017v2p1VSmu;
+    int dau2_idDeepTau2017v2p1VSjet;
+};
+
 bool pairSort (const tau_pair& pA, const tau_pair& pB)
 {
   // first leg 1 iso
@@ -78,18 +103,18 @@ class HHLeptonInterface {
   public:
     HHLeptonInterface ();
     ~HHLeptonInterface ();
-    std::vector<int> get_dau_indexes(
+    lepton_output get_dau_indexes(
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
       fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
-      bRVec Muon_mediumId, bRVec Muon_tightId,
+      bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
       bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
       bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
-      fRVec Electron_dxy, fRVec Electron_dz,
+      fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
       iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
       iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-      fRVec Tau_dz, iRVec Tau_decayMode,
+      fRVec Tau_dz, iRVec Tau_decayMode, bRVec Tau_idDecayModeNewDMs, iRVec Tau_charge,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
       std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers
@@ -100,7 +125,7 @@ class HHLeptonInterface {
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_dz, fRVec Electron_dxy,
       bRVec Electron_mvaFall17V2noIso_WP90, bRVec Electron_mvaFall17V2Iso_WP90,
       fRVec Electron_pfRelIso03_all);
-    
+
     bool pass_trigger(
       float off_pt1, float off_eta1, float off_phi1, int obj_id1,
       float off_pt2, float off_eta2, float off_phi2, int obj_id2,

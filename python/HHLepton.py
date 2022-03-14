@@ -402,15 +402,6 @@ class HHLeptonVariableProducer(JetLepMetModule):
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
 
-        assert sum([self.muon_syst != "", self.electron_syst != "", self.tau_syst != ""]) <= 1
-        self.lep_syst = ""
-        if self.muon_syst:
-            self.lep_syst = self.muon_syst
-        elif self.electron_syst:
-            self.lep_syst = self.electron_syst
-        elif self.tau_syst:
-            self.lep_syst = self.tau_syst
-
         self.out.branch('dau1_pt%s' % self.lep_syst, 'F')
         self.out.branch('dau1_mass%s' % self.lep_syst, 'F')
         self.out.branch('dau2_pt%s' % self.lep_syst, 'F')
@@ -527,7 +518,14 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger"]
+        branches = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
+            "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode", "dau1_idDecayModeNewDMs",
+            "dau1_idDeepTau2017v2p1VSe", "dau1_idDeepTau2017v2p1VSmu",
+            "dau1_idDeepTau2017v2p1VSjet",
+            "dau2_eta", "dau2_phi", "dau2_decayMode", "dau2_idDecayModeNewDMs",
+            "dau2_idDeepTau2017v2p1VSe", "dau2_idDeepTau2017v2p1VSmu",
+            "dau2_idDeepTau2017v2p1VSjet"
+        ]
 
         all_branches = df.GetColumnNames()
         for ib, branch in enumerate(self.mutau_triggers):
@@ -562,21 +560,21 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         df = df.Define("hh_lepton_results", "HHLepton.get_dau_indexes("
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-            "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, "
+            "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, Muon_charge, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
             "Electron_mvaFall17V2Iso_WP80, Electron_mvaFall17V2noIso_WP90, "
             "Electron_mvaFall17V2Iso_WP90, Electron_pfRelIso03_all, "
-            "Electron_dxy, Electron_dz, "
+            "Electron_dxy, Electron_dz, Electron_charge, "
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "Tau_idDeepTau2017v2p1VSmu, Tau_idDeepTau2017v2p1VSe, "
             "Tau_idDeepTau2017v2p1VSjet, Tau_rawDeepTau2017v2p1VSjet, "
-            "Tau_dz, Tau_decayMode,"
+            "Tau_dz, Tau_decayMode, Tau_idDecayModeNewDMs, Tau_charge, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
             "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
         ")".format(self.muon_syst, self.electron_syst, self.tau_syst))
 
-        for ib, branch in enumerate(branches):
-            df = df.Define(branch, "hh_lepton_results[%s]" % ib)
+        for branch in branches:
+            df = df.Define(branch, "hh_lepton_results.%s" % branch)
 
         if self.df_filter:
             df = df.Filter("pairType >= 0")
@@ -588,3 +586,55 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 def HHLeptonRDF(**kwargs):
     df_filter = kwargs.pop("filter")
     return lambda: HHLeptonRDFProducer(df_filter=df_filter, **kwargs)
+
+
+class HHLeptonVarRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super(HHLeptonVarRDFProducer, self).__init__(*args, **kwargs)
+        ROOT.gInterpreter.Declare("""
+            using Vfloat = const ROOT::RVec<float>&;
+            using VInt = const ROOT::RVec<int>&;
+            std::vector<float> get_lepton_values (
+                int pairType, int dau1_index, int dau2_index,
+                Vfloat muon_pt, Vfloat muon_mass,
+                Vfloat electron_pt, Vfloat electron_mass,
+                Vfloat tau_pt, Vfloat tau_mass
+            )
+            {
+                float dau1_pt, dau1_mass, dau2_pt, dau2_mass;
+                if (pairType == 0) {
+                    dau1_pt = muon_pt.at(dau1_index);
+                    dau1_mass = muon_mass.at(dau1_index);
+                } else if (pairType == 1) {
+                    dau1_pt = electron_pt.at(dau1_index);
+                    dau1_mass = electron_mass.at(dau1_index);
+                } else if (pairType == 2) {
+                    dau1_pt = tau_pt.at(dau1_index);
+                    dau1_mass = tau_mass.at(dau1_index);
+                } else {
+                    return {-999., -999., -999., -999.};
+                }
+                dau2_pt = tau_pt.at(dau2_index);
+                dau2_mass = tau_mass.at(dau2_index);
+                return {dau1_pt, dau1_mass, dau2_pt, dau2_mass};
+            }
+        """)
+
+
+    def run(self, df):
+        branches = "dau1_pt{0}, dau1_mass{0}, dau2_pt{0}, dau2_mass{0}".format(self.lep_syst)
+        branches = branches.split(", ")
+
+        df = df.Define("lepton_values%s" % self.lep_syst, "get_lepton_values("
+            "pairType, dau1_index, dau2_index, "
+            "Muon_pt{0}, Muon_mass{0}, Electron_pt{1}, Electron_mass{1}, "
+            "Tau_pt{2}, Tau_mass{2})".format(self.muon_syst, self.electron_syst, self.tau_syst))
+
+        for ib, branch in enumerate(branches):
+            df = df.Define(branch, "lepton_values%s[%s]" % (self.lep_syst, ib))
+
+        return df, branches
+
+
+def HHLeptonVarRDF(**kwargs):
+    return lambda: HHLeptonVarRDFProducer(**kwargs)

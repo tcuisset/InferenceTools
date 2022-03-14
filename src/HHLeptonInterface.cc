@@ -1,8 +1,5 @@
 #include "Tools/Tools/interface/HHLeptonInterface.h"
 
-
-
-
 // Constructors
 
 HHLeptonInterface::HHLeptonInterface () {};
@@ -10,18 +7,18 @@ HHLeptonInterface::HHLeptonInterface () {};
 // Destructor
 HHLeptonInterface::~HHLeptonInterface() {}
 
-std::vector<int> HHLeptonInterface::get_dau_indexes(
+lepton_output HHLeptonInterface::get_dau_indexes(
     fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
     fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
-    bRVec Muon_mediumId, bRVec Muon_tightId,
+    bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
     fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
     bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
     bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
-    fRVec Electron_dxy, fRVec Electron_dz,
+    fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
     fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
     iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
     iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-    fRVec Tau_dz, iRVec Tau_decayMode,
+    fRVec Tau_dz, iRVec Tau_decayMode, bRVec Tau_idDecayModeNewDMs, iRVec Tau_charge,
     iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
     std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
     std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers 
@@ -54,7 +51,7 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
     } // loop over taus
 
     std::vector<tau_pair> tau_pairs;
-    
+
     for (auto & imuon: goodmuons) {
       auto muon_tlv = TLorentzVector();
       muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon], Muon_phi[imuon], Muon_mass[imuon]);
@@ -84,9 +81,19 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return {-1, -1, -1, -1};
+        return lepton_output({-1, -1, -1, -1, -1,
+          -1., -1., -1., -1, false, -1, -1, -1,
+          -1., -1., -1, false, -1, -1, -1});
 
-      return {0, tau_pairs[0].index1, tau_pairs[0].index2, 0};
+      int isOS = (int) (Muon_charge[tau_pairs[0].index1] != Tau_charge[tau_pairs[1].index2]);
+      int ind1 = tau_pairs[0].index1;
+      int ind2 = tau_pairs[0].index2;
+
+      return lepton_output({0, tau_pairs[0].index1, tau_pairs[0].index2, 0, isOS,
+        Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, false, -1, -1, -1,
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
+        Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
   }  // goodmuons stuff
 
@@ -117,7 +124,7 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
     } // loop over taus
 
     std::vector<tau_pair> tau_pairs;
-    
+
     for (auto & iele: goodelectrons) {
       auto electron_tlv = TLorentzVector();
       electron_tlv.SetPtEtaPhiM(Electron_pt[iele], Electron_eta[iele],
@@ -148,9 +155,20 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return {-1, -1, -1, -1};
+        return lepton_output({-1, -1, -1, -1, -1,
+          -1., -1., -1., -1, false, -1, -1, -1,
+          -1., -1., -1, false, -1, -1, -1});
 
-      return {1, tau_pairs[0].index1, tau_pairs[0].index2, 0};
+      int isOS = (int) (Electron_charge[tau_pairs[0].index1] != Tau_charge[tau_pairs[1].index2]);
+      int ind1 = tau_pairs[0].index1;
+      int ind2 = tau_pairs[0].index2;
+
+      return lepton_output({1, tau_pairs[0].index1, tau_pairs[0].index2, 0, isOS,
+        Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1, false,
+        -1, -1, -1,
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
+        Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
   }  // goodmuons stuff
 
@@ -169,7 +187,7 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
       continue;
     goodtaus.push_back(itau);
   } // loop over taus
-  
+
   if (goodtaus.size() >= 2) {
     std::vector<tau_pair> tau_pairs;
     for (auto & itau1 : goodtaus) {
@@ -208,12 +226,27 @@ std::vector<int> HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return {-1, -1, -1, -1};
-      return {2, tau_pairs[0].index1, tau_pairs[0].index2, tau_pairs[0].isVBFtrigger};
+        return lepton_output({-1, -1, -1, -1, -1,
+          -1., -1., -1., -1, false, -1, -1, -1,
+          -1., -1., -1, false, -1, -1, -1});
+
+      int isOS = (int) (Tau_charge[tau_pairs[0].index1] != Tau_charge[tau_pairs[1].index2]);
+      int ind1 = tau_pairs[0].index1;
+      int ind2 = tau_pairs[0].index2;
+
+      return lepton_output({2, tau_pairs[0].index1, tau_pairs[0].index2, 0, isOS,
+        Tau_eta[ind1], Tau_phi[ind1], -1., Tau_decayMode[ind1], Tau_idDecayModeNewDMs[ind1],
+        Tau_idDeepTau2017v2p1VSe[ind1], Tau_idDeepTau2017v2p1VSmu[ind1],
+        Tau_idDeepTau2017v2p1VSjet[ind1],
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
+        Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
   }
 
-  return {-1, -1, -1, -1};
+  return lepton_output({-1, -1, -1, -1, -1,
+    -1., -1., -1., -1, false, -1, -1, -1,
+    -1., -1., -1, false, -1, -1, -1});
 }
 
 
