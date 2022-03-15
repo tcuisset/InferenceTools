@@ -14,6 +14,12 @@
 #include <vector>
 #include <TLorentzVector.h>
 
+#include <ROOT/RVec.hxx>
+
+typedef ROOT::VecOps::RVec<float> fRVec;
+typedef ROOT::VecOps::RVec<bool> bRVec;
+typedef ROOT::VecOps::RVec<int> iRVec;
+
 // DYscaling class
 class DYscaling {
 
@@ -23,18 +29,18 @@ class DYscaling {
     ~DYscaling ();
 
     std::vector<float> get_dy_scale(
-      std::vector<float> GenJet_pt,
-      std::vector<float> GenJet_eta,
-      std::vector<float> GenJet_phi,
-      std::vector<float> GenJet_mass,
-      std::vector<int> GenJet_hadronFlavour,
+      fRVec GenJet_pt,
+      fRVec GenJet_eta,
+      fRVec GenJet_phi,
+      fRVec GenJet_mass,
+      iRVec GenJet_hadronFlavour,
       int LHE_Nb,
-      std::vector<float> GenPart_pt,
-      std::vector<float> GenPart_eta,
-      std::vector<float> GenPart_phi,
-      std::vector<float> GenPart_mass,
-      std::vector<int> GenPart_statusFlags,
-      std::vector<int> GenPart_pdgId);
+      fRVec GenPart_pt,
+      fRVec GenPart_eta,
+      fRVec GenPart_phi,
+      fRVec GenPart_mass,
+      iRVec GenPart_statusFlags,
+      iRVec GenPart_pdgId);
 
   private:
     // Computed in 2019 for 2018 data with deepFlavor - NOT USED for Legacy

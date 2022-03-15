@@ -94,7 +94,7 @@ class DYscalingRDFProducer():
             "DYscale_MTT_up", "DYscale_MTT_down"]
         if self.isDY:
             df = df.Define("dyscalingweights",
-                "dy_scaler.get_dy_scale(GenJet_pt, GetJet_eta, GenJet_phi, GenJet_mass,"
+                "dy_scaler.get_dy_scale(GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass,"
                     "GenJet_hadronFlavour, LHE_Nb, GenPart_pt, GenPart_eta, GenPart_phi,"
                     " GenPart_mass, GenPart_statusFlags, GenPart_pdgId)")
 
