@@ -18,7 +18,9 @@ class SVFitProducer(JetLepMetModule):
         base = "{}/{}/src/Tools/Tools".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/SVfitinterface.h".format(base))
-    
+
+        self.svfit = ROOT.SVfitinterface()
+
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
 
@@ -44,14 +46,12 @@ class SVFitProducer(JetLepMetModule):
         decayMode1 = (dau1.decayMode if dau1 in taus else -1)
         decayMode2 = (dau2.decayMode if dau2 in taus else -1)
 
-        svfit = ROOT.SVfitinterface(
+        result = self.svfit.FitAndGetResultWithInputs(
             0, event.pairType, decayMode1, decayMode2,
             dau1_tlv.Pt(), dau1_tlv.Eta(), dau1_tlv.Phi(), dau1_tlv.M(),
             dau2_tlv.Pt(), dau2_tlv.Eta(), dau2_tlv.Phi(), dau2_tlv.M(),
             met_tlv.Pt(), met_tlv.Phi(), met.covXX, met.covXY, met.covYY
         )
-
-        result = svfit.FitAndGetResult()
 
         self.out.fillBranch("Htt_svfit_pt%s" % self.systs, result[0])
         self.out.fillBranch("Htt_svfit_eta%s" % self.systs, result[1])
@@ -67,6 +67,11 @@ class SVFitRDFProducer(JetLepMetSyst):
         base = "{}/{}/src/Tools/Tools".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/SVfitinterface.h".format(base))
+
+        ROOT.gInterpreter.Declare("""
+            auto svfit = SVfitinterface();
+        """)
+
         ROOT.gInterpreter.Declare("""
             using Vfloat = const ROOT::RVec<float>&;
             using Vint = const ROOT::RVec<int>&;
@@ -76,7 +81,7 @@ class SVFitRDFProducer(JetLepMetSyst):
                     Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
                     Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass, Vint Tau_decayMode,
                     float met_pt, float met_phi, float met_covXX, float met_covXY, float met_covYY) {
-                float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
+                double dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
                 int DM1=-1, DM2=-1;
                 if (pairType == 0) {
                     dau1_pt = muon_pt.at(dau1_index);
@@ -101,13 +106,10 @@ class SVFitRDFProducer(JetLepMetSyst):
                 dau2_mass = tau_mass.at(dau2_index);
                 DM2 = Tau_decayMode.at(dau2_index);
 
-                auto svfit = SVfitinterface();
-                svfit.SetInputs(0, pairType, DM1, DM2,
+                return svfit.FitAndGetResultWithInputs(0, pairType, DM1, DM2,
                     dau1_pt, dau1_eta, dau1_phi, dau1_mass,
                     dau2_pt, dau2_eta, dau2_phi, dau2_mass,
                     met_pt, met_phi, met_covXX, met_covXY, met_covYY);
-
-                return svfit.FitAndGetResult();
             }
         """)
 
