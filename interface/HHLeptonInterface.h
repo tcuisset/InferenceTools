@@ -118,7 +118,8 @@ class HHLeptonInterface {
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
       std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers
-    ); // triggers missing
+    );
+
     bool lepton_veto(int muon_index, int electron_index,
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_dz, fRVec Muon_dxy,
       fRVec Muon_pfRelIso04_all, bRVec Muon_mediumId, bRVec Muon_tightId,
