@@ -640,8 +640,8 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-	if not self.isMC:
-	    return df, []
+        if not self.isMC:
+            return df, []
         branches = ['trigSF', 'trigSF_single', 'trigSF_cross',
             'trigSF_muUp', 'trigSF_muDown', 'trigSF_eleUp', 'trigSF_eleDown',
             'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
