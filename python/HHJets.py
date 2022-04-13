@@ -12,16 +12,21 @@ class HHJetsProducer(JetLepMetModule):
     def __init__(self, *args, **kwargs):
         super(HHJetsProducer, self).__init__(self, *args, **kwargs)
 
-        # print ROOT.gSystem.GetLibraries()
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
 
-        ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-            "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-        ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-            "external/tensorflow/2.1.0-bcolbf/include")
-        base = "{}/{}/src/Tools/Tools".format(
-            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+                "external/eigen/d812f411c3f9-cms/include/")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+                "external/tensorflow/2.5.0/include/")
+        elif os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/tensorflow/2.1.0-bcolbf/include")
+        else:
+            raise ValueError("Architecture not considered")
 
         ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
@@ -243,14 +248,21 @@ class HHJetsRDFProducer(JetLepMetSyst):
 
         self.df_filter = df_filter
 
-        # print ROOT.gSystem.GetLibraries()
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
+        if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+                "external/eigen/d812f411c3f9-cms/include/")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/"
+                "tensorflow/2.5.0/include/")
+        elif s.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/tensorflow/2.1.0-bcolbf/include")
+        else:
+            raise ValueError("Architecture not considered")
 
-        ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-            "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-        ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-            "external/tensorflow/2.1.0-bcolbf/include")
         base = "{}/{}/src/Tools/Tools".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
