@@ -12,6 +12,7 @@ ROOT = import_root()
 
 class DYstitchingProducer(Module):
     def __init__(self, year, *args, **kwargs):
+        isUL = "true" if kwargs.pop("isUL") else "false"
         super(DYstitchingProducer, self).__init__(*args, **kwargs)
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -20,7 +21,7 @@ class DYstitchingProducer(Module):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/DYstitching.h".format(base))
 
-        self.dy_reweighter = ROOT.DYstitching(year)
+        self.dy_reweighter = ROOT.DYstitching(year, isUL)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -42,6 +43,7 @@ class DYstitchingProducer(Module):
 class DYstitchingRDFProducer():
     def __init__(self, year, isDY, *args, **kwargs):
         self.isDY = isDY
+        isUL = "true" if kwargs.pop("isUL") else "false"
         if self.isDY:
             if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
                 ROOT.gSystem.Load("libToolsTools.so")
@@ -49,13 +51,12 @@ class DYstitchingRDFProducer():
             base = "{}/{}/src/Tools/Tools".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             ROOT.gROOT.ProcessLine(".L {}/interface/DYstitching.h".format(base))
-            ROOT.gInterpreter.Declare('auto dy_stitcher = DYstitching(%s);' % year)
+            ROOT.gInterpreter.Declare('auto dy_stitcher = DYstitching(%s, %s);' % (year, isUL))
 
     def run(self, df):
         if self.isDY:
             df = df.Define("DYstitchWeight",
                 "dy_stitcher.get_stitching_weight(LHE_Nb, LHE_Njets, LHE_HT)")
-                # "50.")
         else:
             df = df.Define("DYstitchWeight", "1")
         return df, ["DYstitchWeight"]

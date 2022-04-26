@@ -2,15 +2,20 @@
 
 // Constructors
 
-DYstitching::DYstitching (int year) {
+DYstitching::DYstitching (int year, bool isUL) {
   if (year == 2016) {
     stitchWeights = stitchWeights_2016;
     
   } else if (year == 2017) {
-    stitchWeights = stitchWeights_2017;
-
+    if (!isUL)
+      stitchWeights = stitchWeights_2017;
+    else
+      stitchWeights = stitchWeights_UL2017;
   } else {
-    stitchWeights = stitchWeights_2018;
+    if (!isUL)
+      stitchWeights = stitchWeights_2018;
+    else
+      stitchWeights = stitchWeights_UL2018;
   }
 
 };
