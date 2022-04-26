@@ -53,7 +53,6 @@ struct lepton_output {
     float dau1_phi;
     float dau1_iso;
     int dau1_decayMode;
-    bool dau1_idDecayModeNewDMs;
     int dau1_idDeepTau2017v2p1VSe;
     int dau1_idDeepTau2017v2p1VSmu;
     int dau1_idDeepTau2017v2p1VSjet;
@@ -61,7 +60,6 @@ struct lepton_output {
     float dau2_eta;
     float dau2_phi;
     int dau2_decayMode;
-    bool dau2_idDecayModeNewDMs;
     int dau2_idDeepTau2017v2p1VSe;
     int dau2_idDeepTau2017v2p1VSmu;
     int dau2_idDeepTau2017v2p1VSjet;
@@ -114,7 +112,7 @@ class HHLeptonInterface {
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
       iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
       iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-      fRVec Tau_dz, iRVec Tau_decayMode, bRVec Tau_idDecayModeNewDMs, iRVec Tau_charge,
+      fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
       std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers

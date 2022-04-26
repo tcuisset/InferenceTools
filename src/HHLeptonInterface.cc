@@ -18,7 +18,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
     fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
     iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
     iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
-    fRVec Tau_dz, iRVec Tau_decayMode, bRVec Tau_idDecayModeNewDMs, iRVec Tau_charge,
+    fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
     iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
     std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
     std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers 
@@ -82,15 +82,15 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
         return lepton_output({-1, -1, -1, -1, -1,
-          -1., -1., -1., -1, false, -1, -1, -1,
-          -1., -1., -1, false, -1, -1, -1});
+          -1., -1., -1., -1, -1, -1, -1,
+          -1., -1., -1, -1, -1, -1});
       int ind1 = tau_pairs[0].index1;
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Muon_charge[ind1] != Tau_charge[ind2]);
 
       return lepton_output({0, ind1, ind2, 0, isOS,
-        Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, false, -1, -1, -1,
-        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
         Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
         Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
@@ -155,17 +155,17 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
         return lepton_output({-1, -1, -1, -1, -1,
-          -1., -1., -1., -1, false, -1, -1, -1,
-          -1., -1., -1, false, -1, -1, -1});
+          -1., -1., -1., -1, -1, -1, -1,
+          -1., -1., -1, -1, -1, -1});
 
       int ind1 = tau_pairs[0].index1;
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Electron_charge[ind1] != Tau_charge[ind2]);
 
       return lepton_output({1, ind1, ind2, 0, isOS,
-        Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1, false,
+        Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1,
         -1, -1, -1,
-        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
         Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
         Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
@@ -226,26 +226,26 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
         return lepton_output({-1, -1, -1, -1, -1,
-          -1., -1., -1., -1, false, -1, -1, -1,
-          -1., -1., -1, false, -1, -1, -1});
+          -1., -1., -1., -1, -1, -1, -1,
+          -1., -1., -1, -1, -1, -1});
 
       int ind1 = tau_pairs[0].index1;
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Tau_charge[ind1] != Tau_charge[ind2]);
 
       return lepton_output({2, ind1, ind2, 0, isOS,
-        Tau_eta[ind1], Tau_phi[ind1], -1., Tau_decayMode[ind1], Tau_idDecayModeNewDMs[ind1],
+        Tau_eta[ind1], Tau_phi[ind1], -1., Tau_decayMode[ind1],
         Tau_idDeepTau2017v2p1VSe[ind1], Tau_idDeepTau2017v2p1VSmu[ind1],
         Tau_idDeepTau2017v2p1VSjet[ind1],
-        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2], Tau_idDecayModeNewDMs[ind2],
+        Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
         Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
         Tau_idDeepTau2017v2p1VSjet[ind2]});
     }
   }
 
   return lepton_output({-1, -1, -1, -1, -1,
-    -1., -1., -1., -1, false, -1, -1, -1,
-    -1., -1., -1, false, -1, -1, -1});
+    -1., -1., -1., -1, -1, -1, -1,
+    -1., -1., -1, -1, -1, -1});
 }
 
 

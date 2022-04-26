@@ -101,7 +101,6 @@ class HHLeptonProducer(JetLepMetModule):
         self.out.branch('dau1_q', 'I')
         self.out.branch('dau1_iso', 'F')
         self.out.branch('dau1_decayMode', 'I')
-        self.out.branch('dau1_idDecayModeNewDMs', 'b')
         self.out.branch('dau1_idDeepTau2017v2p1VSe', 'I')
         self.out.branch('dau1_idDeepTau2017v2p1VSmu', 'I')
         self.out.branch('dau1_idDeepTau2017v2p1VSjet', 'I')
@@ -113,7 +112,6 @@ class HHLeptonProducer(JetLepMetModule):
         self.out.branch('dau2_q', 'I')
         self.out.branch('dau2_iso', 'F')
         self.out.branch('dau2_decayMode', 'I')
-        self.out.branch('dau2_idDecayModeNewDMs', 'b')
         self.out.branch('dau2_idDeepTau2017v2p1VSe', 'I')
         self.out.branch('dau2_idDeepTau2017v2p1VSmu', 'I')
         self.out.branch('dau2_idDeepTau2017v2p1VSjet', 'I')
@@ -207,7 +205,6 @@ class HHLeptonProducer(JetLepMetModule):
                 self.out.fillBranch("dau1_q", muon.charge)
                 self.out.fillBranch("dau1_iso", muon.pfRelIso04_all)
                 self.out.fillBranch("dau1_decayMode", -1)
-                self.out.fillBranch("dau1_idDecayModeNewDMs", 0)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSe", -1)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSmu", -1)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSjet", -1)
@@ -220,7 +217,6 @@ class HHLeptonProducer(JetLepMetModule):
                 self.out.fillBranch("dau2_q", tau.charge)
                 self.out.fillBranch("dau2_iso", tau.rawIso)
                 self.out.fillBranch("dau2_decayMode", tau.decayMode)
-                self.out.fillBranch("dau2_idDecayModeNewDMs", tau.idDecayModeNewDMs)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSe", tau.idDeepTau2017v2p1VSe)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSmu", tau.idDeepTau2017v2p1VSmu)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSjet", tau.idDeepTau2017v2p1VSjet)
@@ -287,7 +283,6 @@ class HHLeptonProducer(JetLepMetModule):
                 self.out.fillBranch("dau1_q", electron.charge)
                 self.out.fillBranch("dau1_iso", electron.pfRelIso03_all)
                 self.out.fillBranch("dau1_decayMode", -1)
-                self.out.fillBranch("dau1_idDecayModeNewDMs", 0)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSe", -1)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSmu", -1)
                 self.out.fillBranch("dau1_idDeepTau2017v2p1VSjet", -1)
@@ -300,7 +295,6 @@ class HHLeptonProducer(JetLepMetModule):
                 self.out.fillBranch("dau2_q", tau.charge)
                 self.out.fillBranch("dau2_iso", tau.rawIso)
                 self.out.fillBranch("dau2_decayMode", tau.decayMode)
-                self.out.fillBranch("dau2_idDecayModeNewDMs", tau.idDecayModeNewDMs)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSe", tau.idDeepTau2017v2p1VSe)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSmu", tau.idDeepTau2017v2p1VSmu)
                 self.out.fillBranch("dau2_idDeepTau2017v2p1VSjet", tau.idDeepTau2017v2p1VSjet)
@@ -372,7 +366,6 @@ class HHLeptonProducer(JetLepMetModule):
             self.out.fillBranch("dau1_q", tau1.charge)
             self.out.fillBranch("dau1_iso", tau1.rawIso)
             self.out.fillBranch("dau1_decayMode", tau1.decayMode)
-            self.out.fillBranch("dau1_idDecayModeNewDMs", tau1.idDecayModeNewDMs)
             self.out.fillBranch("dau1_idDeepTau2017v2p1VSe", tau1.idDeepTau2017v2p1VSe)
             self.out.fillBranch("dau1_idDeepTau2017v2p1VSmu", tau1.idDeepTau2017v2p1VSmu)
             self.out.fillBranch("dau1_idDeepTau2017v2p1VSjet", tau1.idDeepTau2017v2p1VSjet)
@@ -385,7 +378,6 @@ class HHLeptonProducer(JetLepMetModule):
             self.out.fillBranch("dau2_q", tau2.charge)
             self.out.fillBranch("dau2_iso", tau2.rawIso)
             self.out.fillBranch("dau2_decayMode", tau2.decayMode)
-            self.out.fillBranch("dau2_idDecayModeNewDMs", tau2.idDecayModeNewDMs)
             self.out.fillBranch("dau2_idDeepTau2017v2p1VSe", tau2.idDeepTau2017v2p1VSe)
             self.out.fillBranch("dau2_idDeepTau2017v2p1VSmu", tau2.idDeepTau2017v2p1VSmu)
             self.out.fillBranch("dau2_idDeepTau2017v2p1VSjet", tau2.idDeepTau2017v2p1VSjet)
@@ -519,10 +511,10 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
     def run(self, df):
         branches = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
-            "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode", "dau1_idDecayModeNewDMs",
+            "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode",
             "dau1_idDeepTau2017v2p1VSe", "dau1_idDeepTau2017v2p1VSmu",
             "dau1_idDeepTau2017v2p1VSjet",
-            "dau2_eta", "dau2_phi", "dau2_decayMode", "dau2_idDecayModeNewDMs",
+            "dau2_eta", "dau2_phi", "dau2_decayMode",
             "dau2_idDeepTau2017v2p1VSe", "dau2_idDeepTau2017v2p1VSmu",
             "dau2_idDeepTau2017v2p1VSjet"
         ]
@@ -568,7 +560,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "Tau_idDeepTau2017v2p1VSmu, Tau_idDeepTau2017v2p1VSe, "
             "Tau_idDeepTau2017v2p1VSjet, Tau_rawDeepTau2017v2p1VSjet, "
-            "Tau_dz, Tau_decayMode, Tau_idDecayModeNewDMs, Tau_charge, "
+            "Tau_dz, Tau_decayMode, Tau_charge, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
             "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
         ")".format(self.muon_syst, self.electron_syst, self.tau_syst))
