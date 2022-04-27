@@ -10,6 +10,7 @@ ROOT = import_root()
 
 class HHJetsProducer(JetLepMetModule):
     def __init__(self, *args, **kwargs):
+        isUL = kwargs.pop("isUL")
         super(HHJetsProducer, self).__init__(self, *args, **kwargs)
 
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
@@ -35,7 +36,7 @@ class HHJetsProducer(JetLepMetModule):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
 
-        self.HHJets = ROOT.HHJetsInterface(models[0], models[1], self.year)
+        self.HHJets = ROOT.HHJetsInterface(models[0], models[1], self.year, isUL)
 
         pass
 
@@ -220,10 +221,6 @@ class HHJetsProducer(JetLepMetModule):
             subj2 = subjets[fatjet.subJetIdx2]
             subj1_tlv = ROOT.TLorentzVector()
             subj2_tlv = ROOT.TLorentzVector()
-            # subj1_tlv.SetPtEtaPhiM(eval("subj1.pt%s" % self.jet_syst), subj1.eta,
-                # subj1.phi, eval("subj1.mass%s" % self.jet_syst))
-            # subj2_tlv.SetPtEtaPhiM(eval("subj2.pt%s" % self.jet_syst), subj2.eta,
-                # subj2.phi, eval("subj2.mass%s" % self.jet_syst))
             subj1_tlv.SetPtEtaPhiM(subj1.pt, subj1.eta, subj1.phi, subj1.mass)
             subj2_tlv.SetPtEtaPhiM(subj2.pt, subj2.eta, subj2.phi, subj2.mass)
             if ((abs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4
@@ -241,9 +238,9 @@ def HHJets(**kwargs):
     return lambda: HHJetsProducer(**kwargs)
 
 
-
 class HHJetsRDFProducer(JetLepMetSyst):
     def __init__(self, df_filter, *args, **kwargs):
+        isUL = "true" if kwargs.pop("isUL") else "false"
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
 
         self.df_filter = df_filter
@@ -267,15 +264,15 @@ class HHJetsRDFProducer(JetLepMetSyst):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
         ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
-        
+
         self.year = kwargs.pop("year")
         base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
 
         ROOT.gInterpreter.Declare("""
-            auto HHJets = HHJetsInterface("%s", "%s", %s);
-        """ % (models[0], models[1], int(self.year)))
+            auto HHJets = HHJetsInterface("%s", "%s", %s, %s);
+        """ % (models[0], models[1], int(self.year), isUL))
 
         ROOT.gInterpreter.Declare("""
             using Vfloat = const ROOT::RVec<float>&;

@@ -1,13 +1,11 @@
 #include "Tools/Tools/interface/HHJetsInterface.h"
 
 // Constructor
-HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year):
+HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL):
   HHbtagger_(std::array<std::string, 2> { {model_0, model_1} })
 {
   year_ = year;
-  // set_bjet_indexes(-1, -1);
-  // set_vbfjet_indexes(-1, -1);
-  // setBoosted(0);
+  if (isUL) max_bjet_eta = 2.5;
 }
 
 
@@ -57,7 +55,7 @@ output HHJetsInterface::GetHHJets(
     jet_tlv.SetPtEtaPhiM(Jet_pt[ijet], Jet_eta[ijet], Jet_phi[ijet], Jet_mass[ijet]);
     if (jet_tlv.DeltaR(dau1_tlv) < 0.5 || jet_tlv.DeltaR(dau2_tlv) < 0.5)
       continue;
-    if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < 2.4)
+    if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < max_bjet_eta)
       jet_indexes.push_back(jet_idx_btag({(int) ijet, Jet_btagDeepFlavB[ijet]}));
     if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < 4.7)
       all_jet_indexes.push_back(ijet);
