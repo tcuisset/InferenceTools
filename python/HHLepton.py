@@ -482,9 +482,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
                     trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
                     if (!isMC && run < 317509)
-                        trigger_reqs.push_back(trig_req({triggers[4], 21, 2.1, 35, 2.1, {{64}, {1, 128}}}));
+                        trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 128}}}));
                     else
-                        trigger_reqs.push_back(trig_req({triggers[5], 21, 2.1, 35, 2.1, {{8}, {1, 16}}}));
+                        trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 16}}}));
                     return trigger_reqs;
                 }
                 std::vector<trig_req> get_tautau_triggers(
