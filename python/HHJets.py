@@ -29,6 +29,9 @@ class HHJetsProducer(JetLepMetModule):
         else:
             raise ValueError("Architecture not considered")
 
+        base = "{}/{}/src/Tools/Tools".format(
+            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+
         ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
         self.year = kwargs.pop("year")
@@ -143,7 +146,7 @@ class HHJetsProducer(JetLepMetModule):
             HHbtag_htt_pt_, HHbtag_htt_eta_, HHbtag_htt_met_dphi_,
             HHbtag_rel_met_pt_htt_pt_, HHbtag_htt_scalar_pt_, HHbtag_evt_)
 
-        HHbtag_scores = zip([bjet[0] for bjet in bjets], HHbtag_scores)
+        HHbtag_scores = list(zip([bjet[0] for bjet in bjets], HHbtag_scores))
         HHbtag_scores.sort(key=lambda x:x[1], reverse=True)  # sort by the obtained HHbtag score
 
         # 2 "bjets" with the higher HHbtag score are the selected H(bb) candidates
@@ -341,6 +344,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
             "MET{4}_pt{3}, MET{4}_phi{3})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                 self.met_smear_tag, self.jet_syst))
+
         df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
         df = df.Define("bjet1_JetIdx", "HHJets.bjet_idx1")
         df = df.Define("bjet2_JetIdx", "HHJets.bjet_idx2")

@@ -256,9 +256,14 @@ class TriggerChecker:
         return False
 
     def match_hlt_object(self, trigger_path, trigger_objs, offline_eta, offline_phi, obj_type):
-        assert obj_type in ["Tau", "Electron", "Muon"]
+        obj_ids = {"Tau": 15, "Electron": 11, "Muon": 13}
+        assert obj_type in list(obj_ids.keys())
         filter_bits = self.json["hltpaths"][trigger_path][obj_type]["filterbits"]
+        # print("Off eta phi", offline_eta, offline_phi)
         for trigger_obj in trigger_objs:
+            if abs(trigger_obj.id) != abs(obj_ids[obj_type]):
+                continue
+            # print("Trig eta phi", trigger_obj.eta, trigger_obj.phi, deltaR(offline_eta, offline_phi, trigger_obj.eta, trigger_obj.phi) )
             matched_trigger_bits = True
             for filter_bit in filter_bits:
                 if (trigger_obj.filterBits & self.json["filterbits"][obj_type][filter_bit]) == 0:
@@ -305,7 +310,6 @@ def lepton_veto(electrons, muons, taus, obj=None):
             # continue
         if (abs(electron.eta) > 2.5 or electron.pt < 10 or abs(electron.dz) > 0.2
                 or abs(electron.dxy) > 0.045):
-            # print "stuff"
             continue
         if not ((electron.pfRelIso03_all < 0.3 and electron.mvaFall17V2noIso_WP90)
                 or electron.mvaFall17V2Iso_WP90):
