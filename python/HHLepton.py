@@ -583,34 +583,36 @@ def HHLeptonRDF(**kwargs):
 class HHLeptonVarRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
         super(HHLeptonVarRDFProducer, self).__init__(*args, **kwargs)
-        ROOT.gInterpreter.Declare("""
-            using Vfloat = const ROOT::RVec<float>&;
-            using VInt = const ROOT::RVec<int>&;
-            std::vector<float> get_lepton_values (
-                int pairType, int dau1_index, int dau2_index,
-                Vfloat muon_pt, Vfloat muon_mass,
-                Vfloat electron_pt, Vfloat electron_mass,
-                Vfloat tau_pt, Vfloat tau_mass
-            )
-            {
-                float dau1_pt, dau1_mass, dau2_pt, dau2_mass;
-                if (pairType == 0) {
-                    dau1_pt = muon_pt.at(dau1_index);
-                    dau1_mass = muon_mass.at(dau1_index);
-                } else if (pairType == 1) {
-                    dau1_pt = electron_pt.at(dau1_index);
-                    dau1_mass = electron_mass.at(dau1_index);
-                } else if (pairType == 2) {
-                    dau1_pt = tau_pt.at(dau1_index);
-                    dau1_mass = tau_mass.at(dau1_index);
-                } else {
-                    return {-999., -999., -999., -999.};
+        if not os.getenv("DAU_VAR"):
+            os.environ["DAU_VAR"] = "true"
+            ROOT.gInterpreter.Declare("""
+                using Vfloat = const ROOT::RVec<float>&;
+                using VInt = const ROOT::RVec<int>&;
+                std::vector<float> get_lepton_values (
+                    int pairType, int dau1_index, int dau2_index,
+                    Vfloat muon_pt, Vfloat muon_mass,
+                    Vfloat electron_pt, Vfloat electron_mass,
+                    Vfloat tau_pt, Vfloat tau_mass
+                )
+                {
+                    float dau1_pt, dau1_mass, dau2_pt, dau2_mass;
+                    if (pairType == 0) {
+                        dau1_pt = muon_pt.at(dau1_index);
+                        dau1_mass = muon_mass.at(dau1_index);
+                    } else if (pairType == 1) {
+                        dau1_pt = electron_pt.at(dau1_index);
+                        dau1_mass = electron_mass.at(dau1_index);
+                    } else if (pairType == 2) {
+                        dau1_pt = tau_pt.at(dau1_index);
+                        dau1_mass = tau_mass.at(dau1_index);
+                    } else {
+                        return {-999., -999., -999., -999.};
+                    }
+                    dau2_pt = tau_pt.at(dau2_index);
+                    dau2_mass = tau_mass.at(dau2_index);
+                    return {dau1_pt, dau1_mass, dau2_pt, dau2_mass};
                 }
-                dau2_pt = tau_pt.at(dau2_index);
-                dau2_mass = tau_mass.at(dau2_index);
-                return {dau1_pt, dau1_mass, dau2_pt, dau2_mass};
-            }
-        """)
+            """)
 
 
     def run(self, df):
