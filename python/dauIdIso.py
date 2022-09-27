@@ -1,3 +1,5 @@
+from copy import deepcopy as copy
+
 from analysis_tools.utils import import_root
 
 from Base.Modules.baseModules import JetLepMetSyst
@@ -10,6 +12,26 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
         self.isMC = kwargs.pop("isMC")
 
         if self.isMC:
+            default_systs = ["muon_id", "muon_iso", "ele_iso", "tau_vsjet", "tau_vse", "tau_vsmu"]
+            systnames = kwargs.pop("systs", ["central"] + default_systs)
+            template = ["" for i in range(len(default_systs))]
+            self.syst_names = []
+            self.systs = []
+            for name in systnames:
+                if name == "central":
+                    self.syst_names.append("")
+                    self.systs.append(template)
+                    continue
+                try:
+                    ind = default_systs.index(name)
+                    for d in ["_up", "_down"]:
+                        tmp = copy(template)
+                        self.syst_names.append("_%s%s" % (name, d))
+                        tmp[ind] = d
+                        self.systs.append(tmp)
+                except ValueError:
+                    raise ValueError("Systematic %s not available" % name)
+
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<float>&;
                 double get_dauIdIso_sf(
@@ -44,18 +66,43 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
     def run(self, df):
         if not self.isMC:
             return df, []
+        branches = []
+        for name, syst_dir in zip(self.syst_names, self.systs):
+            print(name, syst_dir)
+            df = df.Define("idAndIsoAndFakeSF%s" % name,
+                "get_dauIdIso_sf(pairType, dau1_index, dau2_index, Tau_pt{0}, "
+                    "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "
+                    "elesf_wp80iso{1[2]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[3]}, "
+                    "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[3]}, "
+                    "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[4]},"
+                    "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[5]})".format(self.tau_syst, syst_dir))
+            branches.append("idAndIsoAndFakeSF%s" % name)
 
-        df = df.Define("idAndIsoAndFakeSF_deep_pt",
-            "get_dauIdIso_sf(pairType, dau1_index, dau2_index, Tau_pt%s, "
-                "musf_tight_id, musf_tight_reliso, "
-                "elesf_wp80iso, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium, "
-                "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium, "
-                "Tau_sfDeepTau2017v2p1VSe_VVLoose, Tau_sfDeepTau2017v2p1VSmu_VLoose)"
-                % self.tau_syst)
-
-        return df, ["idAndIsoAndFakeSF_deep_pt"]
+        return df, branches
 
 
 def dauIdIsoSFRDF(**kwargs):
+    """
+    Returns the ID and Isolation SF applied to the two leptons with the desired systematics.
+
+    Required RDFModules: :ref:`HHLepton_HHLeptonRDF`, :ref:`Electron_eleSFRDF`,
+        :ref:`Muon_muSFRDF`, :ref:`Tau_tauSFRDF`
+
+    :param systs: Systematics to be considered. Default: [``central``, ``muon_id``, ``muon_iso``,
+        ``ele_iso``, ``tau_vsjet``, ``tau_vse``, ``tau_vsmu``]. 
+    :type systs: list of str
+
+    YAML sintaxis:
+
+    .. code-block:: yaml
+
+        codename:
+            name: dauIdIsoSFRDF
+            path: Tools.Tools.dauIdIso
+            parameters:
+                isMC: self.dataset.process.isMC
+                systs: [central, ...]
+
+    """
     return lambda: dauIdIsoSFRDFProducer(**kwargs)
        
