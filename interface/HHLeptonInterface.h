@@ -53,16 +53,16 @@ struct lepton_output {
     float dau1_phi;
     float dau1_iso;
     int dau1_decayMode;
-    int dau1_idDeepTau2017v2p1VSe;
-    int dau1_idDeepTau2017v2p1VSmu;
-    int dau1_idDeepTau2017v2p1VSjet;
+    int dau1_idDeepTauVSe;
+    int dau1_idDeepTauVSmu;
+    int dau1_idDeepTauVSjet;
 
     float dau2_eta;
     float dau2_phi;
     int dau2_decayMode;
-    int dau2_idDeepTau2017v2p1VSe;
-    int dau2_idDeepTau2017v2p1VSmu;
-    int dau2_idDeepTau2017v2p1VSjet;
+    int dau2_idDeepTauVSe;
+    int dau2_idDeepTauVSmu;
+    int dau2_idDeepTauVSjet;
 };
 
 bool pairSort (const tau_pair& pA, const tau_pair& pB)
@@ -99,7 +99,7 @@ bool pairSort (const tau_pair& pA, const tau_pair& pB)
 class HHLeptonInterface {
 
   public:
-    HHLeptonInterface ();
+    HHLeptonInterface (int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu);
     ~HHLeptonInterface ();
     lepton_output get_dau_indexes(
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
@@ -110,8 +110,8 @@ class HHLeptonInterface {
       bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
-      iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
-      iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
+      iRVec Tau_idDeepTauVSmu, iRVec Tau_idDeepTauVSe,
+      iRVec Tau_idDeepTauVSjet, fRVec Tau_rawDeepTauVSjet,
       fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
@@ -136,7 +136,11 @@ class HHLeptonInterface {
       std::vector<int> bits);
 
   private:
-
+    int vvvl_vsjet_;
+    int vl_vse_;
+    int vvl_vse_;
+    int t_vsmu_;
+    int vl_vsmu_;
 };
 
 #endif // HHLeptonInterface_h

@@ -68,7 +68,6 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
             return df, []
         branches = []
         for name, syst_dir in zip(self.syst_names, self.systs):
-            print(name, syst_dir)
             df = df.Define("idAndIsoAndFakeSF%s" % name,
                 "get_dauIdIso_sf(pairType, dau1_index, dau2_index, Tau_pt{0}, "
                     "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "

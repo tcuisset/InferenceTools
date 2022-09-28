@@ -2,7 +2,14 @@
 
 // Constructors
 
-HHLeptonInterface::HHLeptonInterface () {};
+HHLeptonInterface::HHLeptonInterface (
+    int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu) {
+  vvvl_vsjet_ = vvvl_vsjet;
+  vl_vse_ = vl_vse;
+  vvl_vse_ = vvl_vse;
+  t_vsmu_ = t_vsmu;
+  vl_vsmu_ = vl_vsmu;
+};
 
 // Destructor
 HHLeptonInterface::~HHLeptonInterface() {}
@@ -16,8 +23,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
     bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
     fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
     fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
-    iRVec Tau_idDeepTau2017v2p1VSmu, iRVec Tau_idDeepTau2017v2p1VSe,
-    iRVec Tau_idDeepTau2017v2p1VSjet, fRVec Tau_rawDeepTau2017v2p1VSjet,
+    iRVec Tau_idDeepTauVSmu, iRVec Tau_idDeepTauVSe,
+    iRVec Tau_idDeepTauVSjet, fRVec Tau_rawDeepTauVSjet,
     fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
     iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
     std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
@@ -36,8 +43,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   if (goodmuons.size() >= 1) {
     std::vector<int> goodtaus;
     for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
-      if (Tau_idDeepTau2017v2p1VSmu[itau] < 15 || Tau_idDeepTau2017v2p1VSe[itau] < 7
-          || Tau_idDeepTau2017v2p1VSjet[itau] < 1)
+      if (Tau_idDeepTauVSmu[itau] < t_vsmu_ || Tau_idDeepTauVSe[itau] < vl_vse_
+          || Tau_idDeepTauVSjet[itau] < vvvl_vsjet_)
         continue;
       if (fabs(Tau_dz[itau]) > 0.2)
         continue;
@@ -68,7 +75,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           continue;
 
         tau_pairs.push_back(tau_pair({imuon, Muon_pfRelIso04_all[imuon], Muon_pt[imuon],
-          itau, Tau_rawDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
+          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0}));
 
       } // loop over goodtaus
     } // loop over goodmuons
@@ -91,8 +98,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
       return lepton_output({0, ind1, ind2, 0, isOS,
         Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
         Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
-        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
-        Tau_idDeepTau2017v2p1VSjet[ind2]});
+        Tau_idDeepTauVSe[ind2], Tau_idDeepTauVSmu[ind2],
+        Tau_idDeepTauVSjet[ind2]});
     }
   }  // goodmuons stuff
 
@@ -108,8 +115,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   if (goodelectrons.size() >= 1) {
     std::vector<int> goodtaus;
     for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
-      if (Tau_idDeepTau2017v2p1VSmu[itau] < 15 || Tau_idDeepTau2017v2p1VSe[itau] < 7
-          || Tau_idDeepTau2017v2p1VSjet[itau] < 1)
+      if (Tau_idDeepTauVSmu[itau] < t_vsmu_ || Tau_idDeepTauVSe[itau] < vl_vse_
+          || Tau_idDeepTauVSjet[itau] < vvvl_vsjet_)
         continue;
       if (fabs(Tau_dz[itau]) > 0.2)
         continue;
@@ -141,7 +148,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           continue;
 
         tau_pairs.push_back(tau_pair({iele, Electron_pfRelIso03_all[iele], Electron_pt[iele],
-          itau, Tau_rawDeepTau2017v2p1VSjet[itau], Tau_pt[itau], 0}));
+          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0}));
 
       } // loop over goodtaus
     } // loop over goodelectrons
@@ -166,15 +173,15 @@ lepton_output HHLeptonInterface::get_dau_indexes(
         Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1,
         -1, -1, -1,
         Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
-        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
-        Tau_idDeepTau2017v2p1VSjet[ind2]});
+        Tau_idDeepTauVSe[ind2], Tau_idDeepTauVSmu[ind2],
+        Tau_idDeepTauVSjet[ind2]});
     }
   }  // goodmuons stuff
 
   std::vector<int> goodtaus;
   for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
-    if (Tau_idDeepTau2017v2p1VSmu[itau] < 1 || Tau_idDeepTau2017v2p1VSe[itau] < 3
-        || Tau_idDeepTau2017v2p1VSjet[itau] < 1)
+    if (Tau_idDeepTauVSmu[itau] < vl_vsmu_ || Tau_idDeepTauVSe[itau] < vvl_vse_
+        || Tau_idDeepTauVSjet[itau] < vvvl_vsjet_)
       continue;
     if (fabs(Tau_dz[itau]) > 0.2)
       continue;
@@ -212,8 +219,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
             pass_vbf = 1;
           else continue;
         }
-        tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTau2017v2p1VSjet[itau1], Tau_pt[itau1],
-          itau2, Tau_rawDeepTau2017v2p1VSjet[itau2], Tau_pt[itau2], pass_vbf}));
+        tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTauVSjet[itau1], Tau_pt[itau1],
+          itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_vbf}));
       }
     }
     if (tau_pairs.size() > 0) {
@@ -235,11 +242,11 @@ lepton_output HHLeptonInterface::get_dau_indexes(
 
       return lepton_output({2, ind1, ind2, 0, isOS,
         Tau_eta[ind1], Tau_phi[ind1], -1., Tau_decayMode[ind1],
-        Tau_idDeepTau2017v2p1VSe[ind1], Tau_idDeepTau2017v2p1VSmu[ind1],
-        Tau_idDeepTau2017v2p1VSjet[ind1],
+        Tau_idDeepTauVSe[ind1], Tau_idDeepTauVSmu[ind1],
+        Tau_idDeepTauVSjet[ind1],
         Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
-        Tau_idDeepTau2017v2p1VSe[ind2], Tau_idDeepTau2017v2p1VSmu[ind2],
-        Tau_idDeepTau2017v2p1VSjet[ind2]});
+        Tau_idDeepTauVSe[ind2], Tau_idDeepTauVSmu[ind2],
+        Tau_idDeepTauVSjet[ind2]});
     }
   }
 

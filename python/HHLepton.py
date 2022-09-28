@@ -432,6 +432,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.year = year
         self.runPeriod = runPeriod
         self.df_filter = df_filter
+        vvvl_vsjet = kwargs.pop("vvvl_vsjet")
+        vl_vse = kwargs.pop("vl_vse")
+        vvl_vse = kwargs.pop("vvl_vse")
+        t_vsmu = kwargs.pop("t_vsmu")
+        vl_vsmu = kwargs.pop("vl_vsmu")
 
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -440,8 +445,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/HHLeptonInterface.h".format(base))
         ROOT.gInterpreter.Declare("""
-            auto HHLepton = HHLeptonInterface();
-        """)
+            auto HHLepton = HHLeptonInterface(%s, %s, %s, %s, %s);
+        """ % (vvvl_vsjet, vl_vse, vvl_vse, t_vsmu, vl_vsmu))
 
         self.mutau_triggers = ["HLT_IsoMu22", "HLT_IsoMu22_eta2p1",
             "HLT_IsoTkMu22", "HLT_IsoTkMu22_eta2p1", "HLT_IsoMu24", "HLT_IsoMu27",
@@ -576,6 +581,53 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
 
 def HHLeptonRDF(**kwargs):
+    """
+    Returns the index of the two selected taus + several of their variables not affected by
+    systematics.
+
+    Lepton systematics (used for pt and mass variables) can be modified using the parameters from 
+    :ref:`BaseModules_JetLepMetSyst`.
+
+    :param runPeriod: run period in caps (data only)
+    :type runPeriod: str
+
+    :param vvvl_vsjet: VVVLoose DeepTauVSjet WP value
+    :type vvvl_vsjet: int
+
+    :param vl_vse: VLoose DeepTauVSe WP value
+    :type vl_vse: int
+
+    :param vvl_vse: VVLoose DeepTaVSe WP value
+    :type vvl_vse: int
+
+    :param t_vsmu: Tight DeepTauVSmu WP value
+    :type t_vsmu: int
+
+    :param vl_vsmu: VLoose DeepTauVSmu WP value
+    :type vl_vsmu: int
+
+    :param filter: whether to filter out output events if they don't have 2 lepton candidates
+    :type filter: bool
+
+    YAML sintaxis:
+
+    .. code-block:: yaml
+
+        codename:
+            name: HHLeptonRDF
+            path: Tools.Tools.HHLepton
+            parameters:
+                isMC: self.dataset.process.isMC
+                year: self.config.year
+                runPeriod: self.dataset.runPeriod
+                vvvl_vsjet: self.config.deeptau.vsjet.VVVLoose
+                vl_vse: self.config.deeptau.vse.VLoose
+                vvl_vse: self.config.deeptau.vse.VVLoose
+                t_vsmu: self.config.deeptau.vsmu.Tight
+                vl_vsmu: self.config.deeptau.vsmu.VLoose
+                filter: True
+
+    """
     df_filter = kwargs.pop("filter")
     return lambda: HHLeptonRDFProducer(df_filter=df_filter, **kwargs)
 
@@ -631,4 +683,23 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
 
 
 def HHLeptonVarRDF(**kwargs):
+    """
+    Returns the pt and mass of the selected taus possibly including systematics
+
+    Lepton systematics (used for pt and mass variables) can be modified using the parameters from 
+    :ref:`BaseModules_JetLepMetSyst`.
+
+    Required RDFModules: :ref:`HHLepton_HHLeptonRDF`.
+
+    YAML sintaxis:
+
+    .. code-block:: yaml
+
+        codename:
+            name: HHLeptonVarRDF
+            path: Tools.Tools.HHLepton
+            parameters:
+                isMC: self.dataset.process.isMC
+
+    """
     return lambda: HHLeptonVarRDFProducer(**kwargs)
