@@ -1,40 +1,47 @@
 #include "Tools/Tools/interface/HHDNNinterface.h"
 
 // Constructor
-HHDNNinterface::HHDNNinterface (std::string model_dir, std::vector<std::string> requested, std::vector<float> target_kls)
+HHDNNinterface::HHDNNinterface (std::string model_dir, std::vector<std::string> requested,
+    std::vector<float> target_kls, int year)
  : wrapper_(model_dir, 1, false),
    evt_proc_(false, requested, true)
 {
   // Store target lambdas
   target_kls_ = target_kls;
+  SetGlobalInputs(year);
 }
 
 // Destructor
 HHDNNinterface::~HHDNNinterface() {}
 
 // SetGlobalInputs: set inputs that never change with the events
-void HHDNNinterface::SetGlobalInputs(Year year, Spin spin)
+void HHDNNinterface::SetGlobalInputs(int year)
 {
-  DNN_e_year_   = year;
-  DNN_spin_     = spin;
+  if (year == 2016)
+    DNN_e_year_ = y16;
+  else if (year == 2017)
+    DNN_e_year_ = y17;
+  else
+    DNN_e_year_ = y18;
+  DNN_spin_     = (Spin) 2;
   DNN_res_mass_ = 125.; // FIXME later
 }
 
 
 // SetEventInputs: set inputs that change every event
-void HHDNNinterface::SetEventInputs(Channel channel, int is_boosted, int nvbf, unsigned long long int eventn,
+void HHDNNinterface::SetEventInputs(int channel, int is_boosted, int nvbf, unsigned long long int eventn,
   TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
   TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
-  float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2
+  float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
   float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
   float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
   float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2)
 {
-  DNN_e_channel_    = channel;
+  DNN_e_channel_    = (Channel) channel;
   DNN_is_boosted_   = is_boosted;
   DNN_n_vbf_        = nvbf;
   DNN_evt_          = eventn;
-  
+
   // Taus
   DNN_l_1_.SetCoordinates(l1.Px(), l1.Py(), l1.Pz(), l1.M());
   if (DNN_e_channel_ == 0)
@@ -106,7 +113,7 @@ std::vector<float> HHDNNinterface::GetPredictions()
         DNN_b_1_cvsl_, DNN_b_2_cvsl_, DNN_vbf_1_cvsl_, DNN_vbf_2_cvsl_,
         DNN_b_1_cvsb_, DNN_b_2_cvsb_, DNN_vbf_1_cvsb_, DNN_vbf_2_cvsb_,
         0, 0, 0, // cv, c2v, c3
-        DNN_pass_massCut_);
+        true);
 
     std::vector<std::string> feats_names = evt_proc_.get_feats();
 
@@ -124,4 +131,23 @@ std::vector<float> HHDNNinterface::GetPredictions()
   }
 
   return outDNN;
+}
+
+std::vector<float> HHDNNinterface::GetPredictionsWithInputs(
+  int channel, int is_boosted, int nvbf, unsigned long long int eventn,
+  TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
+  TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
+  float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
+  float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
+  float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
+  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2)
+{
+  SetEventInputs(channel, is_boosted, nvbf, eventn,
+    b1, b2, l1, l2, 
+    vbf1, vbf2, met, svfit, 
+    KinFitMass, KinFitChi2, KinFitConv, SVfitConv, MT2,
+    deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
+    CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2,
+    HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2);
+  return GetPredictions();
 }

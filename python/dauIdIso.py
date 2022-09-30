@@ -85,7 +85,7 @@ def dauIdIsoSFRDF(**kwargs):
     Returns the ID and Isolation SF applied to the two leptons with the desired systematics.
 
     Required RDFModules: :ref:`HHLepton_HHLeptonRDF`, :ref:`Electron_eleSFRDF`,
-        :ref:`Muon_muSFRDF`, :ref:`Tau_tauSFRDF`
+    :ref:`Muon_muSFRDF`, :ref:`Tau_tauSFRDF`
 
     :param systs: Systematics to be considered. Default: [``central``, ``muon_id``, ``muon_iso``,
         ``ele_iso``, ``tau_vsjet``, ``tau_vse``, ``tau_vsmu``]. 

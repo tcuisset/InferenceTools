@@ -349,8 +349,8 @@ class HHJetsRDFProducer(JetLepMetSyst):
         df = df.Define("bjet1_JetIdx", "HHJets.bjet_idx1")
         df = df.Define("bjet2_JetIdx", "HHJets.bjet_idx2")
 
-        df = df.Define("VBFjet1_JetIdx", "HHJets.bjet_idx1")
-        df = df.Define("VBFjet2_JetIdx", "HHJets.bjet_idx2")
+        df = df.Define("VBFjet1_JetIdx", "HHJets.vbfjet_idx1")
+        df = df.Define("VBFjet2_JetIdx", "HHJets.vbfjet_idx2")
         df = df.Define("isBoosted", "HHJets.isBoosted")
 
         if self.df_filter:
@@ -360,5 +360,29 @@ class HHJetsRDFProducer(JetLepMetSyst):
 
 
 def HHJetsRDF(**kwargs):
+    """
+    Returns the HHbtag output, the indexes from the 2 bjets and 2 vbfjets (if existing) and if the
+    event is boosted.
+
+    Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
+    from :ref:`BaseModules_JetLepMetSyst`.
+
+    :param filter: whether to filter out output events if they don't have 2 bjet candidates
+    :type filter: bool
+
+    YAML sintaxis:
+
+    .. code-block:: yaml
+
+        codename:
+            name: HHJetsRDF
+            path: Tools.Tools.HHJets
+            parameters:
+                year: self.config.year
+                isMC: self.dataset.process.isMC
+                isUL: self.dataset.has_tag('ul')
+                filter: True
+
+    """
     df_filter = kwargs.pop("filter")
     return lambda: HHJetsRDFProducer(df_filter=df_filter, **kwargs)

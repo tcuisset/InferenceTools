@@ -432,6 +432,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.year = year
         self.runPeriod = runPeriod
         self.df_filter = df_filter
+        self.deeptau_version = kwargs.pop("deeptau_version", "2017v2p1")
         vvvl_vsjet = kwargs.pop("vvvl_vsjet")
         vl_vse = kwargs.pop("vl_vse")
         vvl_vse = kwargs.pop("vvl_vse")
@@ -515,14 +516,14 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
+        variables = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
             "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode",
-            "dau1_idDeepTau2017v2p1VSe", "dau1_idDeepTau2017v2p1VSmu",
-            "dau1_idDeepTau2017v2p1VSjet",
+            "dau1_idDeepTauVSe", "dau1_idDeepTauVSmu",
+            "dau1_idDeepTauVSjet",
             "dau2_eta", "dau2_phi", "dau2_decayMode",
-            "dau2_idDeepTau2017v2p1VSe", "dau2_idDeepTau2017v2p1VSmu",
-            "dau2_idDeepTau2017v2p1VSjet"
-        ]
+            "dau2_idDeepTauVSe", "dau2_idDeepTauVSmu",
+            "dau2_idDeepTauVSjet"
+        ]                  
 
         all_branches = df.GetColumnNames()
         for ib, branch in enumerate(self.mutau_triggers):
@@ -570,8 +571,13 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
         ")".format(self.muon_syst, self.electron_syst, self.tau_syst))
 
-        for branch in branches:
-            df = df.Define(branch, "hh_lepton_results.%s" % branch)
+        branches = []
+        for var in variables:
+            branchName = var
+            if "DeepTau" in branchName:
+                branchName = var[:var.index("VS")] + self.deeptau_version + var[var.index("VS"):]
+            df = df.Define(branchName, "hh_lepton_results.%s" % var)
+            branches.append(branchName)
 
         if self.df_filter:
             df = df.Filter("pairType >= 0")
@@ -590,6 +596,9 @@ def HHLeptonRDF(**kwargs):
 
     :param runPeriod: run period in caps (data only)
     :type runPeriod: str
+
+    :param deeptau_version: version of the DeepTau discriminator (default: ``2017v2p1``)
+    :type deeptau_version: str
 
     :param vvvl_vsjet: VVVLoose DeepTauVSjet WP value
     :type vvvl_vsjet: int

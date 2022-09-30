@@ -48,22 +48,30 @@ const double MU_MASS = 0.1056583715; //GeV
 class HHDNNinterface {
 
   public:
-    HHDNNinterface (std::string model_dir, std::vector<std::string> requested, std::vector<float> target_kls);
+    HHDNNinterface (std::string model_dir, std::vector<std::string> requested,
+      std::vector<float> target_kls, int year);
     ~HHDNNinterface ();
     
-    void SetGlobalInputs(Year year, Spin spin);
+    void SetGlobalInputs(int year);
 
-    void SetEventInputs(Channel channel, int is_boosted, int nvbf, unsigned long long int eventn,
+    void SetEventInputs(int channel, int is_boosted, int nvbf, unsigned long long int eventn,
       TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
       TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
-      float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv,
-      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2,
-      float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
+      float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
+      float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
       float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
-      float cv, float c2v, float c3, bool pass_massCut
-    );
+      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2);
+
 
     std::vector<float> GetPredictions();
+    std::vector<float> GetPredictionsWithInputs(
+      int channel, int is_boosted, int nvbf, unsigned long long int eventn,
+      TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
+      TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
+      float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
+      float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
+      float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
+      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2);
 
   private:
     InfWrapper wrapper_;
@@ -80,7 +88,7 @@ class HHDNNinterface {
     float DNN_vbf_2_hhbtag_, DNN_vbf_2_cvsl_, DNN_vbf_2_cvsb_;
     int DNN_is_boosted_, DNN_n_vbf_;
     unsigned long long int DNN_evt_;
-    bool DNN_svfit_conv_, DNN_hh_kinfit_conv_, DNN_pass_massCut_;
+    bool DNN_svfit_conv_, DNN_hh_kinfit_conv_;
     Channel DNN_e_channel_;
     Year DNN_e_year_;
     Spin DNN_spin_;
