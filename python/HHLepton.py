@@ -556,20 +556,31 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runPeriod))
 
+        Electron_mvaIso_WP80 = "Electron_mvaIso_WP80"
+        if Electron_mvaIso_WP80 not in all_branches:
+            Electron_mvaIso_WP80 = "Electron_mvaFall17V2Iso_WP80"
+        Electron_mvaIso_WP90 = "Electron_mvaIso_WP90"
+        if Electron_mvaIso_WP90 not in all_branches:
+            Electron_mvaIso_WP90 = "Electron_mvaFall17V2Iso_WP90"
+        Electron_mvaNoIso_WP90 = "Electron_mvaNoIso_WP90"
+        if Electron_mvaNoIso_WP90 not in all_branches:
+            Electron_mvaNoIso_WP90 = "Electron_mvaFall17V2noIso_WP90"
+
         df = df.Define("hh_lepton_results", "HHLepton.get_dau_indexes("
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, Muon_charge, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "Electron_mvaFall17V2Iso_WP80, Electron_mvaFall17V2noIso_WP90, "
-            "Electron_mvaFall17V2Iso_WP90, Electron_pfRelIso03_all, "
+            "{3}, {4}, {5}, Electron_pfRelIso03_all, "
             "Electron_dxy, Electron_dz, Electron_charge, "
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "Tau_idDeepTau2017v2p1VSmu, Tau_idDeepTau2017v2p1VSe, "
-            "Tau_idDeepTau2017v2p1VSjet, Tau_rawDeepTau2017v2p1VSjet, "
+            "Tau_idDeepTau{6}VSmu, Tau_idDeepTau{6}VSe, "
+            "Tau_idDeepTau{6}VSjet, Tau_rawDeepTau{6}VSjet, "
             "Tau_dz, Tau_decayMode, Tau_charge, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
             "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
-        ")".format(self.muon_syst, self.electron_syst, self.tau_syst))
+        ")".format(self.muon_syst, self.electron_syst, self.tau_syst,
+            Electron_mvaIso_WP80, Electron_mvaNoIso_WP90, Electron_mvaIso_WP90,
+            self.deeptau_version))
 
         branches = []
         for var in variables:
