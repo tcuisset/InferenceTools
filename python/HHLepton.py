@@ -427,7 +427,7 @@ def HHLeptonVariable(**kwargs):
 
 class HHLeptonRDFProducer(JetLepMetSyst):
     def __init__(self, isMC, year, runPeriod, df_filter, *args, **kwargs):
-        super(HHLeptonRDFProducer, self).__init__(*args, **kwargs)
+        super(HHLeptonRDFProducer, self).__init__(isMC=isMC, *args, **kwargs)
         self.isMC = isMC
         self.year = year
         self.runPeriod = runPeriod
@@ -686,10 +686,13 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
                 }
             """)
 
-
     def run(self, df):
         branches = "dau1_pt{0}, dau1_mass{0}, dau2_pt{0}, dau2_mass{0}".format(self.lep_syst)
         branches = branches.split(", ")
+
+        all_branches = df.GetColumnNames()
+        if branches[0] in all_branches:
+            return df, []
 
         df = df.Define("lepton_values%s" % self.lep_syst, "get_lepton_values("
             "pairType, dau1_index, dau2_index, "
