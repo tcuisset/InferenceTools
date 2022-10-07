@@ -248,88 +248,91 @@ class HHJetsRDFProducer(JetLepMetSyst):
 
         self.df_filter = df_filter
 
-        if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
-            ROOT.gSystem.Load("libToolsTools.so")
-        if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
-            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                "external/eigen/d812f411c3f9-cms/include/")
-            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/"
-                "tensorflow/2.5.0/include/")
-        elif s.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
-            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                "external/tensorflow/2.1.0-bcolbf/include")
-        else:
-            raise ValueError("Architecture not considered")
+        if not os.getenv("_HHJets"):
+            os.environ["_HHJets"] = "HHJets"
 
-        base = "{}/{}/src/Tools/Tools".format(
-            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+            if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
+                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+                    "external/eigen/d812f411c3f9-cms/include/")
+                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/"
+                    "tensorflow/2.5.0/include/")
+            elif s.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
+                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                    "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
+                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                    "external/tensorflow/2.1.0-bcolbf/include")
+            else:
+                raise ValueError("Architecture not considered")
 
-        ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
+            base = "{}/{}/src/Tools/Tools".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
-        self.year = kwargs.pop("year")
-        base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
-            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
+            ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
-        ROOT.gInterpreter.Declare("""
-            auto HHJets = HHJetsInterface("%s", "%s", %s, %s);
-        """ % (models[0], models[1], int(self.year), isUL))
+            self.year = kwargs.pop("year")
+            base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
 
-        ROOT.gInterpreter.Declare("""
-            using Vfloat = const ROOT::RVec<float>&;
-            using VInt = const ROOT::RVec<int>&;
-            output get_hh_jets (
-                unsigned long long int event,
-                Vfloat Jet_pt, Vfloat Jet_eta, Vfloat Jet_phi, Vfloat Jet_mass,
-                VInt Jet_puId, Vfloat Jet_jetId, Vfloat Jet_btagDeepFlavB,
-                Vfloat SubJet_pt, Vfloat SubJet_eta, Vfloat SubJet_phi, Vfloat SubJet_mass,
-                Vfloat FatJet_msoftdrop, VInt FatJet_subJetIdx1, VInt FatJet_subJetIdx2,
-                int pairType, int dau1_index, int dau2_index,
-                Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
-                float met_pt, float met_phi
-            )
-            {
-                float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                if (pairType == 0) {
-                    dau1_pt = muon_pt.at(dau1_index);
-                    dau1_eta = muon_eta.at(dau1_index);
-                    dau1_phi = muon_phi.at(dau1_index);
-                    dau1_mass = muon_mass.at(dau1_index);
-                } else if (pairType == 1) {
-                    dau1_pt = electron_pt.at(dau1_index);
-                    dau1_eta = electron_eta.at(dau1_index);
-                    dau1_phi = electron_phi.at(dau1_index);
-                    dau1_mass = electron_mass.at(dau1_index);
-                } else if (pairType == 2) {
-                    dau1_pt = tau_pt.at(dau1_index);
-                    dau1_eta = tau_eta.at(dau1_index);
-                    dau1_phi = tau_phi.at(dau1_index);
-                    dau1_mass = tau_mass.at(dau1_index);
-                } else {
-                    dau1_pt = -999.;
-                    dau1_eta = -999.;
-                    dau1_phi = -999.;
-                    dau1_mass = -999.;
+            ROOT.gInterpreter.Declare("""
+                auto HHJets = HHJetsInterface("%s", "%s", %s, %s);
+            """ % (models[0], models[1], int(self.year), isUL))
+
+            ROOT.gInterpreter.Declare("""
+                using Vfloat = const ROOT::RVec<float>&;
+                using VInt = const ROOT::RVec<int>&;
+                output get_hh_jets (
+                    unsigned long long int event,
+                    Vfloat Jet_pt, Vfloat Jet_eta, Vfloat Jet_phi, Vfloat Jet_mass,
+                    VInt Jet_puId, Vfloat Jet_jetId, Vfloat Jet_btagDeepFlavB,
+                    Vfloat SubJet_pt, Vfloat SubJet_eta, Vfloat SubJet_phi, Vfloat SubJet_mass,
+                    Vfloat FatJet_msoftdrop, VInt FatJet_subJetIdx1, VInt FatJet_subJetIdx2,
+                    int pairType, int dau1_index, int dau2_index,
+                    Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
+                    Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
+                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                    float met_pt, float met_phi
+                )
+                {
+                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
+                    if (pairType == 0) {
+                        dau1_pt = muon_pt.at(dau1_index);
+                        dau1_eta = muon_eta.at(dau1_index);
+                        dau1_phi = muon_phi.at(dau1_index);
+                        dau1_mass = muon_mass.at(dau1_index);
+                    } else if (pairType == 1) {
+                        dau1_pt = electron_pt.at(dau1_index);
+                        dau1_eta = electron_eta.at(dau1_index);
+                        dau1_phi = electron_phi.at(dau1_index);
+                        dau1_mass = electron_mass.at(dau1_index);
+                    } else if (pairType == 2) {
+                        dau1_pt = tau_pt.at(dau1_index);
+                        dau1_eta = tau_eta.at(dau1_index);
+                        dau1_phi = tau_phi.at(dau1_index);
+                        dau1_mass = tau_mass.at(dau1_index);
+                    } else {
+                        dau1_pt = -999.;
+                        dau1_eta = -999.;
+                        dau1_phi = -999.;
+                        dau1_mass = -999.;
+                    }
+                    dau2_pt = tau_pt.at(dau2_index);
+                    dau2_eta = tau_eta.at(dau2_index);
+                    dau2_phi = tau_phi.at(dau2_index);
+                    dau2_mass = tau_mass.at(dau2_index);
+
+                    return HHJets.GetHHJets(event, pairType,
+                        Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                        Jet_puId, Jet_jetId, Jet_btagDeepFlavB,
+                        SubJet_pt, SubJet_eta, SubJet_phi, SubJet_mass,
+                        FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2,
+                        dau1_pt, dau1_eta, dau1_phi, dau1_mass,
+                        dau2_pt, dau2_eta, dau2_phi, dau2_mass,
+                        met_pt, met_phi);
                 }
-                dau2_pt = tau_pt.at(dau2_index);
-                dau2_eta = tau_eta.at(dau2_index);
-                dau2_phi = tau_phi.at(dau2_index);
-                dau2_mass = tau_mass.at(dau2_index);
-
-                return HHJets.GetHHJets(event, pairType,
-                    Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                    Jet_puId, Jet_jetId, Jet_btagDeepFlavB,
-                    SubJet_pt, SubJet_eta, SubJet_phi, SubJet_mass,
-                    FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2,
-                    dau1_pt, dau1_eta, dau1_phi, dau1_mass,
-                    dau2_pt, dau2_eta, dau2_phi, dau2_mass,
-                    met_pt, met_phi);
-            }
-        """)
+            """)
 
     def run(self, df):
         df = df.Define("HHJets", "get_hh_jets(event, "

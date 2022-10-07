@@ -107,7 +107,7 @@ class HHDNNProducer(JetLepMetModule):
             channel = 0
         else:
             raise ValueError("pairType %s is not implemented" % event.pairType)
-        
+
         self.hhdnn.SetEventInputs(channel, event.isBoosted, (2 if vbfjet1 else 0), event.event,
             bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv, vbfjet1_tlv, vbfjet2_tlv, met_tlv,
             htt_svfit_tlv, HHKinFit.mass, HHKinFit.chi2, (HHKinFit.chi2 > 0),
@@ -133,11 +133,11 @@ def HH(**kwargs):
 
 class HHDNNRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
-        year = kwargs.pop("year", 2018)
+        year = kwargs.pop("year")
         super(HHDNNRDFProducer, self).__init__(*args, **kwargs)
 
-        if not os.getenv("HHbbttDNN"):
-            os.environ["HHbbttDNN"] = "HHbbttDNN"
+        if not os.getenv("_HHbbttDNN"):
+            os.environ["_HHbbttDNN"] = "HHbbttDNN"
 
             if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
                 ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
@@ -306,6 +306,10 @@ class HHDNNRDFProducer(JetLepMetSyst):
 
     def run(self, df):
         branches = ["dnn_hhbbtt_kl_1%s" % self.systs]
+        all_branches = []
+        if branches[0] in all_branches:
+            return df, []
+
         df = df.Define("dnn_output%s" % self.systs, "get_dnn_outputs("
             "pairType, isBoosted, event, "
             "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "
@@ -339,7 +343,6 @@ def HHDNNRDF(**kwargs):
             parameters:
                 isMC: self.dataset.process.isMC
                 year: self.config.year
-
 
     """
     return lambda: HHDNNRDFProducer(**kwargs)

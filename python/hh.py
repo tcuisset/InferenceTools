@@ -18,7 +18,7 @@ class HHProducer(JetLepMetModule):
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         ROOT.gROOT.ProcessLine(".L {}/interface/HHKinFitInterface.h".format(base))
         pass
-    
+
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
 
@@ -144,88 +144,95 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         self.isMC = kwargs.pop("isMC")
         super(HHKinFitRDFProducer, self).__init__(isMC=self.isMC, *args, **kwargs)
 
+        if not os.getenv("_KINFIT"):
+            os.environ["_KINFIT"] = "kinfit"
+
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+            base = "{}/{}/src/Tools/Tools".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            ROOT.gROOT.ProcessLine(".L {}/interface/HHKinFitInterface.h".format(base))
+            ROOT.gInterpreter.Declare("""
+                #include <TLorentzVector.h>
+                #include "TVector.h"
+                #include "TMatrixD.h"
+                #include "TMath.h"
+
+                using Vfloat = const ROOT::RVec<float>&;
+                ROOT::RVec<double> compute_hhkinfit(
+                        bool isMC, int pairType, int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
+                        Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
+                        Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
+                        Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                        Vfloat jet_resolution, float met_pt, float met_phi,
+                        float met_covXX, float met_covXY, float met_covYY) {
+                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
+                    if (pairType == 0) {
+                        dau1_pt = muon_pt.at(dau1_index);
+                        dau1_eta = muon_eta.at(dau1_index);
+                        dau1_phi = muon_phi.at(dau1_index);
+                        dau1_mass = muon_mass.at(dau1_index);
+                    } else if (pairType == 1) {
+                        dau1_pt = electron_pt.at(dau1_index);
+                        dau1_eta = electron_eta.at(dau1_index);
+                        dau1_phi = electron_phi.at(dau1_index);
+                        dau1_mass = electron_mass.at(dau1_index);
+                    } else if (pairType == 2) {
+                        dau1_pt = tau_pt.at(dau1_index);
+                        dau1_eta = tau_eta.at(dau1_index);
+                        dau1_phi = tau_phi.at(dau1_index);
+                        dau1_mass = tau_mass.at(dau1_index);
+                    }
+                    dau2_pt = tau_pt.at(dau2_index);
+                    dau2_eta = tau_eta.at(dau2_index);
+                    dau2_phi = tau_phi.at(dau2_index);
+                    dau2_mass = tau_mass.at(dau2_index);
+
+                    auto bjet1_tlv = TLorentzVector();
+                    auto bjet2_tlv = TLorentzVector();
+                    auto dau1_tlv = TLorentzVector();
+                    auto dau2_tlv = TLorentzVector();
+
+                    dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
+                    dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
+                    bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
+                        jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
+                    bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
+                        jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+
+                    auto met_tv = TVector2(met_pt * TMath::Cos(met_phi), met_pt * TMath::Sin(met_phi));
+                    auto cov = TMatrixD(2, 2);
+                    cov[0][0] = met_covXX;
+                    cov[0][1] = met_covXY;
+                    cov[1][0] = met_covXY;
+                    cov[1][1] = met_covYY;
+
+                    double resolution1, resolution2;
+                    if (isMC) {
+                        resolution1 = bjet1_tlv.E() * jet_resolution.at(bjet1_index);
+                        resolution2 = bjet2_tlv.E() * jet_resolution.at(bjet2_index);
+                    } else {
+                        resolution1 = -1;
+                        resolution2 = -1;
+                    }
+
+                    auto kinFit = HHKinFitInterface(bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv,
+                        met_tv, cov, resolution1, resolution2);
+                    kinFit.addHypo(125, 125);
+                    return kinFit.fit();
+                }
+            """)
+
     def run(self, df):
-        if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
-            ROOT.gSystem.Load("libToolsTools.so")
-        base = "{}/{}/src/Tools/Tools".format(
-            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        ROOT.gROOT.ProcessLine(".L {}/interface/HHKinFitInterface.h".format(base))
-        ROOT.gInterpreter.Declare("""
-            #include <TLorentzVector.h>
-            #include "TVector.h"
-            #include "TMatrixD.h"
-            #include "TMath.h"
-
-            using Vfloat = const ROOT::RVec<float>&;
-            ROOT::RVec<double> compute_hhkinfit(
-                    bool isMC, int pairType, int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
-                    Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                    Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
-                    Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
-                    Vfloat jet_resolution, float met_pt, float met_phi,
-                    float met_covXX, float met_covXY, float met_covYY) {
-                float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                if (pairType == 0) {
-                    dau1_pt = muon_pt.at(dau1_index);
-                    dau1_eta = muon_eta.at(dau1_index);
-                    dau1_phi = muon_phi.at(dau1_index);
-                    dau1_mass = muon_mass.at(dau1_index);
-                } else if (pairType == 1) {
-                    dau1_pt = electron_pt.at(dau1_index);
-                    dau1_eta = electron_eta.at(dau1_index);
-                    dau1_phi = electron_phi.at(dau1_index);
-                    dau1_mass = electron_mass.at(dau1_index);
-                } else if (pairType == 2) {
-                    dau1_pt = tau_pt.at(dau1_index);
-                    dau1_eta = tau_eta.at(dau1_index);
-                    dau1_phi = tau_phi.at(dau1_index);
-                    dau1_mass = tau_mass.at(dau1_index);
-                }
-                dau2_pt = tau_pt.at(dau2_index);
-                dau2_eta = tau_eta.at(dau2_index);
-                dau2_phi = tau_phi.at(dau2_index);
-                dau2_mass = tau_mass.at(dau2_index);
-
-                auto bjet1_tlv = TLorentzVector();
-                auto bjet2_tlv = TLorentzVector();
-                auto dau1_tlv = TLorentzVector();
-                auto dau2_tlv = TLorentzVector();
-
-                dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
-                dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
-                bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                    jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                    jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
-
-                auto met_tv = TVector2(met_pt * TMath::Cos(met_phi), met_pt * TMath::Sin(met_phi));
-                auto cov = TMatrixD(2, 2);
-                cov[0][0] = met_covXX;
-                cov[0][1] = met_covXY;
-                cov[1][0] = met_covXY;
-                cov[1][1] = met_covYY;
-
-                double resolution1, resolution2;
-                if (isMC) {
-                    resolution1 = bjet1_tlv.E() * jet_resolution.at(bjet1_index);
-                    resolution2 = bjet2_tlv.E() * jet_resolution.at(bjet2_index);
-                } else {
-                    resolution1 = -1;
-                    resolution2 = -1;
-                }
-
-                auto kinFit = HHKinFitInterface(bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv,
-                    met_tv, cov, resolution1, resolution2);
-                kinFit.addHypo(125, 125);
-                return kinFit.fit();
-            }
-        """)
-
         isMC = ("true" if self.isMC else "false")
         jet_resolution = "jet_pt_resolution"
         if not self.isMC:
             jet_resolution = "Jet_eta"  # placeholder
+        branches = ["HHKinFit_mass%s" % self.systs, "HHKinFit_chi2%s" % self.systs]
+        all_branches = df.GetColumnNames()
+        if branches[0] in all_branches:
+            return df, []
 
         df = df.Define("hhkinfit_result%s" % self.systs,
             "compute_hhkinfit({6}, pairType, dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, "
@@ -238,97 +245,99 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                     self.met_smear_tag, isMC, jet_resolution)
             ).Define("HHKinFit_mass%s" % self.systs, "hhkinfit_result%s[0]" % self.systs
             ).Define("HHKinFit_chi2%s" % self.systs, "hhkinfit_result%s[1]" % self.systs)
-        return df, ["HHKinFit_mass%s" % self.systs, "HHKinFit_chi2%s" % self.systs]
+        return df, branches
 
 
 class HHVarRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
         super(HHVarRDFProducer, self).__init__(*args, **kwargs)
-        ROOT.gInterpreter.Declare("""
-            #include <TLorentzVector.h>
-            using Vfloat = const ROOT::RVec<float>&;
-            ROOT::RVec<double> get_hh_features%s(int pairType,
-                    int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
-                    int vbfjet1_index, int vbfjet2_index,
-                    Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                    Vfloat electron_pt, Vfloat electron_eta,
-                    Vfloat electron_phi, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
-                    Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
-                    double Htt_svfit_pt, double Htt_svfit_eta,
-                    double Htt_svfit_phi, double Htt_svfit_mass) {
+        if not os.getenv("_HHVAR_%s" % self.systs):
+            os.environ["_HHVAR_%s" % self.systs] = "hhvar"
+            ROOT.gInterpreter.Declare("""
+                #include <TLorentzVector.h>
+                using Vfloat = const ROOT::RVec<float>&;
+                ROOT::RVec<double> get_hh_features%s(int pairType,
+                        int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
+                        int vbfjet1_index, int vbfjet2_index,
+                        Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
+                        Vfloat electron_pt, Vfloat electron_eta,
+                        Vfloat electron_phi, Vfloat electron_mass,
+                        Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                        double Htt_svfit_pt, double Htt_svfit_eta,
+                        double Htt_svfit_phi, double Htt_svfit_mass) {
 
-                float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                if (pairType == 0) {
-                    dau1_pt = muon_pt.at(dau1_index);
-                    dau1_eta = muon_eta.at(dau1_index);
-                    dau1_phi = muon_phi.at(dau1_index);
-                    dau1_mass = muon_mass.at(dau1_index);
-                } else if (pairType == 1) {
-                    dau1_pt = electron_pt.at(dau1_index);
-                    dau1_eta = electron_eta.at(dau1_index);
-                    dau1_phi = electron_phi.at(dau1_index);
-                    dau1_mass = electron_mass.at(dau1_index);
-                } else if (pairType == 2) {
-                    dau1_pt = tau_pt.at(dau1_index);
-                    dau1_eta = tau_eta.at(dau1_index);
-                    dau1_phi = tau_phi.at(dau1_index);
-                    dau1_mass = tau_mass.at(dau1_index);
+                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
+                    if (pairType == 0) {
+                        dau1_pt = muon_pt.at(dau1_index);
+                        dau1_eta = muon_eta.at(dau1_index);
+                        dau1_phi = muon_phi.at(dau1_index);
+                        dau1_mass = muon_mass.at(dau1_index);
+                    } else if (pairType == 1) {
+                        dau1_pt = electron_pt.at(dau1_index);
+                        dau1_eta = electron_eta.at(dau1_index);
+                        dau1_phi = electron_phi.at(dau1_index);
+                        dau1_mass = electron_mass.at(dau1_index);
+                    } else if (pairType == 2) {
+                        dau1_pt = tau_pt.at(dau1_index);
+                        dau1_eta = tau_eta.at(dau1_index);
+                        dau1_phi = tau_phi.at(dau1_index);
+                        dau1_mass = tau_mass.at(dau1_index);
+                    }
+                    dau2_pt = tau_pt.at(dau2_index);
+                    dau2_eta = tau_eta.at(dau2_index);
+                    dau2_phi = tau_phi.at(dau2_index);
+                    dau2_mass = tau_mass.at(dau2_index);
+
+                    auto bjet1_tlv = TLorentzVector();
+                    auto bjet2_tlv = TLorentzVector();
+                    auto dau1_tlv = TLorentzVector();
+                    auto dau2_tlv = TLorentzVector();
+
+                    dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
+                    dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
+                    auto htt_tlv = dau1_tlv + dau2_tlv;
+                    bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
+                        jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
+                    bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
+                        jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+                    auto hbb_tlv = bjet1_tlv + bjet2_tlv;
+                    auto hh_tlv = htt_tlv + hbb_tlv;
+
+                    double hh_svfit_pt = -999., hh_svfit_eta = -999.;
+                    double hh_svfit_phi = -999., hh_svfit_mass = -999.;
+                    if (Htt_svfit_pt > 0) {
+                        auto htt_svfit_tlv = TLorentzVector();
+                        htt_svfit_tlv.SetPtEtaPhiM(Htt_svfit_pt, Htt_svfit_eta,
+                            Htt_svfit_phi, Htt_svfit_mass);
+                        auto hh_svfit_tlv = htt_svfit_tlv + hbb_tlv;
+                        hh_svfit_pt = hh_svfit_tlv.Pt();
+                        hh_svfit_eta = hh_svfit_tlv.Eta();
+                        hh_svfit_phi = hh_svfit_tlv.Phi();
+                        hh_svfit_mass = hh_svfit_tlv.M();
+                    }
+                    double vbfjj_mass = -999., vbfjj_deltaEta = -999., vbfjj_deltaPhi = -999.;
+                    if (vbfjet1_index >= 0) {
+                        auto vbfjet1_tlv = TLorentzVector();
+                        auto vbfjet2_tlv = TLorentzVector();
+                        vbfjet1_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet1_index), jet_eta.at(vbfjet1_index),
+                            jet_phi.at(vbfjet1_index), jet_mass.at(vbfjet1_index));
+                        vbfjet2_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet2_index), jet_eta.at(vbfjet2_index),
+                            jet_phi.at(vbfjet2_index), jet_mass.at(vbfjet2_index));
+                        auto vbfjj_tlv = vbfjet1_tlv + vbfjet2_tlv;
+                        vbfjj_mass = vbfjj_tlv.M();
+                        vbfjj_deltaEta = vbfjet1_tlv.Eta() - vbfjet2_tlv.Eta();
+                        vbfjj_deltaPhi = vbfjet1_tlv.Phi() - vbfjet2_tlv.Phi();
+                    }
+                    return {
+                        hbb_tlv.Pt(), hbb_tlv.Eta(), hbb_tlv.Phi(), hbb_tlv.M(),
+                        htt_tlv.Pt(), htt_tlv.Eta(), htt_tlv.Phi(), htt_tlv.M(),
+                        hh_tlv.Pt(), hh_tlv.Eta(), hh_tlv.Phi(), hh_tlv.M(),
+                        hh_svfit_pt, hh_svfit_eta, hh_svfit_phi, hh_svfit_mass,
+                        vbfjj_mass, vbfjj_deltaEta, vbfjj_deltaPhi
+                    };
                 }
-                dau2_pt = tau_pt.at(dau2_index);
-                dau2_eta = tau_eta.at(dau2_index);
-                dau2_phi = tau_phi.at(dau2_index);
-                dau2_mass = tau_mass.at(dau2_index);
-
-                auto bjet1_tlv = TLorentzVector();
-                auto bjet2_tlv = TLorentzVector();
-                auto dau1_tlv = TLorentzVector();
-                auto dau2_tlv = TLorentzVector();
-
-                dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
-                dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
-                auto htt_tlv = dau1_tlv + dau2_tlv;
-                bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                    jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                    jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
-                auto hbb_tlv = bjet1_tlv + bjet2_tlv;
-                auto hh_tlv = htt_tlv + hbb_tlv;
-
-                double hh_svfit_pt = -999., hh_svfit_eta = -999.;
-                double hh_svfit_phi = -999., hh_svfit_mass = -999.;
-                if (Htt_svfit_pt > 0) {
-                    auto htt_svfit_tlv = TLorentzVector();
-                    htt_svfit_tlv.SetPtEtaPhiM(Htt_svfit_pt, Htt_svfit_eta,
-                        Htt_svfit_phi, Htt_svfit_mass);
-                    auto hh_svfit_tlv = htt_svfit_tlv + hbb_tlv;
-                    hh_svfit_pt = hh_svfit_tlv.Pt();
-                    hh_svfit_eta = hh_svfit_tlv.Eta();
-                    hh_svfit_phi = hh_svfit_tlv.Phi();
-                    hh_svfit_mass = hh_svfit_tlv.M();
-                }
-                double vbfjj_mass = -999., vbfjj_deltaEta = -999., vbfjj_deltaPhi = -999.;
-                if (vbfjet1_index >= 0) {
-                    auto vbfjet1_tlv = TLorentzVector();
-                    auto vbfjet2_tlv = TLorentzVector();
-                    vbfjet1_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet1_index), jet_eta.at(vbfjet1_index),
-                        jet_phi.at(vbfjet1_index), jet_mass.at(vbfjet1_index));
-                    vbfjet2_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet2_index), jet_eta.at(vbfjet2_index),
-                        jet_phi.at(vbfjet2_index), jet_mass.at(vbfjet2_index));
-                    auto vbfjj_tlv = vbfjet1_tlv + vbfjet2_tlv;
-                    vbfjj_mass = vbfjj_tlv.M();
-                    vbfjj_deltaEta = vbfjet1_tlv.Eta() - vbfjet2_tlv.Eta();
-                    vbfjj_deltaPhi = vbfjet1_tlv.Phi() - vbfjet2_tlv.Phi();
-                }
-                return {
-                    hbb_tlv.Pt(), hbb_tlv.Eta(), hbb_tlv.Phi(), hbb_tlv.M(),
-                    htt_tlv.Pt(), htt_tlv.Eta(), htt_tlv.Phi(), htt_tlv.M(),
-                    hh_tlv.Pt(), hh_tlv.Eta(), hh_tlv.Phi(), hh_tlv.M(),
-                    hh_svfit_pt, hh_svfit_eta, hh_svfit_phi, hh_svfit_mass,
-                    vbfjj_mass, vbfjj_deltaEta, vbfjj_deltaPhi
-                };
-            }
-        """ % self.systs)
+            """ % self.systs)
 
     def run(self, df):
         features = ("Hbb_pt{0},Hbb_eta{0},Hbb_phi{0},Hbb_mass{0},"
@@ -337,6 +346,10 @@ class HHVarRDFProducer(JetLepMetSyst):
             "HH_svfit_pt{0},HH_svfit_eta{0},HH_svfit_phi{0},HH_svfit_mass{0},"
             "VBFjj_mass{0},VBFjj_deltaEta{0},VBFjj_deltaPhi{0}".format(self.systs))
         features = list(features.split(","))
+        all_branches = df.GetColumnNames()
+        if features[0] in all_branches:
+            return df, []
+
         df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{4}(pairType, " 
             "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
