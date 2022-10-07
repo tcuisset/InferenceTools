@@ -108,7 +108,7 @@ class HHProducer(JetLepMetModule):
             VBFjj_mass = VBFjj_tlv.M()
             VBFjj_deltaEta = vbfjet1_tlv.Eta() - vbfjet2_tlv.Eta()
             VBFjj_deltaPhi = vbfjet1_tlv.DeltaPhi(vbfjet2_tlv)
-        
+
         self.out.fillBranch("Hbb_pt%s" % self.systs, hbb_tlv.Pt())
         self.out.fillBranch("Hbb_eta%s" % self.systs, hbb_tlv.Eta())
         self.out.fillBranch("Hbb_phi%s" % self.systs, hbb_tlv.Phi())
@@ -140,6 +140,10 @@ class HHProducer(JetLepMetModule):
 
 
 class HHKinFitRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        self.isMC = kwargs.pop("isMC")
+        super(HHKinFitRDFProducer, self).__init__(isMC=self.isMC, *args, **kwargs)
+
     def run(self, df):
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -154,12 +158,13 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
             using Vfloat = const ROOT::RVec<float>&;
             ROOT::RVec<double> compute_hhkinfit(
-                    int pairType, int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
+                    bool isMC, int pairType, int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
                     Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
                     Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
                     Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                     Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
-                    float met_pt, float met_phi, float met_covXX, float met_covXY, float met_covYY) {
+                    Vfloat jet_resolution, float met_pt, float met_phi,
+                    float met_covXX, float met_covXY, float met_covYY) {
                 float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
                 if (pairType == 0) {
                     dau1_pt = muon_pt.at(dau1_index);
@@ -201,23 +206,38 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                 cov[1][0] = met_covXY;
                 cov[1][1] = met_covYY;
 
-                auto kinFit = HHKinFitInterface(bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv, met_tv, cov);
+                double resolution1, resolution2;
+                if (isMC) {
+                    resolution1 = bjet1_tlv.E() * jet_resolution.at(bjet1_index);
+                    resolution2 = bjet2_tlv.E() * jet_resolution.at(bjet2_index);
+                } else {
+                    resolution1 = -1;
+                    resolution2 = -1;
+                }
+
+                auto kinFit = HHKinFitInterface(bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv,
+                    met_tv, cov, resolution1, resolution2);
                 kinFit.addHypo(125, 125);
                 return kinFit.fit();
             }
         """)
 
-        df = df.Define("hhkinfit_result",
-            "compute_hhkinfit(pairType, dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, "
+        isMC = ("true" if self.isMC else "false")
+        jet_resolution = "jet_pt_resolution"
+        if not self.isMC:
+            jet_resolution = "Jet_eta"  # placeholder
+
+        df = df.Define("hhkinfit_result%s" % self.systs,
+            "compute_hhkinfit({6}, pairType, dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, "
                 "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
                 "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
                 "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-                "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
+                "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, {7},"
                 "MET{5}_pt{4}, MET{5}_phi{4}, MET_covXX, MET_covXY, MET_covYY)".format(
                     self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.met_syst,
-                    self.met_smear_tag)).Define(
-            "HHKinFit_mass%s" % self.systs, "hhkinfit_result[0]").Define(
-            "HHKinFit_chi2%s" % self.systs, "hhkinfit_result[1]")
+                    self.met_smear_tag, isMC, jet_resolution)
+            ).Define("HHKinFit_mass%s" % self.systs, "hhkinfit_result%s[0]" % self.systs
+            ).Define("HHKinFit_chi2%s" % self.systs, "hhkinfit_result%s[1]" % self.systs)
         return df, ["HHKinFit_mass%s" % self.systs, "HHKinFit_chi2%s" % self.systs]
 
 
