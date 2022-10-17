@@ -317,11 +317,17 @@ class HHJetsRDFProducer(JetLepMetSyst):
                         dau1_eta = -999.;
                         dau1_phi = -999.;
                         dau1_mass = -999.;
+                        dau2_pt = -999.;
+                        dau2_eta = -999.;
+                        dau2_phi = -999.;
+                        dau2_mass = -999.;
                     }
-                    dau2_pt = tau_pt.at(dau2_index);
-                    dau2_eta = tau_eta.at(dau2_index);
-                    dau2_phi = tau_phi.at(dau2_index);
-                    dau2_mass = tau_mass.at(dau2_index);
+                    if (pairType >= 0) {
+                        dau2_pt = tau_pt.at(dau2_index);
+                        dau2_eta = tau_eta.at(dau2_index);
+                        dau2_phi = tau_phi.at(dau2_index);
+                        dau2_mass = tau_mass.at(dau2_index);
+                    }
 
                     return HHJets.GetHHJets(event, pairType,
                         Jet_pt, Jet_eta, Jet_phi, Jet_mass,
