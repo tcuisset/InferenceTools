@@ -433,6 +433,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.runPeriod = runPeriod
         self.df_filter = df_filter
         self.deeptau_version = kwargs.pop("deeptau_version", "2017v2p1")
+        self.isV10 = kwargs.pop("isV10", False)
         vvvl_vsjet = kwargs.pop("vvvl_vsjet")
         vl_vse = kwargs.pop("vl_vse")
         vvl_vse = kwargs.pop("vvl_vse")
@@ -469,51 +470,98 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
 
         if self.year == 2018:
-            ROOT.gInterpreter.Declare("""
-                using Vbool = const ROOT::RVec<Bool_t>&;  
-                std::vector<trig_req> get_mutau_triggers(
-                        Vbool triggers, bool isMC, int run, int runPeriod) {
-                    std::vector<trig_req> trigger_reqs;
-                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}}));
-                    trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}}));
-                    if (!isMC && run < 317509)
-                        trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 256}}}));
-                    else
-                        trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 16}}}));
-                    return trigger_reqs;
-                }
-                std::vector<trig_req> get_etau_triggers(
-                        Vbool triggers, bool isMC, int run, int runPeriod) {
-                    std::vector<trig_req> trigger_reqs;
-                    trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
-                    trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
-                    if (!isMC && run < 317509)
-                        trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 128}}}));
-                    else
-                        trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 16}}}));
-                    return trigger_reqs;
-                }
-                std::vector<trig_req> get_tautau_triggers(
-                        Vbool triggers, bool isMC, int run, int runPeriod) {
-                    std::vector<trig_req> trigger_reqs;
-                    trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                    trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                    if (!isMC && run < 317509)
-                        trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
-                    else
-                        trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 16}, {2, 16}}}));
-                    return trigger_reqs;
-                }
-                std::vector<trig_req> get_vbf_triggers(
-                        Vbool triggers, bool isMC, int run, int runPeriod) {
-                    std::vector<trig_req> trigger_reqs;
-                    if (!isMC && run < 317509)
-                        trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                    else
-                        trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{512, 1, 16}, {512, 1, 16}}}));
-                    return trigger_reqs;
-                }
-            """)
+            if not self.isV10:
+                ROOT.gInterpreter.Declare("""
+                    using Vbool = const ROOT::RVec<Bool_t>&;
+                    std::vector<trig_req> get_mutau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                        trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 256}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 16}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_etau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
+                        trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 128}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 16}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_tautau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                        trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 16}, {2, 16}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_vbf_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{512, 1, 16}, {512, 1, 16}}}));
+                        return trigger_reqs;
+                    }
+                """)
+            else:
+                ROOT.gInterpreter.Declare("""
+                    using Vbool = const ROOT::RVec<Bool_t>&;
+                    std::vector<trig_req> get_mutau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                        trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 32}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_etau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
+                        trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 32}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_tautau_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                        trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 32}, {2, 32}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_vbf_triggers(
+                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                        std::vector<trig_req> trigger_reqs;
+                        if (!isMC && run < 317509)
+                            trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 16}, {64, 4, 16}}}));
+                        else
+                            trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{2048, 1, 32}, {2048, 1, 32}}}));
+                        return trigger_reqs;
+                    }
+                """)
 
     def run(self, df):
         variables = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
@@ -608,6 +656,9 @@ def HHLeptonRDF(**kwargs):
     :param runPeriod: run period in caps (data only)
     :type runPeriod: str
 
+    :param isV10: whether the input sample is from nanoaodV10 (default: ``False``)
+    :type isV10: bool
+
     :param deeptau_version: version of the DeepTau discriminator (default: ``2017v2p1``)
     :type deeptau_version: str
 
@@ -638,6 +689,7 @@ def HHLeptonRDF(**kwargs):
             path: Tools.Tools.HHLepton
             parameters:
                 isMC: self.dataset.process.isMC
+                isV10: self.dataset.has_tag("nanoV10")
                 year: self.config.year
                 runPeriod: self.dataset.runPeriod
                 vvvl_vsjet: self.config.deeptau.vsjet.VVVLoose

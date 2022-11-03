@@ -34,9 +34,11 @@ output HHJetsInterface::GetHHJets(
   int vbfjet1_idx = -1;
   int vbfjet2_idx = -1;
   int isBoosted_ = 0;
+  std::vector <int> ctjet_indexes, fwjet_indexes;
 
   if (pairType < 0) {
-    return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx, isBoosted_});
+    return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
+      ctjet_indexes, fwjet_indexes, isBoosted_});
   }
 
   auto dau1_tlv = TLorentzVector();
@@ -78,7 +80,7 @@ output HHJetsInterface::GetHHJets(
       HHbtag_jet_htt_dphi_.push_back(ROOT::Math::VectorUtil::DeltaPhi(htt_tlv, jet_tlv));
       HHbtag_jet_deepFlavour_.push_back(jet.btag);
     }
-    
+
     auto HHbtag_htt_met_dphi_ = (float) ROOT::Math::VectorUtil::DeltaPhi(htt_tlv, met_tlv);
     auto HHbtag_htt_scalar_pt_ = (float) (dau1_tlv.Pt() + dau2_tlv.Pt());
     auto HHbtag_rel_met_pt_htt_pt_ = (float) met_tlv.Pt() / HHbtag_htt_scalar_pt_;
@@ -113,11 +115,10 @@ output HHJetsInterface::GetHHJets(
     if (Jet_pt[bjet1_idx] < Jet_pt[bjet2_idx]) {
       auto aux = bjet1_idx;
       bjet1_idx = bjet2_idx;
-      bjet2_idx = aux;      
+      bjet2_idx = aux;
     }
-    // set_bjet_indexes(bjet1_idx, bjet2_idx);
 
-    if (all_jet_indexes.size() >= 4) {
+    if (all_jet_indexes.size() >= 4) { // 2 bjets + 2 vbf jets
       std::vector <jet_pair_mass> vbfjet_indexes;
       for (size_t ijet = 0; ijet < all_jet_indexes.size(); ijet++) {
         auto jet1_index = all_jet_indexes[ijet];
@@ -147,10 +148,20 @@ output HHJetsInterface::GetHHJets(
         if (Jet_pt[vbfjet1_idx] < Jet_pt[vbfjet2_idx]) {
           auto aux = vbfjet1_idx;
           vbfjet1_idx = vbfjet2_idx;
-          vbfjet2_idx = aux;      
+          vbfjet2_idx = aux;
         }
-        // set_vbfjet_indexes(vbfjet1_idx, vbfjet2_idx);
       }
+    }
+
+    // additional central and forward jets
+    for (auto & ijet : all_jet_indexes) {
+      if ((int) ijet == bjet1_idx || (int) ijet == bjet2_idx
+          || (int) ijet == vbfjet1_idx || (int) ijet == vbfjet2_idx)
+        continue;
+      if (fabs(Jet_eta[ijet]) < max_bjet_eta)
+        ctjet_indexes.push_back(ijet);
+      else if (fabs(Jet_eta[ijet]) < 4.7 && Jet_pt[ijet] > 30)
+        fwjet_indexes.push_back(ijet);
     }
 
     // is the event boosted?
@@ -183,7 +194,8 @@ output HHJetsInterface::GetHHJets(
     }
 
   }
-  return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx, isBoosted_});
+  return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
+    ctjet_indexes, fwjet_indexes, isBoosted_});
 }
 
 

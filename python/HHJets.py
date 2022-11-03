@@ -360,18 +360,23 @@ class HHJetsRDFProducer(JetLepMetSyst):
 
         df = df.Define("VBFjet1_JetIdx", "HHJets.vbfjet_idx1")
         df = df.Define("VBFjet2_JetIdx", "HHJets.vbfjet_idx2")
+
+        df = df.Define("ctjet_indexes", "HHJets.ctjet_indexes")
+        df = df.Define("fwjet_indexes", "HHJets.fwjet_indexes")
+
         df = df.Define("isBoosted", "HHJets.isBoosted")
 
         if self.df_filter:
             df = df.Filter("bjet1_JetIdx >= 0")
         return df, ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
-            "VBFjet1_JetIdx", "VBFjet2_JetIdx", "isBoosted"]
+            "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", "isBoosted"]
 
 
 def HHJetsRDF(**kwargs):
     """
-    Returns the HHbtag output, the indexes from the 2 bjets and 2 vbfjets (if existing) and if the
-    event is boosted.
+    Returns the HHbtag output, the indexes from the 2 bjets and 2 vbfjets (if existing),
+    the indexes of the additional central and forward jets (if existing) and if the
+    event has a boosted topology.
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.

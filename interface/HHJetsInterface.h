@@ -55,6 +55,8 @@ struct output {
   int bjet_idx2;
   int vbfjet_idx1;
   int vbfjet_idx2;
+  std::vector<int> ctjet_indexes;
+  std::vector<int> fwjet_indexes;
   int isBoosted;
 };
 
