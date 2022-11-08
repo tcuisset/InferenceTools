@@ -306,7 +306,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
 
     def run(self, df):
         branches = ["dnn_hhbbtt_kl_1%s" % self.systs]
-        all_branches = []
+        all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
             return df, []
 

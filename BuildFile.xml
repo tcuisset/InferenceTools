@@ -8,6 +8,7 @@
 <use name="tensorflow-cc" />
 <use name="cms_hh_proc_interface/processing"/>
 <use name="cms_hh_tf_inference/inference"/>
+<use name="MulticlassInference/MulticlassInference"/>
 <use name="HTT-utilities/LepEffInterface"/>
 <use name="TauAnalysisTools/TauTriggerSFs"/>
 <export><lib name="1"/></export>
