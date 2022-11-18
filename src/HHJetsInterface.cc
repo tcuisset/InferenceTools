@@ -51,7 +51,7 @@ output HHJetsInterface::GetHHJets(
   std::vector <jet_idx_btag> jet_indexes;
   std::vector <int> all_jet_indexes;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
-    if ((Jet_puId[ijet] < 4 && Jet_pt[ijet] <= 50) || Jet_jetId[ijet] < 2)
+    if ((Jet_puId[ijet] < 1 && Jet_pt[ijet] <= 50) || Jet_jetId[ijet] < 2)
       continue;
     auto jet_tlv = TLorentzVector();
     jet_tlv.SetPtEtaPhiM(Jet_pt[ijet], Jet_eta[ijet], Jet_phi[ijet], Jet_mass[ijet]);
