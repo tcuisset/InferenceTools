@@ -431,6 +431,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.isMC = isMC
         self.year = year
         self.runPeriod = runPeriod
+        self.isRun3 = kwargs.pop("isRun3", False)
         self.df_filter = df_filter
         self.deeptau_version = kwargs.pop("deeptau_version", "2017v2p1")
         self.isV10 = kwargs.pop("isV10", False)
@@ -464,12 +465,14 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg",
             "HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg",
             "HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg",
-            "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg"]
+            "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg",
+            "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
+            "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60"]
         self.vbf_triggers = ["HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg",
             "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
             "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
 
-        if self.year == 2018:
+        if self.year == 2018 or self.year == 2022:
             if not self.isV10:
                 ROOT.gInterpreter.Declare("""
                     using Vbool = const ROOT::RVec<Bool_t>&;
@@ -496,7 +499,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         return trigger_reqs;
                     }
                     std::vector<trig_req> get_tautau_triggers(
-                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                            Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
                         std::vector<trig_req> trigger_reqs;
                         trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
                         trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
@@ -542,14 +545,19 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         return trigger_reqs;
                     }
                     std::vector<trig_req> get_tautau_triggers(
-                            Vbool triggers, bool isMC, int run, int runPeriod) {
+                            Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
                         std::vector<trig_req> trigger_reqs;
-                        trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                        trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                        if (!isMC && run < 317509)
-                            trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
-                        else
-                            trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 32}, {2, 32}}}));
+                        if (isRun3) {
+                            trigger_reqs.push_back(trig_req({triggers[6], 40, 2.1, 40, 2.1, {{8, 32, 128}, {8, 32, 128}}}));
+                            // trigger_reqs.push_back(trig_req({triggers[7], 35, 2.1, 35, 2.1, {{8, 32, 128, 16384}, {8, 32, 128, 16384}}}));
+                        } else {
+                            trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                            trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
+                            if (!isMC && run < 317509)
+                                trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
+                            else
+                                trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 32}, {2, 32}}}));
+                        }
                         return trigger_reqs;
                     }
                     std::vector<trig_req> get_vbf_triggers(
@@ -599,8 +607,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             ", ".join(self.mutau_triggers), ("true" if self.isMC else "false"), runPeriod))
         df = df.Define("etau_triggers", "get_etau_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.etau_triggers), ("true" if self.isMC else "false"), runPeriod))
-        df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, run, %s)" % (
-            ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"), runPeriod))
+        df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, %s, run, %s)" % (
+            ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"),
+            ("true" if self.isRun3 else "false"), runPeriod))
         df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runPeriod))
 

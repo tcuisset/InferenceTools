@@ -264,6 +264,7 @@ class HHVarRDFProducer(JetLepMetSyst):
                         Vfloat electron_phi, Vfloat electron_mass,
                         Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                        float met_pt, float met_phi,
                         double Htt_svfit_pt, double Htt_svfit_eta,
                         double Htt_svfit_phi, double Htt_svfit_mass) {
 
@@ -304,6 +305,11 @@ class HHVarRDFProducer(JetLepMetSyst):
                     auto hbb_tlv = bjet1_tlv + bjet2_tlv;
                     auto hh_tlv = htt_tlv + hbb_tlv;
 
+                    auto met_tlv = TLorentzVector();
+                    met_tlv.SetPxPyPzE(met_pt * cos(met_phi), met_pt * sin(met_phi), 0, met_pt);
+
+                    auto htt_met_tlv = htt_tlv + met_tlv;
+
                     double hh_svfit_pt = -999., hh_svfit_eta = -999.;
                     double hh_svfit_phi = -999., hh_svfit_mass = -999.;
                     if (Htt_svfit_pt > 0) {
@@ -332,6 +338,7 @@ class HHVarRDFProducer(JetLepMetSyst):
                     return {
                         hbb_tlv.Pt(), hbb_tlv.Eta(), hbb_tlv.Phi(), hbb_tlv.M(),
                         htt_tlv.Pt(), htt_tlv.Eta(), htt_tlv.Phi(), htt_tlv.M(),
+                        htt_met_tlv.Pt(), htt_met_tlv.Eta(), htt_met_tlv.Phi(), htt_met_tlv.M(),
                         hh_tlv.Pt(), hh_tlv.Eta(), hh_tlv.Phi(), hh_tlv.M(),
                         hh_svfit_pt, hh_svfit_eta, hh_svfit_phi, hh_svfit_mass,
                         vbfjj_mass, vbfjj_deltaEta, vbfjj_deltaPhi
@@ -342,6 +349,7 @@ class HHVarRDFProducer(JetLepMetSyst):
     def run(self, df):
         features = ("Hbb_pt{0},Hbb_eta{0},Hbb_phi{0},Hbb_mass{0},"
             "Htt_pt{0},Htt_eta{0},Htt_phi{0},Htt_mass{0},"
+            "Htt_met_pt{0},Htt_met_eta{0},Htt_met_phi{0},Htt_met_mass{0},"
             "HH_pt{0},HH_eta{0},HH_phi{0},HH_mass{0},"
             "HH_svfit_pt{0},HH_svfit_eta{0},HH_svfit_phi{0},HH_svfit_mass{0},"
             "VBFjj_mass{0},VBFjj_deltaEta{0},VBFjj_deltaPhi{0}".format(self.systs))
@@ -350,14 +358,16 @@ class HHVarRDFProducer(JetLepMetSyst):
         if features[0] in all_branches:
             return df, []
 
-        df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{4}(pairType, " 
+        df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{6}(pairType, "
             "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
-            "Htt_svfit_pt{4}, Htt_svfit_eta{4}, Htt_svfit_phi{4}, Htt_svfit_mass{4})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs)))
+            "MET{5}_pt{4}, MET{5}_phi{4}, "
+            "Htt_svfit_pt{6}, Htt_svfit_eta{6}, Htt_svfit_phi{6}, Htt_svfit_mass{6})".format(
+                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst,
+                self.met_syst, self.met_smear_tag, self.systs)))
 
         for ifeat, feature in enumerate(features):
             df = df.Define(feature, "hhfeatures%s[%s]" % (self.systs, ifeat))
