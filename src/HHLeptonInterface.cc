@@ -28,7 +28,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
     fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
     iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
     std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-    std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers 
+    std::vector<trig_req> tautau_triggers, std::vector<trig_req> tautaujet_triggers,
+    std::vector<trig_req> vbf_triggers 
   )
 {
   // mutau channel
@@ -75,7 +76,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           continue;
 
         tau_pairs.push_back(tau_pair({imuon, Muon_pfRelIso04_all[imuon], Muon_pt[imuon],
-          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0}));
+          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0, 0}));
 
       } // loop over goodtaus
     } // loop over goodmuons
@@ -88,14 +89,15 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return lepton_output({-1, -1, -1, -1, -1,
+        return lepton_output({
+          -1, -1, -1, -1, -1, -1,
           -1., -1., -1., -1, -1, -1, -1,
           -1., -1., -1, -1, -1, -1});
       int ind1 = tau_pairs[0].index1;
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Muon_charge[ind1] != Tau_charge[ind2]);
 
-      return lepton_output({0, ind1, ind2, 0, isOS,
+      return lepton_output({0, ind1, ind2, 0, 0, isOS,
         Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
         Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
         Tau_idDeepTauVSe[ind2], Tau_idDeepTauVSmu[ind2],
@@ -140,15 +142,14 @@ lepton_output HHLeptonInterface::get_dau_indexes(
         tau_tlv.SetPtEtaPhiM(Tau_pt[itau], Tau_eta[itau], Tau_phi[itau], Tau_mass[itau]);
         if (tau_tlv.DeltaR(electron_tlv) < 0.5)
           continue;
-
         if (!pass_trigger(
             electron_tlv.Pt(), electron_tlv.Eta(), electron_tlv.Phi(), 11,
             tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
-            etau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
+            etau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi)) {
           continue;
-
+        }
         tau_pairs.push_back(tau_pair({iele, Electron_pfRelIso03_all[iele], Electron_pt[iele],
-          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0}));
+          itau, Tau_rawDeepTauVSjet[itau], Tau_pt[itau], 0, 0}));
 
       } // loop over goodtaus
     } // loop over goodelectrons
@@ -161,7 +162,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return lepton_output({-1, -1, -1, -1, -1,
+        return lepton_output({
+          -1, -1, -1, -1, -1, -1,
           -1., -1., -1., -1, -1, -1, -1,
           -1., -1., -1, -1, -1, -1});
 
@@ -169,7 +171,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Electron_charge[ind1] != Tau_charge[ind2]);
 
-      return lepton_output({1, ind1, ind2, 0, isOS,
+      return lepton_output({1, ind1, ind2, 0, 0, isOS,
         Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1,
         -1, -1, -1,
         Tau_eta[ind2], Tau_phi[ind2], Tau_decayMode[ind2],
@@ -207,6 +209,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
         if (tau1_tlv.DeltaR(tau2_tlv) < 0.5)
           continue;
 
+        int pass_tautaujet = 0;
         int pass_vbf = 0;
         if (!pass_trigger(
             tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
@@ -215,12 +218,17 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           if (pass_trigger(
               tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
               tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
+              tautaujet_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
+            pass_tautaujet = 1;
+          else if (pass_trigger(
+              tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
+              tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
               vbf_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi))
             pass_vbf = 1;
           else continue;
         }
         tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTauVSjet[itau1], Tau_pt[itau1],
-          itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_vbf}));
+          itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_tautaujet, pass_vbf}));
       }
     }
     if (tau_pairs.size() > 0) {
@@ -232,7 +240,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
           Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
           Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
           Electron_pfRelIso03_all))
-        return lepton_output({-1, -1, -1, -1, -1,
+        return lepton_output({
+          -1, -1, -1, -1, -1, -1,
           -1., -1., -1., -1, -1, -1, -1,
           -1., -1., -1, -1, -1, -1});
 
@@ -240,7 +249,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
       int ind2 = tau_pairs[0].index2;
       int isOS = (int) (Tau_charge[ind1] != Tau_charge[ind2]);
 
-      return lepton_output({2, ind1, ind2, 0, isOS,
+      return lepton_output({2, ind1, ind2,
+        tau_pairs[0].isTauTauJetTrigger, tau_pairs[0].isVBFtrigger, isOS,
         Tau_eta[ind1], Tau_phi[ind1], -1., Tau_decayMode[ind1],
         Tau_idDeepTauVSe[ind1], Tau_idDeepTauVSmu[ind1],
         Tau_idDeepTauVSjet[ind1],
@@ -250,7 +260,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
     }
   }
 
-  return lepton_output({-1, -1, -1, -1, -1,
+  return lepton_output({
+    -1, -1, -1, -1, -1, -1,
     -1., -1., -1., -1, -1, -1, -1,
     -1., -1., -1, -1, -1, -1});
 }

@@ -30,6 +30,7 @@ struct tau_pair {
   int index2;
   float iso2;
   float pt2;
+  int isTauTauJetTrigger;
   int isVBFtrigger;
 };
 
@@ -46,6 +47,7 @@ struct lepton_output {
     int pairType;
     int dau1_index;
     int dau2_index;
+    int isTauTauJetTrigger;
     int isVBFtrigger;
     int isOS;
 
@@ -115,7 +117,8 @@ class HHLeptonInterface {
       fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-      std::vector<trig_req> tautau_triggers, std::vector<trig_req> vbf_triggers
+      std::vector<trig_req> tautau_triggers, std::vector<trig_req> tautaujet_triggers, 
+      std::vector<trig_req> vbf_triggers
     );
 
     bool lepton_veto(int muon_index, int electron_index,

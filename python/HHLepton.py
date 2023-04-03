@@ -466,8 +466,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg",
             "HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg",
             "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg",
-            "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
-            "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60"]
+            "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1"]
+        self.tautaujet_triggers = ["HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60"]
         self.vbf_triggers = ["HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg",
             "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
             "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
@@ -507,6 +507,12 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
                         else
                             trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 16}, {2, 16}}}));
+                        return trigger_reqs;
+                    }
+                    std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) { // DUMMY FUNCTION
+                        std::vector<trig_req> trigger_reqs;
+                        if (isRun3)
+                            trigger_reqs.push_back(trig_req({triggers[0], 35, 2.1, 35, 2.1, {{8, 32, 128, 16384}, {8, 32, 128, 16384}}}));
                         return trigger_reqs;
                     }
                     std::vector<trig_req> get_vbf_triggers(
@@ -560,6 +566,12 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         }
                         return trigger_reqs;
                     }
+                    std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
+                        std::vector<trig_req> trigger_reqs;
+                        if (isRun3)
+                            trigger_reqs.push_back(trig_req({triggers[0], 35, 2.1, 35, 2.1, {{8, 32, 128, 16384}, {8, 32, 128, 16384}}}));
+                        return trigger_reqs;
+                    }
                     std::vector<trig_req> get_vbf_triggers(
                             Vbool triggers, bool isMC, int run, int runPeriod) {
                         std::vector<trig_req> trigger_reqs;
@@ -572,7 +584,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 """)
 
     def run(self, df):
-        variables = ["pairType", "dau1_index", "dau2_index", "isVBFtrigger", "isOS",
+        variables = ["pairType", "dau1_index", "dau2_index",
+            "isTauTauJetTrigger", "isVBFtrigger", "isOS",
             "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode",
             "dau1_idDeepTauVSe", "dau1_idDeepTauVSmu",
             "dau1_idDeepTauVSjet",
@@ -591,6 +604,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         for ib, branch in enumerate(self.tautau_triggers):
             if branch not in all_branches:
                 self.tautau_triggers[ib] = "false"
+        for ib, branch in enumerate(self.tautaujet_triggers):
+            if branch not in all_branches:
+                self.tautaujet_triggers[ib] = "false"
         for ib, branch in enumerate(self.vbf_triggers):
             if branch not in all_branches:
                 self.vbf_triggers[ib] = "false"
@@ -610,6 +626,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, %s, run, %s)" % (
             ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"),
             ("true" if self.isRun3 else "false"), runPeriod))
+        df = df.Define("tautaujet_triggers", "get_tautaujet_triggers({%s}, %s)" % (
+            ", ".join(self.tautaujet_triggers), ("true" if self.isRun3 else "false")))
         df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runPeriod))
 
@@ -634,7 +652,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "Tau_idDeepTau{6}VSjet, Tau_rawDeepTau{6}VSjet, "
             "Tau_dz, Tau_decayMode, Tau_charge, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
-            "mutau_triggers, etau_triggers, tautau_triggers, vbf_triggers"
+            "mutau_triggers, etau_triggers, tautau_triggers, tautaujet_triggers, vbf_triggers"
         ")".format(self.muon_syst, self.electron_syst, self.tau_syst,
             Electron_mvaIso_WP80, Electron_mvaNoIso_WP90, Electron_mvaIso_WP90,
             self.deeptau_version))
@@ -787,3 +805,76 @@ def HHLeptonVarRDF(**kwargs):
 
     """
     return lambda: HHLeptonVarRDFProducer(**kwargs)
+
+
+class HHDiTauJetRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super(HHDiTauJetRDFProducer, self).__init__(*args, **kwargs)
+        if not os.getenv("HH_DITAUJET"):
+            os.environ["HH_DITAUJET"] = "true"
+            
+            ROOT.gInterpreter.Declare("""
+                using Vfloat = const ROOT::RVec<float>&;
+                using VInt = const ROOT::RVec<int>&;
+                float deltaR(float eta_1, float eta_2, float phi_1, float phi_2) {
+                   const float deta = eta_1 - eta_2;
+                   const float dphi = ROOT::Math::VectorUtil::Phi_mpi_pi(phi_1 - phi_2);
+                   const float dRsq = std::pow(deta,2) + std::pow(dphi,2);
+                   return sqrt(dRsq);
+                }
+                int pass_ditaujet(
+                    int pairType, int isTauTauJetTrigger,
+                    Vfloat tau_eta, Vfloat tau_phi, int dau1_index, int dau2_index,
+                    Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi)
+                {
+                    if (pairType != 2 || isTauTauJetTrigger != 1)  // tautau channel, ditau+jet trig
+                        return 1;
+                    float dau1_eta = tau_eta[dau1_index];
+                    float dau2_eta = tau_eta[dau2_index];
+                    float dau1_phi = tau_phi[dau1_index];
+                    float dau2_phi = tau_phi[dau2_index];
+                    for (int ijet = 0; ijet < jet_pt.size(); ijet++) {
+                        if (jet_pt[ijet] < 65)  // 60 from the HLT Path + 5
+                            continue;
+                        // Overlap removal criteria
+                        if ((deltaR(dau1_eta, jet_eta[ijet], dau1_phi, jet_phi[ijet]) > 0.5) &&
+                                (deltaR(dau2_eta, jet_eta[ijet], dau2_phi, jet_phi[ijet]) > 0.5))
+                            return 1;
+                    }
+                    return 0;
+                }
+            """)
+
+    def run(self, df):
+        df = df.Define("passTauTauJet",
+            "pass_ditaujet(pairType, isTauTauJetTrigger, "
+                "Tau_eta, Tau_phi, dau1_index, dau2_index, "
+                "Jet_pt{0}, Jet_eta, Jet_phi)".format(self.jet_syst))
+        return df.Filter("passTauTauJet == 1"), []
+
+
+def HHDiTauJetRDF(**kwargs):
+    """
+    Filters events passing the ditau+jet trigger but not the offline criteria
+
+    Lepton systematics (used for pt and mass variables) can be modified using the parameters from 
+    :ref:`BaseModules_JetLepMetSyst`.
+
+    Required RDFModules: :ref:`HHLepton_HHLeptonRDF`.
+
+    YAML sintaxis:
+
+    .. code-block:: yaml
+
+        codename:
+            name: HHDiTauJetRDF
+            path: Tools.Tools.HHLepton
+            parameters:
+                isMC: self.dataset.process.isMC
+
+    """
+    return lambda: HHDiTauJetRDFProducer(**kwargs)
+        
+        
+        
+        
