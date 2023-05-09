@@ -124,7 +124,7 @@ class SVFitRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
-        df = df.Define("svfit_result",
+        df = df.Define("svfit_result%s" % self.systs,
             "compute_svfit(pairType, dau1_index, dau2_index, "
                 "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
                 "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
@@ -132,10 +132,10 @@ class SVFitRDFProducer(JetLepMetSyst):
                 "MET{4}_pt{3}, MET{4}_phi{3}, MET_covXX, MET_covXY, MET_covYY)".format(
                     self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                     self.met_smear_tag)).Define(
-            "Htt_svfit_pt%s" % self.systs, "svfit_result[0]").Define(
-            "Htt_svfit_eta%s" % self.systs, "svfit_result[1]").Define(
-            "Htt_svfit_phi%s" % self.systs, "svfit_result[2]").Define(
-            "Htt_svfit_mass%s" % self.systs, "svfit_result[3]")
+            "Htt_svfit_pt%s" % self.systs, "svfit_result%s[0]" % self.systs).Define(
+            "Htt_svfit_eta%s" % self.systs, "svfit_result%s[1]" % self.systs).Define(
+            "Htt_svfit_phi%s" % self.systs, "svfit_result%s[2]" % self.systs).Define(
+            "Htt_svfit_mass%s" % self.systs, "svfit_result%s[3]" % self.systs)
         return df, branches
 
 
