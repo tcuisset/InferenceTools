@@ -8,10 +8,10 @@ class ZZEllipticalCutFilterRDFProducer():
     def __init__(self, *args, **kwargs):
         ROOT.gInterpreter.Declare("""
             bool apply_elliptical_cut(float Htt_svfit_mass, float Hbb_mass) {
-                float c_Htt_svfit_mass = 99.0;
-                float r_Htt_svfit_mass = 39.0;
-                float c_Hbb_mass = 101.0;
-                float r_Hbb_mass = 101.0;
+                float c_Htt_svfit_mass = 105.0;
+                float r_Htt_svfit_mass = 51.0;
+                float c_Hbb_mass = 118.0;
+                float r_Hbb_mass = 113.0;
                 float dist_Htt_svfit_mass = (Htt_svfit_mass - c_Htt_svfit_mass) * (Htt_svfit_mass - c_Htt_svfit_mass)/(r_Htt_svfit_mass * r_Htt_svfit_mass);
                 float dist_Hbb_mass = (Hbb_mass - c_Hbb_mass) * (Hbb_mass - c_Hbb_mass)/(r_Hbb_mass * r_Hbb_mass);
                 return (dist_Htt_svfit_mass + dist_Hbb_mass) < 1;
