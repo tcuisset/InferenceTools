@@ -438,6 +438,10 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
                     bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
                         jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
 
+                    double dR_l1_l2 = dau1_tlv.DeltaR(dau2_tlv);
+                    double dR_l1_l2_x_sv_pT = dR_l1_l2 * ztt_sv_pt;
+                    double dau1_mt = dau1_tlv.Mt();
+
                     int nvbf = 0;
                     if (vbfjet1_index >= 0) {
                         vbfjet1_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet1_index), jet_eta.at(vbfjet1_index),
@@ -457,7 +461,40 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
                         ztt_svfit_tlv.SetPtEtaPhiM(ztt_sv_pt, ztt_sv_eta, ztt_sv_phi, ztt_sv_mass);
                     else
                         ztt_svfit_tlv.SetPtEtaPhiM(1., 1., 1., 1.);
-
+                    
+                    double dphi_sv_met = ztt_svfit_tlv.DeltaPhi(met_tlv);
+                                      
+                    auto Zbb_tlv = TLorentzVector();
+                    Zbb_tlv = bjet1_tlv + bjet2_tlv;
+                    double dphi_Zbb_sv = Zbb_tlv.DeltaPhi(ztt_svfit_tlv);
+                    
+                    auto Ztt_vis_tlv = TLorentzVector();
+                    Ztt_vis_tlv = dau1_tlv + dau2_tlv;
+                    auto Ztt_plus_MET_tlv = TLorentzVector();
+                    Ztt_plus_MET_tlv = Ztt_vis_tlv + met_tlv;
+                    
+                    auto boosted_dau1_tlv = dau1_tlv;
+                    boosted_dau1_tlv.Boost(Ztt_plus_MET_tlv.BoostVector());
+                    auto boosted_dau2_tlv = dau2_tlv;
+                    boosted_dau2_tlv.Boost(Ztt_plus_MET_tlv.BoostVector());
+                    double dR_l1_l2_boosted_Ztt_met = boosted_dau1_tlv.DeltaR(boosted_dau2_tlv);
+                    
+                    auto ZZ_tlv = TLorentzVector();
+                    ZZ_tlv = ztt_svfit_tlv + Zbb_tlv;
+                    auto boostedZZ_dau1_tlv = dau1_tlv;
+                    auto boostedZZ_dau2_tlv = dau2_tlv;
+                    auto boostedZZ_bjet1_tlv = bjet1_tlv;
+                    auto boostedZZ_bjet2_tlv = bjet2_tlv;
+                    boostedZZ_dau1_tlv.Boost(ZZ_tlv.BoostVector());
+                    boostedZZ_dau2_tlv.Boost(ZZ_tlv.BoostVector());
+                    boostedZZ_bjet1_tlv.Boost(ZZ_tlv.BoostVector());
+                    boostedZZ_bjet2_tlv.Boost(ZZ_tlv.BoostVector());
+                    auto plane_taus  = boostedZZ_dau1_tlv.Vect().Cross(boostedZZ_dau2_tlv.Vect());
+                    auto plane_bjets = boostedZZ_bjet1_tlv.Vect().Cross(boostedZZ_bjet2_tlv.Vect());
+                    double Phi = plane_taus.Angle(plane_bjets);
+                    
+                    double costheta_l2_Zttmet = cos(boosted_dau1_tlv.Theta() - Ztt_plus_MET_tlv.Theta());
+                    
                     // MT2 computation
                     asymm_mt2_lester_bisect::disableCopyrightMessage();
                     double MT2 = asymm_mt2_lester_bisect::get_mT2(
@@ -493,7 +530,9 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
                       vbfjet1_tlv.Pt(), vbfjet1_tlv.Eta(), vbfjet1_tlv.Phi(), vbfjet1_tlv.M(),
                       vbfjet2_tlv.Pt(), vbfjet2_tlv.Eta(), vbfjet2_tlv.Phi(), vbfjet2_tlv.M(),
                       MT2, deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
-                      CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2, HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2};
+                      CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2, HHbtag_b1, HHbtag_b2, HHbtag_vbf1,
+                      HHbtag_vbf2, dR_l1_l2_x_sv_pT, dau1_mt, dR_l1_l2, dphi_sv_met, dphi_Zbb_sv,
+                      dR_l1_l2_boosted_Ztt_met, Phi, costheta_l2_Zttmet};
                 }
             """)
 
@@ -505,7 +544,10 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
             "dnn_MT2{0}, dnn_deepFlav1{0}, dnn_deepFlav2{0}, " \
             "dnn_CvsL_b1{0}, dnn_CvsL_b2{0}, dnn_CvsL_vbf1{0}, dnn_CvsL_vbf2{0}, " \
             "dnn_CvsB_b1{0}, dnn_CvsB_b2{0}, dnn_CvsB_vbf1{0}, dnn_CvsB_vbf2{0}, " \
-            "dnn_HHbtag_b1{0}, dnn_HHbtag_b2{0}, dnn_HHbtag_vbf1{0}, dnn_HHbtag_vbf2{0}".format(self.systs)
+            "dnn_HHbtag_b1{0}, dnn_HHbtag_b2{0}, dnn_HHbtag_vbf1{0}, dnn_HHbtag_vbf2{0}, " \
+            "dnn_dR_l1_l2_x_sv_pT{0}, dnn_dau1_mt{0}, dnn_dR_l1_l2{0}, dnn_dphi_sv_met{0}, "\
+            "dnn_dphi_Zbb_sv{0}, dnn_dR_l1_l2_boosted_Ztt_met{0}, dnn_Phi{0}, " \
+            "dnn_costheta_l2_Zttmet{0}".format(self.systs)
         branches = branches.split(", ")
         # print(branches)
         all_branches = df.GetColumnNames()
