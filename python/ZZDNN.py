@@ -136,8 +136,8 @@ class ZZDNNRDFProducer(JetLepMetSyst):
         year = kwargs.pop("year")
         super(ZZDNNRDFProducer, self).__init__(*args, **kwargs)
 
-        if not os.getenv("_HHbbttDNN"):
-            os.environ["_HHbbttDNN"] = "HHbbttDNN"
+        if not os.getenv("_HHbbttDNNout"):
+            os.environ["_HHbbttDNNout"] = "HHbbttDNN"
 
             if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
                 ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
@@ -331,46 +331,46 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
         year = kwargs.pop("year")
         super(ZZDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
-        if not os.getenv("_HHbbttDNN"):
-            os.environ["_HHbbttDNN"] = "HHbbttDNN"
+        if not os.getenv("_HHbbttDNNin"):
+            os.environ["_HHbbttDNNin"] = "HHbbttDNN"
 
-            if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                    "external/eigen/d812f411c3f9-cms/include/")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                    "external/tensorflow/2.5.0/include/")
-            elif os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/tensorflow/2.1.0-bcolbf/include")
-            else:
-                raise ValueError("Architecture not considered")
+            # if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
+            #     ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+            #         "external/eigen/d812f411c3f9-cms/include/")
+            #     ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+            #         "external/tensorflow/2.5.0/include/")
+            # elif os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
+            #     ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+            #         "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
+            #     ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+            #         "external/tensorflow/2.1.0-bcolbf/include")
+            # else:
+            #     raise ValueError("Architecture not considered")
 
-            base = "{}/{}/src/Tools/Tools".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            ROOT.gSystem.Load("libToolsTools.so")
-            ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
-            ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
+            # base = "{}/{}/src/Tools/Tools".format(
+            #     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            # ROOT.gSystem.Load("libToolsTools.so")
+            # ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
+            # ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
-            feature_file = kwargs.pop(
-                "feature_file",
-                "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/features.txt".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            )
-            with open(feature_file) as f:
-                lines = f.readlines()
-            req_features = ', '.join(['"%s"' % line.strip() for line in lines])
+            # feature_file = kwargs.pop(
+            #     "feature_file",
+            #     "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/features.txt".format(
+            #         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            # )
+            # with open(feature_file) as f:
+            #     lines = f.readlines()
+            # req_features = ', '.join(['"%s"' % line.strip() for line in lines])
 
-            model_dir = kwargs.pop(
-                "model_dir",
-                "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/ensemble".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            )
+            # model_dir = kwargs.pop(
+            #     "model_dir",
+            #     "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/ensemble".format(
+            #         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            # )
 
-            ROOT.gInterpreter.Declare("""
-                auto hhdnn = HHDNNinterface("%s", {%s}, {1.}, %s);
-            """ % (model_dir, req_features, year))
+            # ROOT.gInterpreter.Declare("""
+            #     auto hhdnn = HHDNNinterface("%s", {%s}, {1.}, %s);
+            # """ % (model_dir, req_features, year))
 
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
@@ -494,15 +494,6 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
                     double Phi = plane_taus.Angle(plane_bjets);
                     
                     double costheta_l2_Zttmet = cos(boosted_dau1_tlv.Theta() - Ztt_plus_MET_tlv.Theta());
-                    
-                    // MT2 computation
-                    asymm_mt2_lester_bisect::disableCopyrightMessage();
-                    double MT2 = asymm_mt2_lester_bisect::get_mT2(
-                        bjet1_tlv.M(), bjet1_tlv.Px(), bjet1_tlv.Py(),
-                        bjet2_tlv.M(), bjet2_tlv.Px(), bjet2_tlv.Py(),
-                        dau1_tlv.Px() + dau2_tlv.Px() + met_tlv.Px(),
-                        dau1_tlv.Py() + dau2_tlv.Py() + met_tlv.Py(),
-                        dau1_tlv.M(), dau2_tlv.M(), 0.);
 
                     double deepFlav1 = -1., deepFlav2 = -1., CvsL_b1 = -1., CvsL_b2 = -1.,
                         CvsL_vbf1 = -1., CvsL_vbf2 = -1., CvsB_b1 = -1., CvsB_b2 = -1.,
@@ -529,7 +520,7 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
                       bjet2_tlv.Pt(), bjet2_tlv.Eta(), bjet2_tlv.Phi(), bjet2_tlv.M(),
                       vbfjet1_tlv.Pt(), vbfjet1_tlv.Eta(), vbfjet1_tlv.Phi(), vbfjet1_tlv.M(),
                       vbfjet2_tlv.Pt(), vbfjet2_tlv.Eta(), vbfjet2_tlv.Phi(), vbfjet2_tlv.M(),
-                      MT2, deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
+                      deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
                       CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2, HHbtag_b1, HHbtag_b2, HHbtag_vbf1,
                       HHbtag_vbf2, dR_l1_l2_x_sv_pT, dau1_mt, dR_l1_l2, dphi_sv_met, dphi_Zbb_sv,
                       dR_l1_l2_boosted_Ztt_met, Phi, costheta_l2_Zttmet};
@@ -541,7 +532,7 @@ class ZZDNNInputRDFProducer(JetLepMetSyst):
             "dnn_bjet2_pt{0}, dnn_bjet2_eta{0}, dnn_bjet2_phi{0}, dnn_bjet2_m{0}, " \
             "dnn_vbfjet1_pt{0}, dnn_vbfjet1_eta{0}, dnn_vbfjet1_phi{0}, dnn_vbfjet1_m{0}, " \
             "dnn_vbfjet2_pt{0}, dnn_vbfjet2_eta{0}, dnn_vbfjet2_phi{0}, dnn_vbfjet2_m{0}, " \
-            "dnn_MT2{0}, dnn_deepFlav1{0}, dnn_deepFlav2{0}, " \
+            "dnn_deepFlav1{0}, dnn_deepFlav2{0}, " \
             "dnn_CvsL_b1{0}, dnn_CvsL_b2{0}, dnn_CvsL_vbf1{0}, dnn_CvsL_vbf2{0}, " \
             "dnn_CvsB_b1{0}, dnn_CvsB_b2{0}, dnn_CvsB_vbf1{0}, dnn_CvsB_vbf2{0}, " \
             "dnn_HHbtag_b1{0}, dnn_HHbtag_b2{0}, dnn_HHbtag_vbf1{0}, dnn_HHbtag_vbf2{0}, " \
