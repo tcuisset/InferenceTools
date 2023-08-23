@@ -167,7 +167,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                         Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                         Vfloat jet_resolution, float met_pt, float met_phi,
-                        float met_covXX, float met_covXY, float met_covYY, float target) {
+                        float met_covXX, float met_covXY, float met_covYY, int target) {
                     float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
                     if (pairType == 0) {
                         dau1_pt = muon_pt.at(dau1_index);
@@ -231,7 +231,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         if not self.isMC:
             jet_resolution = "Jet_eta"  # placeholder
         pp = "HH" if not self.isZZAnalysis else "ZZ"
-        target = 125. if not self.isZZAnalysis else 91.
+        target = 125 if not self.isZZAnalysis else 91
         branches = ["%sKinFit_mass%s" % (pp, self.systs), "%sKinFit_chi2%s" % (pp, self.systs)]
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
@@ -390,7 +390,7 @@ def HHKinFitRDF(*args, **kwargs):
     # HHKinFit2/HHKinFit2Scenarios/interface/HHKinFitMasterHeavyHiggs.h
     isZZAnalysis = kwargs.pop("isZZAnalysis", False)
 
-    print("### DEBUG 1 : isZZAnalysis = {}".format(isZZAnalysis))
+    # print("### DEBUG 1 : isZZAnalysis = {}".format(isZZAnalysis))
     return lambda: HHKinFitRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)
 
 
@@ -399,5 +399,5 @@ def HHVarRDF(*args, **kwargs):
     # are called in different ways according to the ZZ or HH analysis
     isZZAnalysis = kwargs.pop("isZZAnalysis", False)
 
-    print("### DEBUG 2 : isZZAnalysis = {}".format(isZZAnalysis))
+    # print("### DEBUG 2 : isZZAnalysis = {}".format(isZZAnalysis))
     return lambda: HHVarRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)
