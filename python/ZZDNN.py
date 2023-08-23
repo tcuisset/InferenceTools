@@ -310,6 +310,7 @@ class ZZDNNRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
+        print(" ### DEBUG 1: Running New DNN")
         df = df.Define("dnn_output%s" % self.systs, "get_dnn_outputs("
             "pairType, isBoosted, event, "
             "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "

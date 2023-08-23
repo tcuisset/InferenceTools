@@ -64,6 +64,14 @@ class HHDNNinterface {
 
 
     std::vector<float> GetPredictions();
+    std::vector<float> GetDeafultInputs(
+      int channel, int is_boosted, int nvbf, unsigned long long int eventn,
+      TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
+      TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
+      float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
+      float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
+      float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
+      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2);
     std::vector<float> GetPredictionsWithInputs(
       int channel, int is_boosted, int nvbf, unsigned long long int eventn,
       TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
