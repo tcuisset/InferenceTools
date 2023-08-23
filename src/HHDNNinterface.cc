@@ -117,11 +117,11 @@ std::vector<float> HHDNNinterface::GetPredictions()
 
     std::vector<std::string> feats_names = evt_proc_.get_feats();
 
-    //std::cout << " Feats size : " << feat_vals.size() << std::endl;
-    //for (uint j=0; j<feat_vals.size(); j++)
-    //{
+    // std::cout << " Feats size : " << feat_vals.size() << std::endl;
+    // for (uint j=0; j<feat_vals.size(); j++)
+    // {
     //  std::cout << " - " << feats_names.at(j) << " : " << feat_vals.at(j) << std::endl;
-    //}
+    // }
 
     // Get model prediction
     float DNN_pred = wrapper_.predict(feat_vals, DNN_evt_);
@@ -131,6 +131,43 @@ std::vector<float> HHDNNinterface::GetPredictions()
   }
 
   return outDNN;
+}
+
+// GetDefaultInputsForTraining
+std::vector<float> HHDNNinterface::GetDeafultInputs(
+  int channel, int is_boosted, int nvbf, unsigned long long int eventn,
+  TLorentzVector b1, TLorentzVector b2, TLorentzVector l1, TLorentzVector l2, 
+  TLorentzVector vbf1, TLorentzVector vbf2, TLorentzVector met, TLorentzVector svfit, 
+  float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
+  float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
+  float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
+  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2)
+{
+
+  SetEventInputs(channel, is_boosted, nvbf, eventn,
+  b1, b2, l1, l2, 
+  vbf1, vbf2, met, svfit, 
+  KinFitMass, KinFitChi2, KinFitConv, SVfitConv, MT2,
+  deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
+  CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2,
+  HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2);
+  
+  // Assign external values
+  DNN_klambda_ = target_kls_.at(0);
+
+  // Compute fatures
+  std::vector<float> feat_vals = evt_proc_.process_as_vec(
+      DNN_b_1_, DNN_b_2_, DNN_l_1_, DNN_l_2_, DNN_met_, DNN_svfit_, DNN_vbf_1_, DNN_vbf_2_,
+      DNN_kinfit_mass_, DNN_kinfit_chi2_, DNN_mt2_, DNN_is_boosted_, DNN_b_1_deepflav_, DNN_b_2_deepflav_,
+      DNN_e_channel_, DNN_e_year_, DNN_res_mass_, DNN_spin_, DNN_klambda_,
+      DNN_n_vbf_, DNN_svfit_conv_, DNN_hh_kinfit_conv_,
+      DNN_b_1_hhbtag_, DNN_b_2_hhbtag_, DNN_vbf_1_hhbtag_, DNN_vbf_2_hhbtag_,
+      DNN_b_1_cvsl_, DNN_b_2_cvsl_, DNN_vbf_1_cvsl_, DNN_vbf_2_cvsl_,
+      DNN_b_1_cvsb_, DNN_b_2_cvsb_, DNN_vbf_1_cvsb_, DNN_vbf_2_cvsb_,
+      0, 0, 0, // cv, c2v, c3
+      true);
+
+  return feat_vals;
 }
 
 std::vector<float> HHDNNinterface::GetPredictionsWithInputs(

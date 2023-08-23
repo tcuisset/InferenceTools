@@ -61,11 +61,12 @@ class SVFitProducer(JetLepMetModule):
 
 
 class SVFitRDFProducer(JetLepMetSyst):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, isZZAnalysis, *args, **kwargs):
         super(SVFitRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_SVFIT"):
             os.environ["_SVFIT"] = "svfit"
 
+            self.isZZAnalysis = isZZAnalysis
             if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
                 ROOT.gSystem.Load("libToolsTools.so")
             base = "{}/{}/src/Tools/Tools".format(
@@ -118,8 +119,11 @@ class SVFitRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = ["Htt_svfit_pt%s" % self.systs, "Htt_svfit_eta%s" % self.systs,
-            "Htt_svfit_phi%s" % self.systs, "Htt_svfit_mass%s" % self.systs]
+        p = "H" if not self.isZZAnalysis else "Z"
+        branches = ["%stt_svfit_pt%s"   % (p, self.systs), 
+                    "%stt_svfit_eta%s"  % (p, self.systs),
+                    "%stt_svfit_phi%s"  % (p, self.systs), 
+                    "%stt_svfit_mass%s" % (p, self.systs)]
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
             return df, []
@@ -132,10 +136,10 @@ class SVFitRDFProducer(JetLepMetSyst):
                 "MET{4}_pt{3}, MET{4}_phi{3}, MET_covXX, MET_covXY, MET_covYY)".format(
                     self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
                     self.met_smear_tag)).Define(
-            "Htt_svfit_pt%s" % self.systs, "svfit_result%s[0]" % self.systs).Define(
-            "Htt_svfit_eta%s" % self.systs, "svfit_result%s[1]" % self.systs).Define(
-            "Htt_svfit_phi%s" % self.systs, "svfit_result%s[2]" % self.systs).Define(
-            "Htt_svfit_mass%s" % self.systs, "svfit_result%s[3]" % self.systs)
+            "%stt_svfit_pt%s" % (p, self.systs), "svfit_result%s[0]" % self.systs).Define(
+            "%stt_svfit_eta%s" % (p, self.systs), "svfit_result%s[1]" % self.systs).Define(
+            "%stt_svfit_phi%s" % (p, self.systs), "svfit_result%s[2]" % self.systs).Define(
+            "%stt_svfit_mass%s" % (p, self.systs), "svfit_result%s[3]" % self.systs)
         return df, branches
 
 
@@ -144,4 +148,9 @@ def SVFit(**kwargs):
 
 
 def SVFitRDF(*args, **kwargs):
-    return lambda: SVFitRDFProducer(*args, **kwargs)
+    # The output of SVFit is not affected by H or Z, but the output features
+    # are called in different ways according to the ZZ or HH analysis
+    isZZAnalysis = kwargs.pop("isZZAnalysis", False)
+
+    # print("### DEBUG : isZZAnalysis = {}".format(isZZAnalysis))
+    return lambda: SVFitRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)

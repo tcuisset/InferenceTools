@@ -7,22 +7,22 @@ ROOT = import_root()
 class ZZEllipticalCutFilterRDFProducer():
     def __init__(self, *args, **kwargs):
         ROOT.gInterpreter.Declare("""
-            bool apply_elliptical_cut(float Htt_svfit_mass, float Hbb_mass) {
-                float c_Htt_svfit_mass = 99.0;
-                float r_Htt_svfit_mass = 39.0;
-                float c_Hbb_mass = 101.0;
-                float r_Hbb_mass = 101.0;
-                float dist_Htt_svfit_mass = (Htt_svfit_mass - c_Htt_svfit_mass) * (Htt_svfit_mass - c_Htt_svfit_mass)/(r_Htt_svfit_mass * r_Htt_svfit_mass);
-                float dist_Hbb_mass = (Hbb_mass - c_Hbb_mass) * (Hbb_mass - c_Hbb_mass)/(r_Hbb_mass * r_Hbb_mass);
-                return (dist_Htt_svfit_mass + dist_Hbb_mass) < 1;
+            bool apply_elliptical_cut_80(float Ztt_svfit_mass, float Zbb_mass) {
+                float c_Ztt_svfit_mass = 105.0;
+                float r_Ztt_svfit_mass = 51.0;
+                float c_Zbb_mass = 118.0;
+                float r_Zbb_mass = 113.0;
+                float dist_Ztt_svfit_mass = (Ztt_svfit_mass - c_Ztt_svfit_mass) * (Ztt_svfit_mass - c_Ztt_svfit_mass)/(r_Ztt_svfit_mass * r_Ztt_svfit_mass);
+                float dist_Zbb_mass = (Zbb_mass - c_Zbb_mass) * (Zbb_mass - c_Zbb_mass)/(r_Zbb_mass * r_Zbb_mass);
+                return (dist_Ztt_svfit_mass + dist_Zbb_mass) < 1;
             }
         """)
 
     def run(self, df):
         # define a new branch to check if the event is inside or outside the ellipse
-        df = df.Define("isInside", """apply_elliptical_cut(
-            Htt_svfit_mass,
-            Hbb_mass
+        df = df.Define("isInside", """apply_elliptical_cut_80(
+            Ztt_svfit_mass,
+            Zbb_mass
         )""")
         # filter the events outside the ellipse
         df = df.Filter("isInside == 1")
