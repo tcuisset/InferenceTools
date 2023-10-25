@@ -134,6 +134,7 @@ def HH(**kwargs):
 class HHDNNInputRDFProducer(JetLepMetSyst):
     def __init__(self, isZZAnalysis, *args, **kwargs):
         year = kwargs.pop("year")
+        self.isZZAnalysis = isZZAnalysis
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNDefault"):
@@ -165,8 +166,6 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
                 "features.txt".format(os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             with open(feat_file) as f:
                 self.default_feat = [i.split('\n')[0] for i in f.readlines()]
-
-            self.isZZAnalysis = isZZAnalysis
 
             if self.isZZAnalysis:
                 model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format(
@@ -343,6 +342,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 class HHDNNRDFProducer(JetLepMetSyst):
     def __init__(self, isZZAnalysis, *args, **kwargs):
         year = kwargs.pop("year")
+        self.isZZAnalysis = isZZAnalysis
         super(HHDNNRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNDefault"):
@@ -369,8 +369,6 @@ class HHDNNRDFProducer(JetLepMetSyst):
 
         if not os.getenv("_HHbbttDNN"):
             os.environ["_HHbbttDNN"] = "HHbbttDNN"
-
-            self.isZZAnalysis = isZZAnalysis
 
             if self.isZZAnalysis:
                 model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format(

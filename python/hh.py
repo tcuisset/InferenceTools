@@ -142,12 +142,12 @@ class HHProducer(JetLepMetModule):
 class HHKinFitRDFProducer(JetLepMetSyst):
     def __init__(self, isZZAnalysis, *args, **kwargs):
         self.isMC = kwargs.pop("isMC")
+        self.isZZAnalysis = isZZAnalysis
         super(HHKinFitRDFProducer, self).__init__(isMC=self.isMC, *args, **kwargs)
 
         if not os.getenv("_KINFIT"):
             os.environ["_KINFIT"] = "kinfit"
 
-            self.isZZAnalysis = isZZAnalysis
             if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
                 ROOT.gSystem.Load("libToolsTools.so")
             base = "{}/{}/src/Tools/Tools".format(
@@ -253,10 +253,10 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
 class HHVarRDFProducer(JetLepMetSyst):
     def __init__(self, isZZAnalysis, *args, **kwargs):
+        self.isZZAnalysis = isZZAnalysis
         super(HHVarRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_HHVAR_%s" % self.systs):
             os.environ["_HHVAR_%s" % self.systs] = "hhvar"
-            self.isZZAnalysis = isZZAnalysis
             ROOT.gInterpreter.Declare("""
                 #include <TLorentzVector.h>
                 using Vfloat = const ROOT::RVec<float>&;
