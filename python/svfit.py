@@ -62,11 +62,11 @@ class SVFitProducer(JetLepMetModule):
 
 class SVFitRDFProducer(JetLepMetSyst):
     def __init__(self, isZZAnalysis, *args, **kwargs):
+        self.isZZAnalysis = isZZAnalysis
         super(SVFitRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_SVFIT"):
             os.environ["_SVFIT"] = "svfit"
 
-            self.isZZAnalysis = isZZAnalysis
             if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
                 ROOT.gSystem.Load("libToolsTools.so")
             base = "{}/{}/src/Tools/Tools".format(
