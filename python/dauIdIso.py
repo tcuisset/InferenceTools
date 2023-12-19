@@ -1,4 +1,5 @@
 from copy import deepcopy as copy
+import os
 
 from analysis_tools.utils import import_root
 
@@ -31,37 +32,39 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                         self.systs.append(tmp)
                 except ValueError:
                     raise ValueError("Systematic %s not available" % name)
+                
+            if not os.getenv("_dauIdIsoSF"):
+                os.environ["_dauIdIsoSF"] = "_dauIdIsoSF"
+                ROOT.gInterpreter.Declare("""
+                    using Vfloat = const ROOT::RVec<float>&;
+                    double get_dauIdIso_sf(
+                            int pairType, int dau1_index, int dau2_index, Vfloat Tau_pt,
+                            Vfloat musf_id, Vfloat musf_reliso, Vfloat elesf, 
+                            Vfloat Tau_sfDeepTau2017v2p1VSjet_pt, Vfloat Tau_sfDeepTau2017v2p1VSjet_dm,
+                            Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu) {
+                        double idAndIsoSF_leg1 = 1.;
+                        if (pairType == 0) {
+                            idAndIsoSF_leg1 = musf_id.at(dau1_index) * musf_reliso.at(dau1_index);
+                        } else if (pairType == 1) {
+                            idAndIsoSF_leg1 = elesf.at(dau1_index);
+                        } else if (pairType == 2) {
+                            if (Tau_pt[dau1_index] < 40)
+                                idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau1_index);
+                            else idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau1_index);
 
-            ROOT.gInterpreter.Declare("""
-                using Vfloat = const ROOT::RVec<float>&;
-                double get_dauIdIso_sf(
-                        int pairType, int dau1_index, int dau2_index, Vfloat Tau_pt,
-                        Vfloat musf_id, Vfloat musf_reliso, Vfloat elesf, 
-                        Vfloat Tau_sfDeepTau2017v2p1VSjet_pt, Vfloat Tau_sfDeepTau2017v2p1VSjet_dm,
-                        Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu) {
-                    double idAndIsoSF_leg1 = 1.;
-                    if (pairType == 0) {
-                        idAndIsoSF_leg1 = musf_id.at(dau1_index) * musf_reliso.at(dau1_index);
-                    } else if (pairType == 1) {
-                        idAndIsoSF_leg1 = elesf.at(dau1_index);
-                    } else if (pairType == 2) {
-                        if (Tau_pt[dau1_index] < 40)
-                            idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau1_index);
-                        else idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau1_index);
-
-                        idAndIsoSF_leg1 *= Tau_sfDeepTau2017v2p1VSe.at(dau1_index) *
-                            Tau_sfDeepTau2017v2p1VSmu.at(dau1_index);
+                            idAndIsoSF_leg1 *= Tau_sfDeepTau2017v2p1VSe.at(dau1_index) *
+                                Tau_sfDeepTau2017v2p1VSmu.at(dau1_index);
+                        }
+                        double idAndIsoSF_leg2 = 1.;
+                        if (pairType == 2 && Tau_pt[dau1_index] > 40)
+                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
+                        else
+                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau2_index);
+                        idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index) *
+                            Tau_sfDeepTau2017v2p1VSmu.at(dau2_index);
+                        return idAndIsoSF_leg1 * idAndIsoSF_leg2;
                     }
-                    double idAndIsoSF_leg2 = 1.;
-                    if (pairType == 2 && Tau_pt[dau1_index] > 40)
-                        idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
-                    else
-                        idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau2_index);
-                    idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index) *
-                        Tau_sfDeepTau2017v2p1VSmu.at(dau2_index);
-                    return idAndIsoSF_leg1 * idAndIsoSF_leg2;
-                }
-            """)
+                """)
 
     def run(self, df):
         if not self.isMC:

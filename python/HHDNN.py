@@ -159,29 +159,29 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
             ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
+        feat_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/" \
+            "features.txt".format(os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        with open(feat_file) as f:
+            self.default_feat = [i.split('\n')[0] for i in f.readlines()]
+
+        if self.isZZAnalysis:
+            model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        else:
+            model_dir = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        ensemble = model_dir + "ensemble"
+        features = model_dir + "features.txt"
+
+        feature_file = kwargs.pop("feature_file", features)
+        with open(feature_file) as f:
+            lines = f.readlines()
+        req_features = ', '.join(['"%s"' % line.strip() for line in lines])
+
+        model_dir = kwargs.pop("model_dir", ensemble)
+
         if not os.getenv("_HHbbttDNNInput"):
             os.environ["_HHbbttDNNInput"] = "HHbbttDNNInput"
-
-            feat_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/" \
-                "features.txt".format(os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            with open(feat_file) as f:
-                self.default_feat = [i.split('\n')[0] for i in f.readlines()]
-
-            if self.isZZAnalysis:
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            else:
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            ensemble = model_dir + "ensemble"
-            features = model_dir + "features.txt"
-
-            feature_file = kwargs.pop("feature_file", features)
-            with open(feature_file) as f:
-                lines = f.readlines()
-            req_features = ', '.join(['"%s"' % line.strip() for line in lines])
-
-            model_dir = kwargs.pop("model_dir", ensemble)
 
             ROOT.gInterpreter.Declare("""
                 auto hhdnnInput = HHDNNinterface("%s", {%s}, {1.}, %s);

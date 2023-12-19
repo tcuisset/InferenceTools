@@ -27,13 +27,15 @@ class Htt_trigSFProducer(JetLepMetModule):
         base_tau = "{}/{}/src/TauAnalysisTools/TauTriggerSFs".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
-        if "/libHTT-utilitiesLepEffInterface.so" not in ROOT.gSystem.GetLibraries():
-            ROOT.gSystem.Load("libHTT-utilitiesLepEffInterface.so")
-        ROOT.gROOT.ProcessLine(".L {}/interface/ScaleFactor.h".format(base))
+        if not os.getenv("_Htt_trigSF"):
+            os.environ["_Htt_trigSF"] = "_Htt_trigSF"
+            if "/libHTT-utilitiesLepEffInterface.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libHTT-utilitiesLepEffInterface.so")
+            ROOT.gROOT.ProcessLine(".L {}/interface/ScaleFactor.h".format(base))
 
-        if "/libTauAnalysisToolsTauTriggerSFs.so" not in ROOT.gSystem.GetLibraries():
-            ROOT.gSystem.Load("libTauAnalysisToolsTauTriggerSFs.so")
-        ROOT.gROOT.ProcessLine(".L {}/interface/SFProvider.h".format(base_tau))
+            if "/libTauAnalysisToolsTauTriggerSFs.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libTauAnalysisToolsTauTriggerSFs.so")
+            ROOT.gROOT.ProcessLine(".L {}/interface/SFProvider.h".format(base_tau))
 
         if self.isMC:
             self.eTrgSF = ROOT.ScaleFactor()
@@ -537,124 +539,127 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             etau_pt_th2 = 35.
 
         if self.isMC:
-            base = "{}/{}/src/Tools/Tools".format(
+
+            if not os.getenv("_Htt_trigSF"):
+                os.environ["_Htt_trigSF"] = "_Htt_trigSF"
+                
+                base = "{}/{}/src/Tools/Tools".format(
+                        os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                    ROOT.gSystem.Load("libToolsTools.so")
+                ROOT.gROOT.ProcessLine(".L {}/interface/Htt_trigSFinterface.h".format(base))
+
+                base = "{}/{}/src/HTT-utilities/LepEffInterface".format(
+                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                base_tau = "{}/{}/src/TauAnalysisTools/TauTriggerSFs".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
-            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
-                ROOT.gSystem.Load("libToolsTools.so")
-            ROOT.gROOT.ProcessLine(".L {}/interface/Htt_trigSFinterface.h".format(base))
-
-            base = "{}/{}/src/HTT-utilities/LepEffInterface".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            base_tau = "{}/{}/src/TauAnalysisTools/TauTriggerSFs".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-
-            if not self.isUL:
-                if self.year == 2016:
-                    eTrgSF = "{}/data/Electron/Run2016/Electron_Run2016_legacy_Ele25.root".format(base)
-                    # using 2017 as dummy
-                    eTauTrgSF = "{}/data/Electron/Run2017/Electron_EleTau_Ele24_fix.root".format(base)
-                    muTrgSF = "{}/data/Muon/Run2016/Muon_Run2016_legacy_IsoMu22.root".format(base)
-                    muTauTrgSF = "{}/data/Muon/Run2016/Muon_Mu19leg_2016BtoH_eff.root".format(base)
-                    tauTrgSF_ditau = "{}/data/2016_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_mutau = "{}/data/2016_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    # using 2017 as dummy
-                    tauTrgSF_etau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    # using 2017 as dummy
-                    tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    # using 2017 as dummy
-                    jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
-                elif self.year == 2017:
-                    eTrgSF = "{}/data/Electron/Run2017/Electron_Ele32orEle35_fix.root".format(base)
-                    eTauTrgSF = "{}/data/Electron/Run2017/Electron_EleTau_Ele24_fix.root".format(base)
-                    muTrgSF = "{}/data/Muon/Run2017/Muon_IsoMu24orIsoMu27.root".format(base)
-                    muTauTrgSF = "{}/data/Muon/Run2017/Muon_MuTau_IsoMu20.root".format(base)
-                    tauTrgSF_ditau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_mutau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_etau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
-                elif self.year == 2018:
-                    eTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele32orEle35.root".format(base)
-                    eTauTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele24.root".format(base)
-                    muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base)
-                    muTauTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu20.root".format(base)
-                    tauTrgSF_ditau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_mutau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_etau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
-            else:
-                if self.year == 2018:
-                    eTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele32orEle35.root".format(base)
-                    eTauTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele24.root".format(base)
-                    muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base)
-                    muTauTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu20.root".format(base)
-                    tauTrgSF_ditau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_mutau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    tauTrgSF_etau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    # for vbf using legacy while being computed
-                    tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                    # for jet using legacy while being computed
-                    jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
+                if not self.isUL:
+                    if self.year == 2016:
+                        eTrgSF = "{}/data/Electron/Run2016/Electron_Run2016_legacy_Ele25.root".format(base)
+                        # using 2017 as dummy
+                        eTauTrgSF = "{}/data/Electron/Run2017/Electron_EleTau_Ele24_fix.root".format(base)
+                        muTrgSF = "{}/data/Muon/Run2016/Muon_Run2016_legacy_IsoMu22.root".format(base)
+                        muTauTrgSF = "{}/data/Muon/Run2016/Muon_Mu19leg_2016BtoH_eff.root".format(base)
+                        tauTrgSF_ditau = "{}/data/2016_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2016_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # using 2017 as dummy
+                        tauTrgSF_etau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # using 2017 as dummy
+                        tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # using 2017 as dummy
+                        jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
+                    elif self.year == 2017:
+                        eTrgSF = "{}/data/Electron/Run2017/Electron_Ele32orEle35_fix.root".format(base)
+                        eTauTrgSF = "{}/data/Electron/Run2017/Electron_EleTau_Ele24_fix.root".format(base)
+                        muTrgSF = "{}/data/Muon/Run2017/Muon_IsoMu24orIsoMu27.root".format(base)
+                        muTauTrgSF = "{}/data/Muon/Run2017/Muon_MuTau_IsoMu20.root".format(base)
+                        tauTrgSF_ditau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
+                    elif self.year == 2018:
+                        eTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele32orEle35.root".format(base)
+                        eTauTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele24.root".format(base)
+                        muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base)
+                        muTauTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu20.root".format(base)
+                        tauTrgSF_ditau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                 else:
-                    raise ValueError("TauTriggerSFs not implemented yet for 2016 and 2017")
+                    if self.year == 2018:
+                        eTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele32orEle35.root".format(base)
+                        eTauTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele24.root".format(base)
+                        muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base)
+                        muTauTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu20.root".format(base)
+                        tauTrgSF_ditau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # for vbf using legacy while being computed
+                        tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # for jet using legacy while being computed
+                        jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
+                    else:
+                        raise ValueError("TauTriggerSFs not implemented yet for 2016 and 2017")
 
-            ROOT.gInterpreter.Declare("""
-                auto Htt_trigSF = Htt_trigSFinterface(%s, %s, %s, %s, %s,
-                    "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s");
-            """ % (int(self.year), mutau_pt_th1, mutau_pt_th2, etau_pt_th1, etau_pt_th2,
-                eTrgSF, eTauTrgSF, muTrgSF, muTauTrgSF, tauTrgSF_ditau,
-                tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
+                ROOT.gInterpreter.Declare("""
+                    auto Htt_trigSF = Htt_trigSFinterface(%s, %s, %s, %s, %s,
+                        "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s");
+                """ % (int(self.year), mutau_pt_th1, mutau_pt_th2, etau_pt_th1, etau_pt_th2,
+                    eTrgSF, eTauTrgSF, muTrgSF, muTauTrgSF, tauTrgSF_ditau,
+                    tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
 
-            ROOT.gInterpreter.Declare("""
-                using Vfloat = const ROOT::RVec<float>&;
-                using VInt = const ROOT::RVec<int>&;
-                std::vector<double> get_htt_trigsf (
-                    int pairType, int isVBFtrigger,
-                    int dau1_index, int dau2_index, int vbfjet1_index, int vbfjet2_index,
-                    Vfloat muon_pt, Vfloat muon_eta, Vfloat electron_pt, Vfloat electron_eta,
-                    Vfloat tau_pt, Vfloat tau_eta, VInt tau_decayMode,
-                    Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass
-                )
-                {
-                    float dau1_pt=-999, dau1_eta=-999;
-                    int dau1_decayMode = -1;
-                    if (pairType == 0) {
-                        dau1_pt = muon_pt.at(dau1_index);
-                        dau1_eta = muon_eta.at(dau1_index);
-                    } else if (pairType == 1) {
-                        dau1_pt = electron_pt.at(dau1_index);
-                        dau1_eta = electron_eta.at(dau1_index);
-                    } else if (pairType == 2) {
-                        dau1_pt = tau_pt.at(dau1_index);
-                        dau1_eta = tau_eta.at(dau1_index);
-                        dau1_decayMode = tau_decayMode.at(dau1_index);
+                ROOT.gInterpreter.Declare("""
+                    using Vfloat = const ROOT::RVec<float>&;
+                    using VInt = const ROOT::RVec<int>&;
+                    std::vector<double> get_htt_trigsf (
+                        int pairType, int isVBFtrigger,
+                        int dau1_index, int dau2_index, int vbfjet1_index, int vbfjet2_index,
+                        Vfloat muon_pt, Vfloat muon_eta, Vfloat electron_pt, Vfloat electron_eta,
+                        Vfloat tau_pt, Vfloat tau_eta, VInt tau_decayMode,
+                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass
+                    )
+                    {
+                        float dau1_pt=-999, dau1_eta=-999;
+                        int dau1_decayMode = -1;
+                        if (pairType == 0) {
+                            dau1_pt = muon_pt.at(dau1_index);
+                            dau1_eta = muon_eta.at(dau1_index);
+                        } else if (pairType == 1) {
+                            dau1_pt = electron_pt.at(dau1_index);
+                            dau1_eta = electron_eta.at(dau1_index);
+                        } else if (pairType == 2) {
+                            dau1_pt = tau_pt.at(dau1_index);
+                            dau1_eta = tau_eta.at(dau1_index);
+                            dau1_decayMode = tau_decayMode.at(dau1_index);
+                        }
+                        float dau2_pt = tau_pt.at(dau2_index);
+                        float dau2_eta = tau_eta.at(dau2_index);
+                        int dau2_decayMode = tau_decayMode.at(dau2_index);
+
+                        float vbfjet1_pt=-999, vbfjet1_eta=-999, vbfjet1_phi=-999, vbfjet1_mass=-999;
+                        float vbfjet2_pt=-999, vbfjet2_eta=-999, vbfjet2_phi=-999, vbfjet2_mass=-999;
+                        if (vbfjet1_index >= 0 && vbfjet2_index >= 0) {
+                            vbfjet1_pt = jet_pt.at(vbfjet1_index);
+                            vbfjet1_eta = jet_eta.at(vbfjet1_index);
+                            vbfjet1_phi = jet_phi.at(vbfjet1_index);
+                            vbfjet1_mass = jet_mass.at(vbfjet1_index);
+                            vbfjet2_pt = jet_pt.at(vbfjet2_index);
+                            vbfjet2_eta = jet_eta.at(vbfjet2_index);
+                            vbfjet2_phi = jet_phi.at(vbfjet2_index);
+                            vbfjet2_mass = jet_mass.at(vbfjet2_index);
+                        }
+
+                        return Htt_trigSF.get_scale_factors(pairType, isVBFtrigger,
+                            dau1_decayMode, dau1_pt, dau1_eta,
+                            dau2_decayMode, dau2_pt, dau2_eta,
+                            vbfjet1_pt, vbfjet1_eta, vbfjet1_phi, vbfjet1_mass,
+                            vbfjet2_pt, vbfjet2_eta, vbfjet2_phi, vbfjet2_mass);
                     }
-                    float dau2_pt = tau_pt.at(dau2_index);
-                    float dau2_eta = tau_eta.at(dau2_index);
-                    int dau2_decayMode = tau_decayMode.at(dau2_index);
-
-                    float vbfjet1_pt=-999, vbfjet1_eta=-999, vbfjet1_phi=-999, vbfjet1_mass=-999;
-                    float vbfjet2_pt=-999, vbfjet2_eta=-999, vbfjet2_phi=-999, vbfjet2_mass=-999;
-                    if (vbfjet1_index >= 0 && vbfjet2_index >= 0) {
-                        vbfjet1_pt = jet_pt.at(vbfjet1_index);
-                        vbfjet1_eta = jet_eta.at(vbfjet1_index);
-                        vbfjet1_phi = jet_phi.at(vbfjet1_index);
-                        vbfjet1_mass = jet_mass.at(vbfjet1_index);
-                        vbfjet2_pt = jet_pt.at(vbfjet2_index);
-                        vbfjet2_eta = jet_eta.at(vbfjet2_index);
-                        vbfjet2_phi = jet_phi.at(vbfjet2_index);
-                        vbfjet2_mass = jet_mass.at(vbfjet2_index);
-                    }
-
-                    return Htt_trigSF.get_scale_factors(pairType, isVBFtrigger,
-                        dau1_decayMode, dau1_pt, dau1_eta,
-                        dau2_decayMode, dau2_pt, dau2_eta,
-                        vbfjet1_pt, vbfjet1_eta, vbfjet1_phi, vbfjet1_mass,
-                        vbfjet2_pt, vbfjet2_eta, vbfjet2_phi, vbfjet2_mass);
-                }
-            """)
+                """)
 
     def run(self, df):
         if not self.isMC:

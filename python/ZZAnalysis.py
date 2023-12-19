@@ -25,7 +25,7 @@ class ZZEllipticalCutFilterRDFProducer():
             Zbb_mass
         )""")
         # filter the events outside the ellipse
-        df = df.Filter("isInside == 1")
+        df = df.Filter("isInside == 1", "ZZEllipticalCutFilterRDF")
         return df, []
 
 def ZZEllipticalCutFilterRDF(*args, **kwargs):
@@ -38,30 +38,33 @@ class ZZBBTauTauFilterRDFProducer():
         # print(" ### DEBUG: isZZsig = {}".format(isZZsig))
         # print(" ### DEBUG: isZZbkg = {}".format(isZZbkg))
 
-        ROOT.gInterpreter.Declare("""
-            using Vfloat = const ROOT::RVec<float>&;
-            using Vint   = const ROOT::RVec<int>&;
-            bool find_bb_tautau(Vint GenPart_pdgId, Vint GenPart_genPartIdxMother) {
-                bool FoundSignal = false;
-                int n_b_fromZ = 0;
-                int n_tau_fromZ = 0;
-                for (int i_gen = 0; i_gen < GenPart_pdgId.size(); i_gen ++) {
-                    if (GenPart_genPartIdxMother.at(i_gen) == -1) continue; // it is the incoming parton
-                    if ((fabs(GenPart_pdgId.at(i_gen)) == 5) && (GenPart_pdgId.at(GenPart_genPartIdxMother.at(i_gen)) == 23)) {
-                        // std::cout << i_gen << std::endl;
-                        n_b_fromZ += 1;
+        if not os.getenv("_ZZBBTauTauFilter"):
+            os.environ["_ZZBBTauTauFilter"] = "_ZZBBTauTauFilter"
+
+            ROOT.gInterpreter.Declare("""
+                using Vfloat = const ROOT::RVec<float>&;
+                using Vint   = const ROOT::RVec<int>&;
+                bool find_bb_tautau(Vint GenPart_pdgId, Vint GenPart_genPartIdxMother) {
+                    bool FoundSignal = false;
+                    int n_b_fromZ = 0;
+                    int n_tau_fromZ = 0;
+                    for (int i_gen = 0; i_gen < GenPart_pdgId.size(); i_gen ++) {
+                        if (GenPart_genPartIdxMother.at(i_gen) == -1) continue; // it is the incoming parton
+                        if ((fabs(GenPart_pdgId.at(i_gen)) == 5) && (GenPart_pdgId.at(GenPart_genPartIdxMother.at(i_gen)) == 23)) {
+                            // std::cout << i_gen << std::endl;
+                            n_b_fromZ += 1;
+                        }
+                        if ((fabs(GenPart_pdgId.at(i_gen)) == 15) && (GenPart_pdgId.at(GenPart_genPartIdxMother.at(i_gen)) == 23)) {
+                            // std::cout << i_gen << std::endl;
+                            n_tau_fromZ += 1;
+                        }
                     }
-                    if ((fabs(GenPart_pdgId.at(i_gen)) == 15) && (GenPart_pdgId.at(GenPart_genPartIdxMother.at(i_gen)) == 23)) {
-                        // std::cout << i_gen << std::endl;
-                        n_tau_fromZ += 1;
+                    if ((n_b_fromZ > 1) && (n_tau_fromZ > 1)) {
+                        FoundSignal = true;
                     }
+                    return FoundSignal;
                 }
-                if ((n_b_fromZ > 1) && (n_tau_fromZ > 1)) {
-                    FoundSignal = true;
-                }
-                return FoundSignal;
-            }
-        """)
+            """)
 
     def run(self, df):
         if self.isZZsig or self.isZZbkg:
@@ -73,16 +76,22 @@ class ZZBBTauTauFilterRDFProducer():
             # filter the events with ZZ->bbtautau
             if self.isZZsig:
                 # print(" ### DEBUG: isZZTobbtautau == 1")
-                df = df.Filter("isZZTobbtautau == 1")
+                df = df.Filter("isZZTobbtautau == 1", "ZZBBTauTauFilterRDF_Sig")
             # filter the events without ZZ->bbtautau
             elif self.isZZbkg:
                 # print(" ### DEBUG: isZZTobbtautau == 0")
-                df = df.Filter("isZZTobbtautau == 0")
+                df = df.Filter("isZZTobbtautau == 0", "ZZBBTauTauFilterRDF_Sig")
+        return df, []
+
+class ZZBBTauTauFilterDummyRDFProducer():
+    def run(self, df):
         return df, []
 
 def ZZBBTauTauFilterRDF(*args, **kwargs):
     isZZsig = kwargs.pop("isZZsig")
     isZZbkg = kwargs.pop("isZZbkg")
 
-    # print("### DEBUG : isZZsig = {}, isZZbkg = {}".format(isZZsig, isZZbkg))
-    return lambda: ZZBBTauTauFilterRDFProducer(isZZsig=isZZsig, isZZbkg=isZZbkg, *args, **kwargs)
+    if isZZsig or isZZbkg:
+        return lambda: ZZBBTauTauFilterRDFProducer(isZZsig=isZZsig, isZZbkg=isZZbkg, *args, **kwargs)
+    else:
+        return lambda: ZZBBTauTauFilterDummyRDFProducer()

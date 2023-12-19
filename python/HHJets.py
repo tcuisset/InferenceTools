@@ -248,33 +248,32 @@ class HHJetsRDFProducer(JetLepMetSyst):
 
         self.df_filter = df_filter
 
-        if not os.getenv("_HHJets"):
-            os.environ["_HHJets"] = "HHJets"
+        if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+            ROOT.gSystem.Load("libToolsTools.so")
+        if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
+                "external/eigen/d812f411c3f9-cms/include/")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/"
+                "tensorflow/2.5.0/include/")
+        elif s.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
+            ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
+                "external/tensorflow/2.1.0-bcolbf/include")
+        else:
+            raise ValueError("Architecture not considered")
 
-            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
-                ROOT.gSystem.Load("libToolsTools.so")
-            if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                    "external/eigen/d812f411c3f9-cms/include/")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/"
-                    "tensorflow/2.5.0/include/")
-            elif s.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/tensorflow/2.1.0-bcolbf/include")
-            else:
-                raise ValueError("Architecture not considered")
+        self.year = kwargs.pop("year")
+        base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
+            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
+
+        if not os.getenv("_HHJets"):
+            os.environ["_HHJets"] = "_HHJets"
 
             base = "{}/{}/src/Tools/Tools".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-
             ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
-
-            self.year = kwargs.pop("year")
-            base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
 
             ROOT.gInterpreter.Declare("""
                 auto HHJets = HHJetsInterface("%s", "%s", %s, %s);
@@ -367,7 +366,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         df = df.Define("isBoosted", "HHJets.isBoosted")
 
         if self.df_filter:
-            df = df.Filter("bjet1_JetIdx >= 0")
+            df = df.Filter("bjet1_JetIdx >= 0", "HHJetsRDF")
         return df, ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
             "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", "isBoosted"]
 
