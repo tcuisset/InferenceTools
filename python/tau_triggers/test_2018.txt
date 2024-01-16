@@ -1,0 +1,86 @@
+------------------------------------
+
+0 => CaloIdL_TrackIdL_IsoVL: "*CaloIdLTrackIdLIsoVL*TrackIso*Filter"
+1 => 1e (WPTight): "hltEle*WPTight*TrackIsoFilter*"
+2 => 1e (WPLoose): "hltEle*WPLoose*TrackIsoFilter"
+3 => OverlapFilter PFTau: "*OverlapFilter*IsoEle*PFTau*"
+4 => 2e: "hltEle*Ele*CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"
+5 => 1e-1mu: "hltMu*TrkIsoVVL*Ele*CaloIdLTrackIdLIsoVL*Filter*"
+6 => 1e-1tau: "hlt*OverlapFilterIsoEle*PFTau*"
+7 => 3e: "hltEle*Ele*Ele*CaloIdLTrackIdLDphiLeg*Filter"
+8 => 2e-1mu: "hltL3fL1Mu*DoubleEG*Filtered*", "hltMu*DiEle*CaloIdLTrackIdLElectronleg*Filter"
+9 => 1e-2mu: "hltL3fL1DoubleMu*EG*Filter*", "hltDiMu*Ele*CaloIdLTrackIdLElectronleg*Filter"
+10 => 1e (32_L1DoubleEG_AND_L1SingleEGOr): "hltEle32L1DoubleEGWPTightGsfTrackIsoFilter","hltEGL1SingleEGOrFilter"
+11 => 1e (CaloIdVT_GsfTrkIdT): "hltEle*CaloIdVTGsfTrkIdTGsfDphiFilter"
+12 => 1e (PFJet): "HLT_Ele*PFJet*"
+13 => 1e (Photon175_OR_Photon200): "hltEG175HEFilter", "hltEG200HEFilter"
+
+for Electron
+
+------------------------------------
+
+0 => TrkIsoVVL: "*RelTrkIsoVVLFiltered0p4", "*RelTrkIsoVVLFiltered"
+1 => Iso: "hltL3crIso*IsoFiltered0p07", "hltL3crIso*IsoFiltered0p08", "hltL3crIso*IsoFiltered"
+2 => OverlapFilter PFTau: "*OverlapFilterIsoMu*PFTau*"
+3 => 1mu: "hltL3crIsoL1*SingleMu*IsoFiltered0p07", "hltL3crIsoL1sMu*IsoFiltered0p07", "hltL3crIsoL1*SingleMu*IsoFiltered0p08", "hltL3crIsoL1sMu*IsoFiltered0p08", "hltL3crIsoL1*SingleMu*IsoFiltered", "hltL3crIsoL1sMu*IsoFiltered"
+4 => 2mu: "hltDiMuon*Filtered*"
+5 => 1mu-1e: "hltMu*TrkIsoVVL*Ele*CaloIdLTrackIdLIsoVL*Filter*"
+6 => 1mu-1tau: "hlt*OverlapFilterIsoMu*PFTau*"
+7 => 3mu: "hltL3fL1TripleMu*"
+8 => 2mu-1e: "hltL3fL1DoubleMu*EG*Filtered*", "hltDiMu*Ele*CaloIdLTrackIdLElectronleg*Filter"
+9 => 1mu-2e: "hltL3fL1Mu*DoubleEG*Filtered*", "hltMu*DiEle*CaloIdLTrackIdLElectronleg*Filter"
+10 => 1mu (Mu50): "hltL3fL1sMu*L3Filtered50*", "hltL3fL1sMu*TkFiltered50*"
+11 => 1mu (Mu100): "hltL3fL1sMu*L3Filtered100*", "hltL3fL1sMu*TkFiltered100*"
+12 => 1mu-1photon: "hltMu17Photon30IsoCaloIdMuonlegL3Filtered17Q"
+
+for Muon
+
+------------------------------------
+
+0 => LooseChargedIso: "*LooseChargedIso*"
+1 => MediumChargedIso: "*MediumChargedIso*"
+2 => TightChargedIso: "*TightChargedIso*"
+3 => DeepTau: "*DeepTau*"
+4 => TightID OOSC photons: "*TightOOSCPhotons*"
+5 => HPS: "*Hps*"
+6 => charged iso di-tau: "hlt*DoublePFTau*TrackPt1*ChargedIsolation*Dz02*"
+7 => deeptau di-tau: "hlt*DoublePFTau*DeepTau*L1HLTMatched"
+8 => e-tau: "hlt*OverlapFilterIsoEle*WPTightGsf*PFTau*"
+9 => mu-tau: "hlt*OverlapFilterIsoMu*PFTau*"
+10 => single-tau/tau+MET: "hlt*SelectedPFTau*L1HLTMatched"
+11 => run 2 VBF+ditau: "hlt*DoublePFTau*TrackPt1*ChargedIso*"
+12 => run 3 VBF+ditau: "hlt*DoublePFTau*Track*ChargedIso*AgainstMuon"
+13 => run 3 double PF jets + ditau: "hltHpsSinglePFTau*HLTMatched"
+14 => di-tau + PFJet: "hltHpsOverlapFilterDeepTauDoublePFTau*PFJet*"
+15 => Displaced Tau: "hlt*Double*ChargedIsoDisplPFTau*Dxy*"
+16 => Monitoring: "*Monitoring"
+17 => regional paths: "*Reg"
+18 => L1 seeded paths: "*L1Seeded"
+19 => 1 prong tau paths "*1Prong"
+
+for Tau
+
+------------------------------------
+
+HLT_Ele32_WPTight_Gsf: hltEle32noerWPTightGsfTrackIsoFilter (2)
+HLT_Ele35_WPTight_Gsf: hltEle35noerWPTightGsfTrackIsoFilter (2)
+HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1: hltOverlapFilterIsoEle24WPTightGsfLooseIsoPFTau30 (64) (1, 256)
+HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1: hltHpsOverlapFilterIsoEle24WPTightGsfLooseIsoPFTau30 (64) (1, 256)
+
+HLT_IsoMu24: hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered0p07 (2, 8)
+HLT_IsoMu27: hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07 (2, 8)
+HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1: hltOverlapFilterIsoMu20LooseChargedIsoPFTau27L1Seeded (64) (1, 512)
+HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1: hltHpsOverlapFilterIsoMu20LooseChargedIsoPFTau27L1Seeded (4) (1, 32)
+
+HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg: hltDoublePFTau35TrackPt1TightChargedIsolationAndTightOOSCPhotonsDz02Reg (4, 16, 64) (4, 16, 64)
+HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg: hltDoublePFTau40TrackPt1MediumChargedIsolationAndTightOOSCPhotonsDz02Reg (2, 16, 64) (2, 16, 64)
+HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg: hltDoublePFTau40TrackPt1TightChargedIsolationDz02Reg (4, 64) (4, 64)
+HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg: hltHpsDoublePFTau35TrackPt1MediumChargedIsolationDz02Reg (64) (64)
+HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1: hltMatchedVBFOnePFJet2CrossCleanedFromDoubleLooseChargedIsoPFTau20 + hltMatchedVBFTwoPFJets2CrossCleanedFromDoubleLooseChargedIsoPFTau20 (1) (1) 
+HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1: hltMatchedVBFOnePFJet2CrossCleanedFromDoubleLooseChargedIsoPFTauHPS20 + hltMatchedVBFTwoPFJets2CrossCleanedFromDoubleLooseChargedIsoPFTauHPS20 (1, 32) (1, 32)
+
+From:
+https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+https://kandroso.web.cern.ch/HLepRare/HTT_skim_v1/Run2_2016/ZZTo2Q2L_doc.html (TrigObj_filterBits)
+https://cmshltinfo.app.cern.ch/summary
+https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauTrigger#Tau_Triggers_in_NanoAOD
