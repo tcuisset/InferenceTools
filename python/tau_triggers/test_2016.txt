@@ -1,0 +1,59 @@
+------------------------------------
+
+0 => CaloIdL_TrackIdL_IsoVL: "*CaloIdLTrackIdLIsoVL*TrackIso*Filter"
+1 => 1e (WPTight): "hltEle*WPTight*TrackIsoFilter*"
+2 => 1e (WPLoose): "hltEle*WPLoose*TrackIsoFilter"
+3 => OverlapFilter PFTau: "*OverlapFilter*IsoEle*PFTau*"
+4 => 2e: "hltEle*Ele*CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"
+5 => 1e-1mu: "hltMu*TrkIsoVVL*Ele*CaloIdLTrackIdLIsoVL*Filter*"
+6 => 1e-1tau: "hlt*OverlapFilterIsoEle*PFTau*"
+7 => 3e: "hltEle*Ele*Ele*CaloIdLTrackIdLDphiLeg*Filter"
+8 => 2e-1mu: "hltL3fL1Mu*DoubleEG*Filtered*", "hltMu*DiEle*CaloIdLTrackIdLElectronleg*Filter"
+9 => 1e-2mu: "hltL3fL1DoubleMu*EG*Filter*", "hltDiMu*Ele*CaloIdLTrackIdLElectronleg*Filter"
+10 => 1e (32_L1DoubleEG_AND_L1SingleEGOr): "hltEle32L1DoubleEGWPTightGsfTrackIsoFilter","hltEGL1SingleEGOrFilter"
+11 => 1e (CaloIdVT_GsfTrkIdT): "hltEle*CaloIdVTGsfTrkIdTGsfDphiFilter"
+12 => 1e (PFJet): "HLT_Ele*PFJet*"
+13 => 1e (Photon175_OR_Photon200): "hltEG175HEFilter", "hltEG200HEFilter"
+
+for Electron
+
+------------------------------------
+
+0 => TrkIsoVVL: "*RelTrkIso*Filtered0p4"
+1 => Iso: "hltL3cr*IsoFiltered0p09"
+2 => OverlapFilter PFTau: "*OverlapFilter*IsoMu*PFTau*"
+3 => IsoTkMu: "hltL3f*IsoFiltered0p09"
+10 => 1mu (Mu50): "hltL3fL1sMu*L3Filtered50*":"hltL3fL1sMu*TkFiltered50*"
+
+for Muon
+
+------------------------------------
+
+0 => LooseIso: "*LooseIso*" (-*VLooseIso*)
+1 => Medium(Comb)Iso: "*Medium*Iso*"
+2 => VLooseIso: "*VLooseIso*"
+3 => None: ""
+4 => L2p5 pixel iso: "hltL2TauIsoFilter"
+5 => OverlapFilter IsoMu: "*OverlapFilter*IsoMu*"
+6 => OverlapFilter IsoEle: "*OverlapFilter*IsoEle*"
+7 => L1-HLT matched: "*L1HLTMatched*"
+8 => Dz: "*Dz02*"
+
+for Tau
+
+------------------------------------
+
+HLT_Ele25_eta2p1_WPTight_Gsf: hltEle25erWPTightGsfTrackIsoFilter (2)
+
+HLT_IsoMu22: hltL3crIsoL1sMu20L1f0L2f10QL3f22QL3trkIsoFiltered0p09 (2)
+HLT_IsoMu22_eta2p1: hltL3crIsoL1sSingleMu20erL1f0L2f10QL3f22QL3trkIsoFiltered0p09 (2)
+HLT_IsoTkMu22: hltL3fL1sMu20L1f0Tkf22QL3trkIsoFiltered0p09 (8)
+HLT_IsoTkMu22_eta2p1: hltL3fL1sMu20erL1f0Tkf22QL3trkIsoFiltered0p09 (8)
+HLT_IsoMu19_eta2p1_LooseIsoPFTau20: hltOverlapFilterIsoMu19LooseIsoPFTau20 + hltL3crIsoL1sMu18erTauJet20erL1f0L2f10QL3f19QL3trkIsoFiltered0p09 + hltPFTau20TrackLooseIsoAgainstMuon (2, 4) (1, 32)
+HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1: hltOverlapFilterSingleIsoMu19LooseIsoPFTau20 + hltL3crIsoL1sSingleMu18erIorSingleMu20erL1f0L2f10QL3f19QL3trkIsoFiltered0p09 + hltPFTau20TrackLooseIsoAgainstMuon (2, 4) (1, 32)
+
+HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg: hltDoublePFTau35TrackPt1MediumIsolationDz02Reg (2, 256)
+HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg: hltDoublePFTau35TrackPt1MediumCombinedIsolationDz02Reg (2, 256)
+
+From:
+https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
