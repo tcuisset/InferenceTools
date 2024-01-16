@@ -475,6 +475,107 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 auto HHLepton = HHLeptonInterface(%s, %s, %s, %s, %s);
             """ % (vvvl_vsjet, vl_vse, vvl_vse, t_vsmu, vl_vsmu))
 
+            if self.year == 2016:
+                if not self.isV10:
+                    raise ValueError("TauTriggerSFs not implemented yet for 2016 v9")
+                else:
+                    ROOT.gInterpreter.Declare("""
+                        using Vbool = const ROOT::RVec<Bool_t>&;
+                        std::vector<trig_req> get_mutau_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            trigger_reqs.push_back(trig_req({triggers[0], 23, 2.3, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22
+                            trigger_reqs.push_back(trig_req({triggers[1], 23, 2.1, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22_eta2p1
+                            trigger_reqs.push_back(trig_req({triggers[2], 23, 2.3, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu22
+                            trigger_reqs.push_back(trig_req({triggers[3], 23, 2.1, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu22_eta2p1
+                            trigger_reqs.push_back(trig_req({triggers[6], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20
+                            trigger_reqs.push_back(trig_req({triggers[7], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_etau_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_tautau_triggers(
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            if (!isMC) {
+                                if ((runPeriod >= 2) && (runPeriod <= 7)) {
+                                    trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
+                                }
+                                else if (runPeriod == 8) {
+                                    trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
+                                }               
+                            }
+                            else {
+                                trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
+                            }
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
+                            std::vector<trig_req> trigger_reqs;
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_vbf_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            return trigger_reqs;
+                        }
+                    """)
+
+            if self.year == 2017:
+                if not self.isV10:
+                    raise ValueError("TauTriggerSFs not implemented yet for 2017 v9")
+                else:
+                    ROOT.gInterpreter.Declare("""
+                        using Vbool = const ROOT::RVec<Bool_t>&;
+                        std::vector<trig_req> get_mutau_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
+                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
+                            trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_etau_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_tautau_triggers(
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
+                            trigger_reqs.push_back(trig_req({triggers[3], 45, 2.1, 45, 2.1, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
+                            trigger_reqs.push_back(trig_req({triggers[4], 45, 2.1, 45, 2.1, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
+                            if (!isMC) {
+                                if ((runPeriod >= 4) && (runPeriod <= 6)) {
+                                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg
+                                }
+                            }
+                            else {
+                                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg
+                            }
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
+                            std::vector<trig_req> trigger_reqs;
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_vbf_triggers(
+                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                            std::vector<trig_req> trigger_reqs;
+                            return trigger_reqs;
+                        }
+                    """)
+
             if self.year == 2018 or self.year == 2022:
                 if not self.isV10:
                     ROOT.gInterpreter.Declare("""
@@ -534,54 +635,53 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runPeriod) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}}));
-                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}}));
-                            if (!isMC && run < 317509)
-                                trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}}));
-                            else
-                                trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 32}}}));
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
+                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
+                            if (!isMC && run < 317509) {
+                                trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+                            }
+                            else {
+                                trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 32}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
+                            }
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runPeriod) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}}));
-                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}}));
-                            if (!isMC && run < 317509)
-                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}}));
-                            else
-                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 32}}}));
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            if (!isMC && run < 317509) {
+                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                            }
+                            else {
+                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+                            }
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
                                 Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
                             std::vector<trig_req> trigger_reqs;
-                            if (isRun3) {
-                                trigger_reqs.push_back(trig_req({triggers[6], 40, 2.1, 40, 2.1, {{8, 32, 128}, {8, 32, 128}}}));
-                                // trigger_reqs.push_back(trig_req({triggers[7], 35, 2.1, 35, 2.1, {{8, 32, 128, 16384}, {8, 32, 128, 16384}}}));
-                            } else {
-                                trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                                trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
-                                if (!isMC && run < 317509)
-                                    trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, {{64, 4}, {64, 4}}}));
-                                else
-                                    trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{2, 32}, {2, 32}}}));
+                            if (!isMC && run < 317509) {
+                                trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[3], 45, 2.1, 45, 2.1, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[4], 45, 2.1, 45, 2.1, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
+                            }
+                            else {
+                                trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{64}, {64}}})); // HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
                             }
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
                             std::vector<trig_req> trigger_reqs;
-                            if (isRun3)
-                                trigger_reqs.push_back(trig_req({triggers[0], 35, 2.1, 35, 2.1, {{8, 32, 128, 16384}, {8, 32, 128, 16384}}}));
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_vbf_triggers(
                                 Vbool triggers, bool isMC, int run, int runPeriod) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC && run < 317509)
-                                trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 16}, {64, 4, 16}}}));
+                                trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1
                             else
-                                trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{2048, 1, 32}, {2048, 1, 32}}}));
+                                trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{1, 32}, {1, 32}}})); // HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1
                             return trigger_reqs;
                         }
                     """)

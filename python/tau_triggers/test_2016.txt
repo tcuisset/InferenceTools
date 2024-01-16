@@ -57,3 +57,6 @@ HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg: hltDoublePFTau35TrackPt1Medi
 
 From:
 https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+https://kandroso.web.cern.ch/HLepRare/HTT_skim_v1/Run2_2016/ZZTo2Q2L_doc.html (TrigObj_filterBits)
+https://cmshltinfo.app.cern.ch/summary
+https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauTrigger#Tau_Triggers_in_NanoAOD
