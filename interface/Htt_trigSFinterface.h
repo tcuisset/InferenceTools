@@ -42,8 +42,11 @@ class Htt_trigSFinterface {
   public:
     Htt_trigSFinterface (
       int year, float mutau_pt_th1, float mutau_pt_th2, float etau_pt_th1, float etau_pt_th2,
-      std::string eTrgSF_file, std::string eTauTrgSF_file, std::string muTrgSF_file,
-      std::string muTauTrgSF_file, std::string tauTrgSF_ditau_file, std::string tauTrgSF_mutau_file,
+      std::string eTrgSF_file, std::string eTrgSF_name, bool eTrgSF_bool, 
+      std::string eTauTrgSF_file, std::string eTauTrgSF_name, bool eTauTrgSF_bool,
+      std::string muTrgSF_file, std::string muTrgSF_name, bool muTrgSF_bool,
+      std::string muTauTrgSF_file, std::string muTauTrgSF_name, bool muTauTrgSF_bool,
+      std::string tauTrgSF_ditau_file, std::string tauTrgSF_mutau_file,
       std::string tauTrgSF_etau_file, std::string tauTrgSF_vbf_file, std::string jetTrgSF_vbf_file);    
     ~Htt_trigSFinterface ();
 

@@ -525,6 +525,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
         self.isMC = kwargs["isMC"]
         self.year = kwargs.pop("year")
         self.isUL = kwargs.pop("isUL")
+        self.ispreVFP = kwargs.pop("ispreVFP")
         super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
 
         if self.year == 2016:
@@ -552,6 +553,12 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                 base = "{}/{}/src/HTT-utilities/LepEffInterface".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 base_tau = "{}/{}/src/TauAnalysisTools/TauTriggerSFs".format(
+                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                base_egamma = "{}/{}/src/HTT-utilities/EgammaPogSF_UL".format(
+                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                base_mu = "{}/{}/src/HTT-utilities/MuPogSF_UL".format(
+                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                base_cross = "{}/{}/src/HTT-utilities/trigSFs_UL_eleMu".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
                 if not self.isUL:
@@ -590,27 +597,64 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                 else:
-                    if self.year == 2018:
-                        eTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele32orEle35.root".format(base)
-                        eTauTrgSF = "{}/data/Electron/Run2018/Electron_Run2018_Ele24.root".format(base)
-                        muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base)
-                        muTauTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu20.root".format(base)
-                        tauTrgSF_ditau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_mutau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_etau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                    if self.year == 2016:
+                        if self.ispreVFP:   prefix = "pre"
+                        else:               prefix = "post"
+                        eTrgSF = "{}/sf_el_2016{}_HLTEle25.root".format(base_cross, prefix); eTrgName = ""; eTrgBool = "true"
+                        eTauTrgSF = "{}/sf_el_2017_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true" # using 2017 as dummy
+                        muTrgSF = "{}/data/Muon/Run2016BtoH/Muon_IsoMu24_2016BtoH_eff.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL like here https://github.com/LLRCMS/KLUBAnalysis/blob/74a346c97ad1c9f5027a2c1ead8c18652629522f/test/skimNtuple_HHbtag.cpp#L620C4-L620C4
+                        muTauTrgSF = "{}/sf_mu_2016{}_HLTMu20Tau27.root".format(base_cross, prefix); muTauTrgName = ""; muTauTrgBool = "true"
+                        if self.ispreVFP:
+                            tauTrgSF_ditau = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                            tauTrgSF_mutau = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                            tauTrgSF_etau  = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        else:
+                            tauTrgSF_ditau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                            tauTrgSF_mutau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                            tauTrgSF_etau  = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_vbf = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau) # using 2017 as dummy
+                        jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau) # using 2017 as dummy
+                    elif self.year == 2017:
+                        eTrgSF = "{}/sf_el_2017_HLTEle32.root".format(base_cross); eTrgName = ""; eTrgBool = "true"
+                        eTauTrgSF = "{}/sf_el_2017_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true"
+                        muTrgSF = "{}/data/Muon/Run2017/Muon_IsoMu24orIsoMu27.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL
+                        muTauTrgSF = "{}/sf_mu_2017_HLTMu20Tau27.root".format(base_cross); muTauTrgName = ""; muTauTrgBool = "true"
+                        tauTrgSF_ditau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_vbf = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         # for vbf using legacy while being computed
+                        jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
+                    elif self.year == 2018:
+                        eTrgSF = "{}/sf_el_2018_HLTEle32.root".format(base_cross); eTrgName = ""; eTrgBool = "true"
+                        eTauTrgSF = "{}/sf_el_2018_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true"
+                        muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL
+                        muTauTrgSF = "{}/sf_mu_2018_HLTMu20Tau27.root".format(base_cross); muTauTrgName = ""; muTauTrgBool = "true"
+                        tauTrgSF_ditau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         # for jet using legacy while being computed
                         jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                     else:
-                        raise ValueError("TauTriggerSFs not implemented yet for 2016 and 2017")
+                        raise ValueError("TauTriggerSFs not implemented yet for 2017")
 
+                # TrgSF: path to the TriggerSF file
+                # TrgName: if empty string "" the contructor is init_EG_ScaleFactor, else init_ScaleFactor (default legacy is ZMass)
+                # TrgBool: used inside init_EG_ScaleFactor
                 ROOT.gInterpreter.Declare("""
                     auto Htt_trigSF = Htt_trigSFinterface(%s, %s, %s, %s, %s,
-                        "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s");
+                        "%s", "%s", "%s", 
+                        "%s", "%s", "%s", 
+                        "%s", "%s", "%s", 
+                        "%s", "%s", "%s", 
+                        "%s", "%s", "%s", "%s", "%s");
                 """ % (int(self.year), mutau_pt_th1, mutau_pt_th2, etau_pt_th1, etau_pt_th2,
-                    eTrgSF, eTauTrgSF, muTrgSF, muTauTrgSF, tauTrgSF_ditau,
-                    tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
+                    eTrgSF, eTrgName, eTrgBool, 
+                    eTauTrgSF, eTauTrgName, eTauTrgBool,
+                    muTrgSF, muTrgName, muTrgBool, 
+                    muTauTrgSF, muTauTrgName, muTauTrgBool,
+                    tauTrgSF_ditau, tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
 
                 ROOT.gInterpreter.Declare("""
                     using Vfloat = const ROOT::RVec<float>&;
