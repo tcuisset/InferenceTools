@@ -639,10 +639,10 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         muTrgSF = "{}/Run2/UL/2018/2018_trigger/Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root".format(base_mu); muTrgName = "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt"; muTrgBool = ""
                         # TH2D x=pT, y=eta -> init_EG_ScaleFactor
                         muTauTrgSF = "{}/sf_mu_2018_HLTMu20Tau27.root".format(base_cross); muTauTrgName = ""; muTauTrgBool = "true"
-                        tauTrgSF_ditau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_mutau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_etau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_ditau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_mutau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_etau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        tauTrgSF_vbf = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         # for jet using legacy while being computed
                         jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                     else:
