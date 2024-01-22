@@ -88,7 +88,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
       auto Eff_tau_Data = tauTrgSF_mutau.getEfficiencyData(dau2_pt, dau2_decayMode, 0);
       auto Eff_tau_MC = tauTrgSF_mutau.getEfficiencyMC(dau2_pt, dau2_decayMode, 0);
 
-      std::cout << " --> tauTrgSF_mutau " << Eff_tau_Data << std::endl;
+      // std::cout << " --> tauTrgSF_mutau " << Eff_tau_Data << std::endl;
 
       std::vector <double> Eff_Data_mu, Eff_MC_mu;
       for (size_t i = 0; i< Eff_l_Data.size(); i++) {
