@@ -62,7 +62,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
       auto Eff_L_Data_Err = muTrgSF.get_EfficiencyDataError(dau1_pt, dau1_eta);
       auto Eff_L_MC_Err = muTrgSF.get_EfficiencyMCError(dau1_pt, dau1_eta);
 
-      std::cout << " --> muTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_L_Data_nom << std::endl;
+      // std::cout << " --> muTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_L_Data_nom << std::endl;
 
       std::vector <double> Eff_L_Data = {
         Eff_L_Data_nom - Eff_L_Data_Err, Eff_L_Data_nom, Eff_L_Data_nom + Eff_L_Data_Err};
@@ -71,12 +71,13 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
 
       // cross trigger
       // mu leg
+
+      // std::cout << " --> muTauTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_l_Data_nom << std::endl;
+
       auto Eff_l_Data_nom = muTauTrgSF.get_EfficiencyData(dau1_pt, dau1_eta);
       auto Eff_l_MC_nom = muTauTrgSF.get_EfficiencyMC(dau1_pt, dau1_eta);
       auto Eff_l_Data_Err = muTauTrgSF.get_EfficiencyDataError(dau1_pt, dau1_eta);
       auto Eff_l_MC_Err = muTauTrgSF.get_EfficiencyMCError(dau1_pt, dau1_eta);
-
-      std::cout << " --> muTauTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_l_Data_nom << std::endl;
 
       std::vector <double> Eff_l_Data = {
         Eff_l_Data_nom - Eff_l_Data_Err, Eff_l_Data_nom, Eff_l_Data_nom + Eff_l_Data_Err};
@@ -87,7 +88,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
       auto Eff_tau_Data = tauTrgSF_mutau.getEfficiencyData(dau2_pt, dau2_decayMode, 0);
       auto Eff_tau_MC = tauTrgSF_mutau.getEfficiencyMC(dau2_pt, dau2_decayMode, 0);
 
-      // std::cout << " --> tauTrgSF_mutau " << Eff_tau_Data << std::endl;
+      std::cout << " --> tauTrgSF_mutau " << Eff_tau_Data << std::endl;
 
       std::vector <double> Eff_Data_mu, Eff_MC_mu;
       for (size_t i = 0; i< Eff_l_Data.size(); i++) {
@@ -171,8 +172,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
       auto Eff_L_Data_Err = eTrgSF.get_EfficiencyDataError(dau1_pt, dau1_eta);
       auto Eff_L_MC_Err = eTrgSF.get_EfficiencyMCError(dau1_pt, dau1_eta);
 
-      std::cout << " --> eTrgSF Data : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_L_Data_nom << std::endl;
-      std::cout << " --> eTrgSF MC : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_L_MC_nom << std::endl;
+      // std::cout << " --> eTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_L_Data_nom << std::endl;
 
       std::vector <double> Eff_L_Data = {
         Eff_L_Data_nom - Eff_L_Data_Err, Eff_L_Data_nom, Eff_L_Data_nom + Eff_L_Data_Err};
@@ -186,7 +186,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
       auto Eff_l_Data_Err = eTauTrgSF.get_EfficiencyDataError(dau1_pt, dau1_eta);
       auto Eff_l_MC_Err = eTauTrgSF.get_EfficiencyMCError(dau1_pt, dau1_eta);
 
-      std::cout << " --> eTauTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_l_Data_nom << std::endl;
+      // std::cout << " --> eTauTrgSF : pt " << dau1_pt << " ; eta " << dau1_eta << " --> " << Eff_l_Data_nom << std::endl;
 
       std::vector <double> Eff_l_Data = {
         Eff_l_Data_nom - Eff_l_Data_Err, Eff_l_Data_nom, Eff_l_Data_nom + Eff_l_Data_Err};
@@ -243,7 +243,6 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
     }
 
     else {
-      std::cout << "eTrgSF" << std::endl;
       double SF = eTrgSF.get_ScaleFactor(dau1_pt, dau1_eta);
       double SF_error = eTrgSF.get_ScaleFactorError(dau1_pt, dau1_eta);
       trigSF_e = {SF - SF_error, SF, SF + SF_error};

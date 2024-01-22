@@ -602,13 +602,18 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         else:               prefix = "post"
                         eTrgSF = "{}/sf_el_2016{}_HLTEle25.root".format(base_cross, prefix); eTrgName = ""; eTrgBool = "true"
                         eTauTrgSF = "{}/sf_el_2017_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true" # using 2017 as dummy
-                        muTrgSF = "{}/data/Muon/Run2016BtoH/Muon_IsoMu24_2016BtoH_eff.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL like here https://github.com/LLRCMS/KLUBAnalysis/blob/74a346c97ad1c9f5027a2c1ead8c18652629522f/test/skimNtuple_HHbtag.cpp#L620C4-L620C4
                         muTauTrgSF = "{}/sf_mu_2016{}_HLTMu20Tau27.root".format(base_cross, prefix); muTauTrgName = ""; muTauTrgBool = "true"
                         if self.ispreVFP:
+                            muTrgSF = "{}/Run2/UL/2016_preVFP/2016_preVFP_trigger/Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_SingleMuonTriggers.root".format(base_mu); 
+                            muTrgName = "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt"; 
+                            muTrgBool = ""
                             tauTrgSF_ditau = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_mutau = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_etau  = "{}/data/2016ULpreVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         else:
+                            muTrgSF = "{}/Run2/UL/2016_postVFP/2016_postVFP_trigger/Efficiencies_muon_generalTracks_Z_Run2016_UL_SingleMuonTriggers.root".format(base_mu); 
+                            muTrgName = "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt"; 
+                            muTrgBool = ""
                             tauTrgSF_ditau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_mutau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_etau  = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
@@ -617,7 +622,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                     elif self.year == 2017:
                         eTrgSF = "{}/sf_el_2017_HLTEle32.root".format(base_cross); eTrgName = ""; eTrgBool = "true"
                         eTauTrgSF = "{}/sf_el_2017_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true"
-                        muTrgSF = "{}/data/Muon/Run2017/Muon_IsoMu24orIsoMu27.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL
+                        muTrgSF = "{}/Run2/UL/2017/2017_trigger/Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root".format(base_mu); muTrgName = "NUM_IsoMu27_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt"; muTrgBool = ""
                         muTauTrgSF = "{}/sf_mu_2017_HLTMu20Tau27.root".format(base_cross); muTauTrgName = ""; muTauTrgBool = "true"
                         tauTrgSF_ditau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_mutau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
@@ -630,8 +635,8 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         eTrgSF = "{}/sf_el_2018_HLTEle32.root".format(base_cross); eTrgName = ""; eTrgBool = "true"
                         # same format
                         eTauTrgSF = "{}/sf_el_2018_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true"
-                        # set of TGraphAsymErrors + etaBinsH -> init_ScaleFactor(file, "ZMass") (absolute eta). Checked, works
-                        muTrgSF = "{}/data/Muon/Run2018/Muon_Run2018_IsoMu24orIsoMu27.root".format(base); muTrgName = "ZMass"; muTrgBool = "" # [FIXME] to be updated to UL
+                        # TH2D x=eta, y=pT -> init_ScaleFactor(file, HistoName) (absolute eta). Checked, works
+                        muTrgSF = "{}/Run2/UL/2018/2018_trigger/Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root".format(base_mu); muTrgName = "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt"; muTrgBool = ""
                         # TH2D x=pT, y=eta -> init_EG_ScaleFactor
                         muTauTrgSF = "{}/sf_mu_2018_HLTMu20Tau27.root".format(base_cross); muTauTrgName = ""; muTauTrgBool = "true"
                         tauTrgSF_ditau = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
