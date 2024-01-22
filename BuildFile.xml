@@ -11,5 +11,8 @@
 <use name="MulticlassInference/MulticlassInference"/>
 <use name="HTT-utilities/LepEffInterface"/>
 <use name="TauAnalysisTools/TauTriggerSFs"/>
+<use name="root"/>
+<use name="rootdataframe"/>
+<use name="rootvecops"/>
 <export><lib name="1"/></export>
 
