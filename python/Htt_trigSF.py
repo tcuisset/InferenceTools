@@ -617,7 +617,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                             tauTrgSF_ditau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_mutau = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                             tauTrgSF_etau  = "{}/data/2016ULpostVFP_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_vbf = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau) # using 2017 as dummy
+                        tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau) # using 2017 as dummy
                         jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau) # using 2017 as dummy
                     elif self.year == 2017:
                         eTrgSF = "{}/sf_el_2017_HLTEle32.root".format(base_cross); eTrgName = ""; eTrgBool = "true"
@@ -627,7 +627,8 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         tauTrgSF_ditau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_mutau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_etau = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_vbf = "{}/data/2017UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # use Legacy file, since Sfs for DiTau OR VBF are not yet available
+                        tauTrgSF_vbf = "{}/data/2017_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         # for vbf using legacy while being computed
                         jetTrgSF_vbf = "{}/data/2017_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                     elif self.year == 2018:
@@ -642,7 +643,8 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         tauTrgSF_ditau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_mutau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         tauTrgSF_etau = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
-                        tauTrgSF_vbf = "{}/data/2018UL_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
+                        # use Legacy file, since Sfs for DiTau OR VBF are not yet available
+                        tauTrgSF_vbf = "{}/data/2018_tauTriggerEff_DeepTau2017v2p1.root".format(base_tau)
                         # for jet using legacy while being computed
                         jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                     else:
