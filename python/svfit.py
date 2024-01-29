@@ -61,8 +61,8 @@ class SVFitProducer(JetLepMetModule):
 
 
 class SVFitRDFProducer(JetLepMetSyst):
-    def __init__(self, isZZAnalysis, *args, **kwargs):
-        self.isZZAnalysis = isZZAnalysis
+    def __init__(self, AnalysisType, *args, **kwargs):
+        self.AnalysisType = AnalysisType
         super(SVFitRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_SVFIT"):
             os.environ["_SVFIT"] = "svfit"
@@ -119,7 +119,16 @@ class SVFitRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        p = "H" if not self.isZZAnalysis else "Z"
+
+        # DEBUG
+        if not self.AnalysisType:
+            p = "H"
+            print(" ### INFO: Running SVFit with default option for HH analysis")
+        else:
+            print(" ### INFO: Running SVFit with AnalysisType = {}".format(self.AnalysisType))
+            if self.AnalysisType == "Zbb_Ztautau" or self.AnalysisType == "Ztautau_Hbb":    p = "Z"
+            elif self.AnalysisType == "Zbb_Htautau":                                        p = "H"
+
         branches = ["%stt_svfit_pt%s"   % (p, self.systs), 
                     "%stt_svfit_eta%s"  % (p, self.systs),
                     "%stt_svfit_phi%s"  % (p, self.systs), 
@@ -149,8 +158,8 @@ def SVFit(**kwargs):
 
 def SVFitRDF(*args, **kwargs):
     # The output of SVFit is not affected by H or Z, but the output features
-    # are called in different ways according to the ZZ or HH analysis
-    isZZAnalysis = kwargs.pop("isZZAnalysis", False)
+    # are called in different ways according to the analysis
+    AnalysisType = kwargs.pop("AnalysisType", False)
 
-    # print("### DEBUG : isZZAnalysis = {}".format(isZZAnalysis))
-    return lambda: SVFitRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)
+    # print("### DEBUG : AnalysisType = {}".format(AnalysisType))
+    return lambda: SVFitRDFProducer(AnalysisType=AnalysisType, *args, **kwargs)

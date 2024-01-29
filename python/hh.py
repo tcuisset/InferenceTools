@@ -140,9 +140,9 @@ class HHProducer(JetLepMetModule):
 
 
 class HHKinFitRDFProducer(JetLepMetSyst):
-    def __init__(self, isZZAnalysis, *args, **kwargs):
+    def __init__(self, AnalysisType, *args, **kwargs):
         self.isMC = kwargs.pop("isMC")
-        self.isZZAnalysis = isZZAnalysis
+        self.AnalysisType = AnalysisType
         super(HHKinFitRDFProducer, self).__init__(isMC=self.isMC, *args, **kwargs)
 
         if not os.getenv("_KINFIT"):
@@ -167,7 +167,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                         Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                         Vfloat jet_resolution, float met_pt, float met_phi,
-                        float met_covXX, float met_covXY, float met_covYY, int target) {
+                        float met_covXX, float met_covXY, float met_covYY, int target1, int target2) {
                     float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
                     if (pairType == 0) {
                         dau1_pt = muon_pt.at(dau1_index);
@@ -220,7 +220,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
                     auto kinFit = HHKinFitInterface(bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv,
                         met_tv, cov, resolution1, resolution2);
-                    kinFit.addHypo(target, target);
+                    kinFit.addHypo(target1, target2);
                     return kinFit.fit();
                 }
             """)
@@ -230,8 +230,17 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         jet_resolution = "jet_pt_resolution"
         if not self.isMC:
             jet_resolution = "Jet_eta"  # placeholder
-        pp = "HH" if not self.isZZAnalysis else "ZZ"
-        target = 125 if not self.isZZAnalysis else 91
+
+        # DEBUG
+        if not self.AnalysisType:
+            pp = "HH"; target1 = 125; target2 = 125
+            print(" ### INFO: Running KinFit with default option for HH analysis")
+        else:
+            print(" ### INFO: Running KinFit with AnalysisType = {}".format(self.AnalysisType))
+            if self.AnalysisType == "Zbb_Ztautau":      pp = "ZZ"; target1 = 91; target2 = 91
+            elif self.AnalysisType == "Zbb_Htautau":    pp = "ZH"; target1 = 91; target2 = 125 # [FIXME] Order to be checked
+            elif self.AnalysisType == "Ztautau_Hbb":    pp = "ZH"; target1 = 125; target2 = 91 # [FIXME] Order to be checked
+
         branches = ["%sKinFit_mass%s" % (pp, self.systs), "%sKinFit_chi2%s" % (pp, self.systs)]
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
@@ -243,17 +252,17 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                 "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
                 "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
                 "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, {7},"
-                "MET{5}_pt{4}, MET{5}_phi{4}, MET_covXX, MET_covXY, MET_covYY, {8})".format(
+                "MET{5}_pt{4}, MET{5}_phi{4}, MET_covXX, MET_covXY, MET_covYY, {8}, {9})".format(
                     self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.met_syst,
-                    self.met_smear_tag, isMC, jet_resolution, target)
+                    self.met_smear_tag, isMC, jet_resolution, target1, target2)
             ).Define("%sKinFit_mass%s" % (pp, self.systs), "hhkinfit_result%s[0]" % self.systs
             ).Define("%sKinFit_chi2%s" % (pp, self.systs), "hhkinfit_result%s[1]" % self.systs)
         return df, branches
 
 
 class HHVarRDFProducer(JetLepMetSyst):
-    def __init__(self, isZZAnalysis, *args, **kwargs):
-        self.isZZAnalysis = isZZAnalysis
+    def __init__(self, AnalysisType, *args, **kwargs):
+        self.AnalysisType = AnalysisType
         super(HHVarRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_HHVAR_%s" % self.systs):
             os.environ["_HHVAR_%s" % self.systs] = "hhvar"
@@ -351,13 +360,23 @@ class HHVarRDFProducer(JetLepMetSyst):
             """ % self.systs)
 
     def run(self, df):
-        p = "H" if not self.isZZAnalysis else "Z"
-        features = ("{0}bb_pt{1},{0}bb_eta{1},{0}bb_phi{1},{0}bb_mass{1},"
-            "{0}tt_pt{1},{0}tt_eta{1},{0}tt_phi{1},{0}tt_mass{1},"
-            "{0}tt_met_pt{1},{0}tt_met_eta{1},{0}tt_met_phi{1},{0}tt_met_mass{1},"
-            "{0}{0}_pt{1},{0}{0}_eta{1},{0}{0}_phi{1},{0}{0}_mass{1},"
-            "{0}{0}_svfit_pt{1},{0}{0}_svfit_eta{1},{0}{0}_svfit_phi{1},{0}{0}_svfit_mass{1},"
-            "VBFjj_mass{1},VBFjj_deltaEta{1},VBFjj_deltaPhi{1}".format(p, self.systs))
+
+        # DEBUG
+        if not self.AnalysisType:
+            p_b = "H"; p_t = "H"; pp = "HH"
+            print(" ### INFO: Running HHVar with default option for HH analysis")
+        else:
+            print(" ### INFO: Running HHVar with AnalysisType = {}".format(self.AnalysisType))
+            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"
+            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"
+            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"
+
+        features = ("{0}bb_pt{3},{0}bb_eta{3},{0}bb_phi{3},{0}bb_mass{3},"
+            "{1}tt_pt{3},{1}tt_eta{3},{1}tt_phi{3},{1}tt_mass{3},"
+            "{1}tt_met_pt{3},{1}tt_met_eta{3},{1}tt_met_phi{3},{1}tt_met_mass{3},"
+            "{2}_pt{3},{2}_eta{3},{2}_phi{3},{2}_mass{3},"
+            "{2}_svfit_pt{3},{2}_svfit_eta{3},{2}_svfit_phi{3},{2}_svfit_mass{3},"
+            "VBFjj_mass{3},VBFjj_deltaEta{3},VBFjj_deltaPhi{3}".format(p_b, p_t, pp, self.systs))
         features = list(features.split(","))
         all_branches = df.GetColumnNames()
         if features[0] in all_branches:
@@ -372,7 +391,7 @@ class HHVarRDFProducer(JetLepMetSyst):
             "MET{5}_pt{4}, MET{5}_phi{4}, "
             "{7}tt_svfit_pt{6}, {7}tt_svfit_eta{6}, {7}tt_svfit_phi{6}, {7}tt_svfit_mass{6})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst,
-                self.met_syst, self.met_smear_tag, self.systs, p)))
+                self.met_syst, self.met_smear_tag, self.systs, p_t)))
 
         for ifeat, feature in enumerate(features):
             df = df.Define(feature, "hhfeatures%s[%s]" % (self.systs, ifeat))
@@ -388,16 +407,16 @@ def HHKinFitRDF(*args, **kwargs):
     # mass hypothesis for the fit: at the moment there is a bug with the hypothesis 
     # To bypass it, it's necessary to manually change mh1 and mh2 values inside 
     # HHKinFit2/HHKinFit2Scenarios/interface/HHKinFitMasterHeavyHiggs.h
-    isZZAnalysis = kwargs.pop("isZZAnalysis", False)
+    AnalysisType = kwargs.pop("AnalysisType", False)
 
-    # print("### DEBUG 1 : isZZAnalysis = {}".format(isZZAnalysis))
-    return lambda: HHKinFitRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)
+    # print("### DEBUG 1 : AnalysisType = {}".format(AnalysisType))
+    return lambda: HHKinFitRDFProducer(AnalysisType=AnalysisType, *args, **kwargs)
 
 
 def HHVarRDF(*args, **kwargs):
     # The output of HHVarRDF is not affected by H or Z, but the output features
     # are called in different ways according to the ZZ or HH analysis
-    isZZAnalysis = kwargs.pop("isZZAnalysis", False)
+    AnalysisType = kwargs.pop("AnalysisType", False)
 
-    # print("### DEBUG 2 : isZZAnalysis = {}".format(isZZAnalysis))
-    return lambda: HHVarRDFProducer(isZZAnalysis=isZZAnalysis, *args, **kwargs)
+    # print("### DEBUG 2 : AnalysisType = {}".format(AnalysisType))
+    return lambda: HHVarRDFProducer(AnalysisType=AnalysisType, *args, **kwargs)
