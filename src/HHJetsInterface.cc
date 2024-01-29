@@ -18,8 +18,8 @@ output HHJetsInterface::GetHHJets(
     unsigned long long int event, int pairType,
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
-    fRVec SubJet_pt, fRVec SubJet_eta, fRVec SubJet_phi, fRVec SubJet_mass,
-    fRVec FatJet_msoftdrop, iRVec FatJet_subJetIdx1, iRVec FatJet_subJetIdx2,
+    fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
+    fRVec FatJet_msoftdrop, fRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
     float met_pt, float met_phi)
@@ -34,11 +34,12 @@ output HHJetsInterface::GetHHJets(
   int vbfjet1_idx = -1;
   int vbfjet2_idx = -1;
   int isBoosted_ = 0;
+  int fatjet_idx = -1;
   std::vector <int> ctjet_indexes, fwjet_indexes;
 
   if (pairType < 0) {
     return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-      ctjet_indexes, fwjet_indexes, isBoosted_});
+      ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});
   }
 
   auto dau1_tlv = TLorentzVector();
@@ -165,37 +166,56 @@ output HHJetsInterface::GetHHJets(
     }
 
     // is the event boosted?
-    // we loop over the fat AK8 jets, apply a mass cut and verify that its subjets match
-    // the jets we selected before.
-    auto bjet1_tlv = TLorentzVector();
-    auto bjet2_tlv = TLorentzVector();
-    bjet1_tlv.SetPtEtaPhiM(Jet_pt[bjet1_idx], Jet_eta[bjet1_idx],
-      Jet_phi[bjet1_idx], Jet_mass[bjet1_idx]);
-    bjet2_tlv.SetPtEtaPhiM(Jet_pt[bjet2_idx], Jet_eta[bjet2_idx],
-      Jet_phi[bjet2_idx], Jet_mass[bjet2_idx]);
-    for (size_t ifatjet = 0; ifatjet < FatJet_msoftdrop.size(); ifatjet++) {
-      if (FatJet_msoftdrop[ifatjet] < 30)
-        continue;
-      if (FatJet_subJetIdx1[ifatjet] == -1 || FatJet_subJetIdx2[ifatjet] == -1)
-        continue;
-      auto subidx1 = FatJet_subJetIdx1[ifatjet];
-      auto subidx2 = FatJet_subJetIdx2[ifatjet];
-      auto subj1_tlv = TLorentzVector();
-      auto subj2_tlv = TLorentzVector();
-      subj1_tlv.SetPtEtaPhiM(SubJet_pt[subidx1], SubJet_eta[subidx1],
-        SubJet_phi[subidx1], SubJet_mass[subidx1]);
-      subj2_tlv.SetPtEtaPhiM(SubJet_pt[subidx2], SubJet_eta[subidx2],
-        SubJet_phi[subidx2], SubJet_mass[subidx2]);
-      if ((fabs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj2_tlv)) > 0.4) &&
-          (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
-        continue;
-      // setBoosted(1);
-      isBoosted_ = 1;
+    // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
+    std::vector <jet_idx_btag> fatjet_indexes;
+    for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
+      auto fatjet_tlv = TLorentzVector();
+      fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
+        FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
+      if (fatjet_tlv.Pt() < 250) continue; 
+      if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
+      if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
+      if (FatJet_msoftdrop.at(ifatjet) < 30) continue;
+      fatjet_indexes.push_back(jet_idx_btag({(int) ifatjet, FatJet_particleNet_XbbVsQCD.at(ifatjet)}));
     }
+    if (fatjet_indexes.size() != 0) {
+      isBoosted_ = 1;
+      std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
+      fatjet_idx = fatjet_indexes[0].idx;
+    }
+
+    // // is the event boosted?
+    // // we loop over the fat AK8 jets, apply a mass cut and verify that its subjets match
+    // // the jets we selected before.
+    // auto bjet1_tlv = TLorentzVector();
+    // auto bjet2_tlv = TLorentzVector();
+    // bjet1_tlv.SetPtEtaPhiM(Jet_pt[bjet1_idx], Jet_eta[bjet1_idx],
+    //   Jet_phi[bjet1_idx], Jet_mass[bjet1_idx]);
+    // bjet2_tlv.SetPtEtaPhiM(Jet_pt[bjet2_idx], Jet_eta[bjet2_idx],
+    //   Jet_phi[bjet2_idx], Jet_mass[bjet2_idx]);
+    // for (size_t ifatjet = 0; ifatjet < FatJet_msoftdrop.size(); ifatjet++) {
+    //   if (FatJet_msoftdrop[ifatjet] < 30)
+    //     continue;
+    //   if (FatJet_subJetIdx1[ifatjet] == -1 || FatJet_subJetIdx2[ifatjet] == -1)
+    //     continue;
+    //   auto subidx1 = FatJet_subJetIdx1[ifatjet];
+    //   auto subidx2 = FatJet_subJetIdx2[ifatjet];
+    //   auto subj1_tlv = TLorentzVector();
+    //   auto subj2_tlv = TLorentzVector();
+    //   subj1_tlv.SetPtEtaPhiM(SubJet_pt[subidx1], SubJet_eta[subidx1],
+    //     SubJet_phi[subidx1], SubJet_mass[subidx1]);
+    //   subj2_tlv.SetPtEtaPhiM(SubJet_pt[subidx2], SubJet_eta[subidx2],
+    //     SubJet_phi[subidx2], SubJet_mass[subidx2]);
+    //   if ((fabs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj2_tlv)) > 0.4) &&
+    //       (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
+    //     continue;
+    //   // setBoosted(1);
+    //   isBoosted_ = 1;
+    // }
 
   }
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-    ctjet_indexes, fwjet_indexes, isBoosted_});
+    ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});
 }
 
 

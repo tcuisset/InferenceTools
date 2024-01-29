@@ -58,6 +58,7 @@ struct output {
   std::vector<int> ctjet_indexes;
   std::vector<int> fwjet_indexes;
   int isBoosted;
+  int fatjet_idx;
 };
 
 
@@ -82,8 +83,8 @@ class HHJetsInterface {
   output GetHHJets(unsigned long long int event, int pairType,
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
-    fRVec SubJet_pt, fRVec SubJet_eta, fRVec SubJet_phi, fRVec SubJet_mass,
-    fRVec FatJet_msoftdrop, iRVec FatJet_subJetIdx1, iRVec FatJet_subJetIdx2,
+    fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
+    fRVec FatJet_msoftdrop, fRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
     float met_pt, float met_phi);
