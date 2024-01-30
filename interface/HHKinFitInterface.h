@@ -53,6 +53,8 @@ class HHKinFitInterface {
 
   private:
     HHKinFit2::HHKinFitMasterHeavyHiggs m_HHKinFit;
+    int m_mh1; // store the values of the hypothesis mass (only one hypo supported) for the call to getMH and getChi2
+    int m_mh2;
 };
 
 #endif // HHKinFitInterface_h
