@@ -238,8 +238,8 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         else:
             print(" ### INFO: Running KinFit with AnalysisType = {}".format(self.AnalysisType))
             if self.AnalysisType == "Zbb_Ztautau":      pp = "ZZ"; target1 = 91; target2 = 91
-            elif self.AnalysisType == "Zbb_Htautau":    pp = "ZH"; target1 = 91; target2 = 125 # [FIXME] Order to be checked
-            elif self.AnalysisType == "Ztautau_Hbb":    pp = "ZH"; target1 = 125; target2 = 91 # [FIXME] Order to be checked
+            elif self.AnalysisType == "Zbb_Htautau":    pp = "ZH"; target1 = 125; target2 = 91 # 1 is tautau, 2 is bb
+            elif self.AnalysisType == "Ztautau_Hbb":    pp = "ZH"; target1 = 91; target2 = 125 
 
         branches = ["%sKinFit_mass%s" % (pp, self.systs), "%sKinFit_chi2%s" % (pp, self.systs)]
         all_branches = df.GetColumnNames()

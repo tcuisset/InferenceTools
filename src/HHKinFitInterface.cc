@@ -14,14 +14,21 @@ HHKinFitInterface::HHKinFitInterface(TLorentzVector const& bjet1,
     double sigmaEbjet2,
     bool istruth, 
     TLorentzVector const&  heavyhiggsgen):
-    m_HHKinFit(bjet1, bjet2, tauvis1, tauvis2, met, met_cov, sigmaEbjet1, sigmaEbjet2, istruth, heavyhiggsgen)
+    m_HHKinFit(bjet1, bjet2, tauvis1, tauvis2, met, met_cov, sigmaEbjet1, sigmaEbjet2, istruth, heavyhiggsgen),
+    m_mh1(0), m_mh2(0)
 {};
 
 // Destructor
 HHKinFitInterface::~HHKinFitInterface() {}
 
 void HHKinFitInterface::addHypo(int mh1, int mh2) {
+  if (m_mh1 != 0 || m_mh2 != 0) {
+    std::cerr << "HHKinFitInterface only supports one mass hypothesis" << std::endl;
+    throw std::runtime_error("HHKinFitInterface only supports one mass hypothesis");
+  }
   m_HHKinFit.addHypo(mh1, mh2);
+  m_mh1 = mh1;
+  m_mh2 = mh2;
   return;
 }
 
@@ -40,7 +47,7 @@ std::vector<double> HHKinFitInterface::fit(){
     good_fit = false;
   }
   
-  if (good_fit) return {m_HHKinFit.getMH(), m_HHKinFit.getChi2()};
+  if (good_fit) return {m_HHKinFit.getMH(m_mh1, m_mh2), m_HHKinFit.getChi2(m_mh1, m_mh2)};
   else return {-999., -999.};
   
 }
