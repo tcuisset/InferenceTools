@@ -598,9 +598,12 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                         jetTrgSF_vbf = "{}/data/2018_VBFHTauTauTrigger_JetLegs.root".format(base_tau)
                 else:
                     if self.year == 2016:
-                        if self.ispreVFP:   prefix = "pre"
-                        else:               prefix = "post"
-                        eTrgSF = "{}/sf_el_2016{}_HLTEle25.root".format(base_cross, prefix); eTrgName = ""; eTrgBool = "true"
+                        if self.ispreVFP:   
+                            prefix = "pre"
+                            eTrgSF = "{}/sf_el_2016{}_HLTEle25.root".format(base_cross, prefix); eTrgName = ""; eTrgBool = "true"
+                        else:               
+                            prefix = "post"
+                            eTrgSF = "{}/sf_el_2016{}_HLTEle25_fix.root".format(base_cross, prefix); eTrgName = ""; eTrgBool = "true"
                         eTauTrgSF = "{}/sf_el_2017_HLTEle24Tau30.root".format(base_cross); eTauTrgName = ""; eTauTrgBool = "true" # using 2017 as dummy
                         muTauTrgSF = "{}/sf_mu_2016{}_HLTMu20Tau27.root".format(base_cross, prefix); muTauTrgName = ""; muTauTrgBool = "true"
                         if self.ispreVFP:
