@@ -159,8 +159,12 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
             ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
-        feat_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2021-11-22-0/" \
-            "features.txt".format(os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        if not self.AnalysisType:
+            feat_file = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/features.txt".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+        else:
+            feat_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/features.txt".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         with open(feat_file) as f:
             self.default_feat = [i.split('\n')[0] for i in f.readlines()]
 
