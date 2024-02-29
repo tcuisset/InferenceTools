@@ -344,7 +344,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
             "Jet_pt{5}, Jet_eta, Jet_phi, Jet_mass{5}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
             "FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, "
-            "FatJet_msoftdrop, FatJet_particleNet_HbbvsQCD, "
+            "FatJet_msoftdrop, FatJet_particleNet_XbbVsQCD, "
             "pairType, dau1_index, dau2_index, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
