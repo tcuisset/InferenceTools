@@ -39,6 +39,13 @@ class DYstitchingProducer(Module):
         self.out.fillBranch("DYstitchWeight", weight)
         return True
 
+def DYstitching(**kwargs):
+    isDY = kwargs.pop("isDY", False)
+    year = kwargs.pop("year")
+    if isDY:
+        return lambda: DYstitchingProducer(year=year, **kwargs)
+    else:
+        return lambda: DummyModule(**kwargs)
 
 class DYstitchingRDFProducer():
     def __init__(self, year, isDY, *args, **kwargs):
@@ -62,20 +69,40 @@ class DYstitchingRDFProducer():
         return df, ["DYstitchWeight"]
 
 
-def DYstitching(**kwargs):
-    isDY = kwargs.pop("isDY", False)
-    year = kwargs.pop("year")
-    if isDY:
-        return lambda: DYstitchingProducer(year=year, **kwargs)
-    else:
-        return lambda: DummyModule(**kwargs)
-
-
 def DYstitchingRDF(*args, **kwargs):
     isDY = kwargs.pop("isDY", False)
     year = kwargs.pop("year")
 
     return lambda: DYstitchingRDFProducer(year=year, isDY=isDY, *args, **kwargs)
+
+class DYstitchingEasyRDFProducer():
+    def __init__(self, isDY, *args, **kwargs):
+        self.isDY = isDY
+        if self.isDY:
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+
+            ROOT.gInterpreter.Declare("""
+                Float_t ComputeEasyDYWeight (Float_t LHE_Vpt) {
+                    float StitchWeight = 1.;
+                    if (LHE_Vpt == 0) { StitchWeight = 0.5; }
+                    else              { StitchWeight = 1./3.; }
+                    return StitchWeight;
+                }
+            """)
+
+    def run(self, df):
+        if self.isDY:
+            df = df.Define("DYstitchEasyWeight",
+                "ComputeEasyDYWeight(LHE_Vpt)")
+        else:
+            df = df.Define("DYstitchEasyWeight", "1")
+        return df, ["DYstitchEasyWeight"]
+
+def DYstitchingEasyRDF(*args, **kwargs):
+    isDY = kwargs.pop("isDY", False)
+
+    return lambda: DYstitchingEasyRDFProducer(isDY=isDY, *args, **kwargs)
 
 
 class DYscalingRDFProducer():
