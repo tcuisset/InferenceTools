@@ -363,20 +363,20 @@ class HHVarRDFProducer(JetLepMetSyst):
 
         # DEBUG
         if not self.AnalysisType:
-            p_b = "H"; p_t = "H"; pp = "HH"
+            p_b = "H"; p_t = "H"; pp = "HH"; p_sv = "H"
             print(" ### INFO: Running HHVar with default option for HH analysis")
         else:
             print(" ### INFO: Running HHVar with AnalysisType = {}".format(self.AnalysisType))
-            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"
-            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"
-            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"
+            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"; p_sv = "X"
+            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
+            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
-        features = ("{0}bb_pt{3},{0}bb_eta{3},{0}bb_phi{3},{0}bb_mass{3},"
-            "{1}tt_pt{3},{1}tt_eta{3},{1}tt_phi{3},{1}tt_mass{3},"
-            "{1}tt_met_pt{3},{1}tt_met_eta{3},{1}tt_met_phi{3},{1}tt_met_mass{3},"
-            "{2}_pt{3},{2}_eta{3},{2}_phi{3},{2}_mass{3},"
-            "{2}_svfit_pt{3},{2}_svfit_eta{3},{2}_svfit_phi{3},{2}_svfit_mass{3},"
-            "VBFjj_mass{3},VBFjj_deltaEta{3},VBFjj_deltaPhi{3}".format(p_b, p_t, pp, self.systs))
+        features = ("{0}bb_pt{4},{0}bb_eta{4},{0}bb_phi{4},{0}bb_mass{4},"
+            "{1}tt_pt{4},{1}tt_eta{4},{1}tt_phi{4},{1}tt_mass{4},"
+            "{1}tt_met_pt{4},{1}tt_met_eta{4},{1}tt_met_phi{4},{1}tt_met_mass{4},"
+            "{2}_pt{4},{2}_eta{4},{2}_phi{4},{2}_mass{4},"
+            "{3}_svfit_pt{4},{3}_svfit_eta{4},{3}_svfit_phi{4},{3}_svfit_mass{4},"
+            "VBFjj_mass{4},VBFjj_deltaEta{4},VBFjj_deltaPhi{4}".format(p_b, p_t, pp, p_sv, self.systs))
         features = list(features.split(","))
         all_branches = df.GetColumnNames()
         if features[0] in all_branches:
@@ -391,7 +391,7 @@ class HHVarRDFProducer(JetLepMetSyst):
             "MET{5}_pt{4}, MET{5}_phi{4}, "
             "{7}tt_svfit_pt{6}, {7}tt_svfit_eta{6}, {7}tt_svfit_phi{6}, {7}tt_svfit_mass{6})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst,
-                self.met_syst, self.met_smear_tag, self.systs, p_t)))
+                self.met_syst, self.met_smear_tag, self.systs, p_sv)))
 
         for ifeat, feature in enumerate(features):
             df = df.Define(feature, "hhfeatures%s[%s]" % (self.systs, ifeat))

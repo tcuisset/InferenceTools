@@ -125,9 +125,10 @@ class SVFitRDFProducer(JetLepMetSyst):
             p = "H"
             print(" ### INFO: Running SVFit with default option for HH analysis")
         else:
-            print(" ### INFO: Running SVFit with AnalysisType = {}".format(self.AnalysisType))
-            if self.AnalysisType == "Zbb_Ztautau" or self.AnalysisType == "Ztautau_Hbb":    p = "Z"
-            elif self.AnalysisType == "Zbb_Htautau":                                        p = "H"
+            p = "X"
+            # print(" ### INFO: Running SVFit with AnalysisType = {}".format(self.AnalysisType))
+            # if self.AnalysisType == "Zbb_Ztautau" or self.AnalysisType == "Ztautau_Hbb":    p = "Z"
+            # elif self.AnalysisType == "Zbb_Htautau":                                        p = "H"
 
         branches = ["%stt_svfit_pt%s"   % (p, self.systs), 
                     "%stt_svfit_eta%s"  % (p, self.systs),

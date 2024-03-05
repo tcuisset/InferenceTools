@@ -322,9 +322,9 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             print(" ### INFO: Running HHDNN with default option for HH analysis")
         else:
             print(" ### INFO: Running HHDNN with AnalysisType = {}".format(self.AnalysisType))
-            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"
-            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"
-            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"
+            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"; p_sv = "X"
+            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
+            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
         
         branches = ["{0}{1}".format(i, self.systs) for i in self.default_feat]
         all_branches = df.GetColumnNames()
@@ -342,7 +342,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             "{8}KinFit_mass{4}, {8}KinFit_chi2{4}, MET{5}_pt{6}, MET{5}_phi{6}, "
             "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag)".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs,
-                self.met_smear_tag, self.met_syst, p_t, pp)
+                self.met_smear_tag, self.met_syst, p_sv, pp)
             )
 
         for ib, branch in enumerate(branches):
@@ -543,9 +543,9 @@ class HHDNNRDFProducer(JetLepMetSyst):
             print(" ### INFO: Running HHDNN with default option for HH analysis")
         else:
             print(" ### INFO: Running HHDNN with AnalysisType = {}".format(self.AnalysisType))
-            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"
-            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"
-            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"
+            if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"; p_sv = "X"
+            elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
+            elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
         branches = ["dnn_%sbbtt_kl_1%s" % (pp, self.systs)]
         all_branches = df.GetColumnNames()
@@ -563,7 +563,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
             "{8}KinFit_mass{4}, {8}KinFit_chi2{4}, MET{5}_pt{6}, MET{5}_phi{6}, "
             "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag)".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs,
-                self.met_smear_tag, self.met_syst, p_t, pp)
+                self.met_smear_tag, self.met_syst, p_sv, pp)
             ).Define(branches[0], "dnn_output%s[0]" % self.systs)
         return df, branches
 
