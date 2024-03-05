@@ -9,11 +9,11 @@ from Base.Modules.baseModules import JetLepMetSyst, JetLepMetModule
 ROOT = import_root()
 
 class HHLeptonProducer(JetLepMetModule):
-    def __init__(self, isMC, year, runPeriod, *args, **kwargs):
+    def __init__(self, isMC, year, runEra, *args, **kwargs):
         super(HHLeptonProducer, self).__init__(*args, **kwargs)
         self.isMC = isMC
         self.year = year
-        self.runPeriod = runPeriod
+        self.runEra = runEra
         self.trigger_checker = TriggerChecker(year)
 
         if self.year == 2016:
@@ -24,7 +24,7 @@ class HHLeptonProducer(JetLepMetModule):
             self.trigger_checker.etau_triggers = ["HLT_Ele25_eta2p1_WPTight_Gsf"]
             self.trigger_checker.etau_crosstriggers = []
             if not self.isMC:
-                if self.runPeriod != "H":
+                if self.runEra != "H":
                     self.trigger_checker.tautau_triggers = [
                         "HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg"]
                 else:
@@ -48,7 +48,7 @@ class HHLeptonProducer(JetLepMetModule):
                 "HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg",
                 "HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg",
                 "HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg"]
-            if self.runPeriod in ["D", "E", "F"] or self.isMC:
+            if self.runEra in ["D", "E", "F"] or self.isMC:
                 self.trigger_checker.vbf_triggers = [
                     "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg"]
             else:
@@ -426,13 +426,13 @@ def HHLeptonVariable(**kwargs):
 
 
 class HHLeptonRDFProducer(JetLepMetSyst):
-    def __init__(self, isMC, year, runPeriod, df_filter, *args, **kwargs):
+    def __init__(self, isMC, year, runEra, pairType_filter, *args, **kwargs):
         super(HHLeptonRDFProducer, self).__init__(isMC=isMC, *args, **kwargs)
         self.isMC = isMC
         self.year = year
-        self.runPeriod = runPeriod
+        self.runEra = runEra
         self.isRun3 = kwargs.pop("isRun3", False)
-        self.df_filter = df_filter
+        self.pairType_filter = pairType_filter
         self.deeptau_version = kwargs.pop("deeptau_version", "2017v2p1")
         self.isV10 = kwargs.pop("isV10", False)
         vvvl_vsjet = kwargs.pop("vvvl_vsjet")
@@ -482,7 +482,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[0], 23, 2.3, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22
                             trigger_reqs.push_back(trig_req({triggers[1], 23, 2.1, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22_eta2p1
@@ -493,19 +493,19 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
-                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC) {
-                                if ((runPeriod >= 2) && (runPeriod <= 7)) {
+                                if ((runEra >= 2) && (runEra <= 7)) {
                                     trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
                                 }
-                                else if (runPeriod == 8) {
+                                else if (runEra == 8) {
                                     trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
                                 }               
                             }
@@ -520,7 +520,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_vbf_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             return trigger_reqs;
                         }
@@ -533,7 +533,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
                             trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
@@ -541,7 +541,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG
                             trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
@@ -550,13 +550,13 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
-                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
                             trigger_reqs.push_back(trig_req({triggers[3], 45, 2.1, 45, 2.1, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
                             trigger_reqs.push_back(trig_req({triggers[4], 45, 2.1, 45, 2.1, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
                             if (!isMC) {
-                                if ((runPeriod >= 4) && (runPeriod <= 6)) {
+                                if ((runEra >= 4) && (runEra <= 6)) {
                                     trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg
                                 }
                             }
@@ -570,7 +570,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_vbf_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             return trigger_reqs;
                         }
@@ -581,7 +581,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}}));
                             trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}}));
@@ -592,7 +592,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}}));
                             trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, {{2}, {}}}));
@@ -603,7 +603,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
-                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
                             trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
@@ -620,7 +620,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_vbf_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC && run < 317509)
                                 trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{64, 4, 8}, {64, 4, 8}}}));
@@ -633,10 +633,10 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
-                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
+                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
+                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
                             if (!isMC && run < 317509) {
                                 trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
                             }
@@ -646,10 +646,10 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
-                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             if (!isMC && run < 317509) {
                                 trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
                             }
@@ -659,7 +659,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
-                                Vbool triggers, bool isMC, bool isRun3, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC && run < 317509) {
                                 trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
@@ -676,7 +676,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_vbf_triggers(
-                                Vbool triggers, bool isMC, int run, int runPeriod) {
+                                Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC && run < 317509)
                                 trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1
@@ -714,25 +714,25 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             if branch not in all_branches:
                 self.vbf_triggers[ib] = "false"
 
-        runPeriods = ["dum", "A", "B", "C", "D", "E", "F", "G", "H"]
-        runPeriod = None
-        for irun, runPeriod in enumerate(runPeriods):
-            if self.runPeriod == runPeriod:
-                runPeriod = irun
+        runEras = ["dum", "A", "B", "C", "D", "E", "F", "G", "H"]
+        runEra = None
+        for _irun, _runEra in enumerate(runEras):
+            if self.runEra == _runEra:
+                runEra = _irun
                 break
-        assert runPeriod != None
+        assert runEra != None
 
         df = df.Define("mutau_triggers", "get_mutau_triggers({%s}, %s, run, %s)" % (
-            ", ".join(self.mutau_triggers), ("true" if self.isMC else "false"), runPeriod))
+            ", ".join(self.mutau_triggers), ("true" if self.isMC else "false"), runEra))
         df = df.Define("etau_triggers", "get_etau_triggers({%s}, %s, run, %s)" % (
-            ", ".join(self.etau_triggers), ("true" if self.isMC else "false"), runPeriod))
+            ", ".join(self.etau_triggers), ("true" if self.isMC else "false"), runEra))
         df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, %s, run, %s)" % (
             ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"),
-            ("true" if self.isRun3 else "false"), runPeriod))
+            ("true" if self.isRun3 else "false"), runEra))
         df = df.Define("tautaujet_triggers", "get_tautaujet_triggers({%s}, %s)" % (
             ", ".join(self.tautaujet_triggers), ("true" if self.isRun3 else "false")))
         df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
-            ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runPeriod))
+            ", ".join(self.vbf_triggers), ("true" if self.isMC else "false"), runEra))
 
         Electron_mvaIso_WP80 = "Electron_mvaIso_WP80"
         if Electron_mvaIso_WP80 not in all_branches:
@@ -768,8 +768,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             df = df.Define(branchName, "hh_lepton_results.%s" % var)
             branches.append(branchName)
 
-        if self.df_filter:
-            df = df.Filter("pairType >= 0", "HHLeptonRDF")
+        if self.pairType_filter:
+            df = df.Filter("pairType >= 0")
 
         return df, branches
         # return df, []
@@ -783,8 +783,8 @@ def HHLeptonRDF(**kwargs):
     Lepton systematics (used for pt and mass variables) can be modified using the parameters from 
     :ref:`BaseModules_JetLepMetSyst`.
 
-    :param runPeriod: run period in caps (data only)
-    :type runPeriod: str
+    :param runEra: run period in caps (data only)
+    :type runEra: str
 
     :param isV10: whether the input sample is from nanoaodV10 (default: ``False``)
     :type isV10: bool
@@ -821,17 +821,18 @@ def HHLeptonRDF(**kwargs):
                 isMC: self.dataset.process.isMC
                 isV10: self.dataset.has_tag("nanoV10")
                 year: self.config.year
-                runPeriod: self.dataset.runPeriod
+                runEra: self.dataset.runEra
+                runEra: self.dataset.runEra
                 vvvl_vsjet: self.config.deeptau.vsjet.VVVLoose
                 vl_vse: self.config.deeptau.vse.VLoose
                 vvl_vse: self.config.deeptau.vse.VVLoose
                 t_vsmu: self.config.deeptau.vsmu.Tight
                 vl_vsmu: self.config.deeptau.vsmu.VLoose
-                filter: True
+                pairType_filter: True
 
     """
-    df_filter = kwargs.pop("filter")
-    return lambda: HHLeptonRDFProducer(df_filter=df_filter, **kwargs)
+    pairType_filter = kwargs.pop("pairType_filter")
+    return lambda: HHLeptonRDFProducer(pairType_filter=pairType_filter, **kwargs)
 
 
 class HHLeptonVarRDFProducer(JetLepMetSyst):
