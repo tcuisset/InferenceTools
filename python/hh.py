@@ -371,12 +371,12 @@ class HHVarRDFProducer(JetLepMetSyst):
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
-        features = ("{0}bb_pt{4},{0}bb_eta{4},{0}bb_phi{4},{0}bb_mass{4},"
-            "{1}tt_pt{4},{1}tt_eta{4},{1}tt_phi{4},{1}tt_mass{4},"
-            "{1}tt_met_pt{4},{1}tt_met_eta{4},{1}tt_met_phi{4},{1}tt_met_mass{4},"
-            "{2}_pt{4},{2}_eta{4},{2}_phi{4},{2}_mass{4},"
-            "{3}_svfit_pt{4},{3}_svfit_eta{4},{3}_svfit_phi{4},{3}_svfit_mass{4},"
-            "VBFjj_mass{4},VBFjj_deltaEta{4},VBFjj_deltaPhi{4}".format(p_b, p_t, pp, p_sv, self.systs))
+        features = ("{0}bb_pt{3},{0}bb_eta{3},{0}bb_phi{3},{0}bb_mass{3},"
+            "{1}tt_pt{3},{1}tt_eta{3},{1}tt_phi{3},{1}tt_mass{3},"
+            "{1}tt_met_pt{3},{1}tt_met_eta{3},{1}tt_met_phi{3},{1}tt_met_mass{3},"
+            "{2}_pt{3},{2}_eta{3},{2}_phi{3},{2}_mass{3},"
+            "{2}_svfit_pt{3},{2}_svfit_eta{3},{2}_svfit_phi{3},{2}_svfit_mass{3},"
+            "VBFjj_mass{3},VBFjj_deltaEta{3},VBFjj_deltaPhi{3}".format(p_b, p_t, pp, self.systs))
         features = list(features.split(","))
         all_branches = df.GetColumnNames()
         if features[0] in all_branches:
