@@ -385,13 +385,16 @@ class HHDNNRDFProducer(JetLepMetSyst):
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Zbb_Ztautau":
                 # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format( # old model
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/".format(
+                # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/".format( # old model 2018
+                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZZbbtt-0/".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Zbb_Htautau": # or self.AnalysisType == "Ztautau_Hbb":
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZbbHtt-0/".format(
+                # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZbbHtt-0/".format( # old model 2018
+                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZbbHtt-0/".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Ztautau_Hbb":
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZttHbb-0/".format(
+                # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZttHbb-0/".format( # old model 2018
+                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZttHbb-0/".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
             ensemble = model_dir + "ensemble"
