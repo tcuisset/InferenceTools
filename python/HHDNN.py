@@ -350,9 +350,17 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
         return df, branches
 
 class HHDNNRDFProducer(JetLepMetSyst):
-    def __init__(self, AnalysisType, *args, **kwargs):
+    def __init__(self, AnalysisType, DNN_res_mass:float, *args, **kwargs):
         year = kwargs.pop("year")
         self.AnalysisType = AnalysisType
+        self.DNN_res_mass = DNN_res_mass
+        self.resonant_dnn = DNN_res_mass >= 0.
+        # For the resonant DNN, we add the resonant mass to the branch name as we want to run different mass points in the same processing
+        # We also add the suffix to the global C++ variable names
+        if self.resonant_dnn:
+            self.resonant_suffix = f"_{self.DNN_res_mass:.0f}"
+        else:
+            self.resonant_suffix = ""
         super(HHDNNRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNDefault"):
@@ -377,8 +385,8 @@ class HHDNNRDFProducer(JetLepMetSyst):
             ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
             ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
-        if not os.getenv("_HHbbttDNN"):
-            os.environ["_HHbbttDNN"] = "HHbbttDNN"
+        if not os.getenv("_HHbbttDNN"+self.resonant_suffix):
+            os.environ["_HHbbttDNN"+self.resonant_suffix] = "HHbbttDNN"+self.resonant_suffix
 
             if not self.AnalysisType:
                 model_dir = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/".format(
@@ -389,13 +397,21 @@ class HHDNNRDFProducer(JetLepMetSyst):
                 model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZZbbtt-0/".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Zbb_Htautau": # or self.AnalysisType == "Ztautau_Hbb":
-                # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZbbHtt-0/".format( # old model 2018
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZbbHtt-0/".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                if self.resonant_dnn:
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ResZbbHtt-0/".format(
+                        os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                else:
+                    # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZbbHtt-0/".format( # old model 2018
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZbbHtt-0/".format(
+                        os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Ztautau_Hbb":
-                # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZttHbb-0/".format( # old model 2018
-                model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZttHbb-0/".format(
-                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                if self.resonant_dnn:
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ResZttHbb-0/".format(
+                        os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                else:
+                    # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZttHbb-0/".format( # old model 2018
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ZttHbb-0/".format(
+                        os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 
             ensemble = model_dir + "ensemble"
             features = model_dir + "features.txt"
@@ -408,12 +424,12 @@ class HHDNNRDFProducer(JetLepMetSyst):
             model_dir = kwargs.pop("model_dir", ensemble)
 
             ROOT.gInterpreter.Declare("""
-                auto hhdnn = HHDNNinterface("%s", {%s}, {1.}, %s);
-            """ % (model_dir, req_features, year))
+                auto hhdnn%s = HHDNNinterface("%s", {%s}, {1.}, %s);
+            """ % (self.resonant_suffix, model_dir, req_features, year))
 
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
-                ROOT::RVec<Float_t> get_dnn_outputs(int pairType, int isBoosted, int event,
+                ROOT::RVec<Float_t> get_dnn_outputs%s(int pairType, int isBoosted, int event,
                     int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
                     int vbfjet1_index, int vbfjet2_index,
                     Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
@@ -423,7 +439,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
                     float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
                     float HHKinFit_mass, float HHKinFit_chi2, float met_pt, float met_phi,
                     Vfloat Jet_btagDeepFlavB, Vfloat Jet_btagDeepFlavCvL, Vfloat Jet_btagDeepFlavCvB,
-                    Vfloat Jet_HHbtag
+                    Vfloat Jet_HHbtag, float DNN_res_mass
                 )
                 {
                     float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
@@ -527,16 +543,16 @@ class HHDNNRDFProducer(JetLepMetSyst):
                         HHbtag_vbf2 = Jet_HHbtag.at(vbfjet2_index);
                     }
 
-                    return hhdnn.GetPredictionsWithInputs(
+                    return hhdnn%s.GetPredictionsWithInputs(
                       channel, isBoosted, nvbf, event,
                       bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv, 
                       vbfjet1_tlv, vbfjet2_tlv, met_tlv, htt_svfit_tlv, 
                       HHKinFit_mass, HHKinFit_chi2, (HHKinFit_chi2 >= 0), (htt_sv_mass >= 0), MT2,
                       deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
                       CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2,
-                      HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2);
+                      HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2, DNN_res_mass);
                 }
-            """)
+            """ % (self.resonant_suffix, self.resonant_suffix))
 
     def run(self, df):
 
@@ -549,13 +565,13 @@ class HHDNNRDFProducer(JetLepMetSyst):
             if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"; p_sv = "X"
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
-
-        branches = ["dnn_%sbbtt_kl_1%s" % (pp, self.systs)]
+        
+        branches = ["dnn_%sbbtt_kl_1%s%s" % (pp, self.resonant_suffix, self.systs)]
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
             return df, []
 
-        df = df.Define("dnn_output%s" % self.systs, "get_dnn_outputs("
+        df = df.Define("dnn_output%s%s" % (self.resonant_suffix, self.systs), "get_dnn_outputs{10}("
             "pairType, isBoosted, event, "
             "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0},"
@@ -564,10 +580,10 @@ class HHDNNRDFProducer(JetLepMetSyst):
             "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
             "{7}tt_svfit_pt{4}, {7}tt_svfit_eta{4}, {7}tt_svfit_phi{4}, {7}tt_svfit_mass{4}, "
             "{8}KinFit_mass{4}, {8}KinFit_chi2{4}, MET{5}_pt{6}, MET{5}_phi{6}, "
-            "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag)".format(
+            "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag, {9})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs,
-                self.met_smear_tag, self.met_syst, p_sv, pp)
-            ).Define(branches[0], "dnn_output%s[0]" % self.systs)
+                self.met_smear_tag, self.met_syst, p_sv, pp, self.DNN_res_mass, self.resonant_suffix)
+            ).Define(branches[0], "dnn_output%s%s[0]" % (self.resonant_suffix, self.systs))
         return df, branches
 
 def HHDNNInputRDF(**kwargs):
@@ -602,6 +618,9 @@ def HHDNNRDF(**kwargs):
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
 
+    Parameter DNN_res_mass : set to -1 for non-resonant DNN. set to a positive mass value, to use parametrized resonant DNN.
+    The mass is encoded into the output branch name.
+
     YAML sintaxis:
 
     .. code-block:: yaml
@@ -613,10 +632,11 @@ def HHDNNRDF(**kwargs):
                 isMC: self.dataset.process.isMC
                 year: self.config.year
                 AnalysisType: self.config.get_aux('AnalysisType', False)
+                DNN_res_mass: -1
 
     """
     AnalysisType = kwargs.pop("AnalysisType", False)
 
     # print("### DEBUG 2 : AnalysisType = {}".format(AnalysisType))
-    return lambda: HHDNNRDFProducer(AnalysisType=AnalysisType, **kwargs)
+    return lambda: HHDNNRDFProducer(AnalysisType=AnalysisType, DNN_res_mass=kwargs.pop("DNN_res_mass", -1.), **kwargs)
 

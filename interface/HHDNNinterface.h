@@ -60,7 +60,7 @@ class HHDNNinterface {
       float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
       float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
       float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
-      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2);
+      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2, float DNN_res_mass=-1.);
 
 
     std::vector<float> GetPredictions();
@@ -79,7 +79,7 @@ class HHDNNinterface {
       float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
       float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
       float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
-      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2);
+      float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2, float DNN_res_mass=-1.); // DNN_res_mass is only needed for resonant parametrized DNN
 
   private:
     InfWrapper wrapper_;

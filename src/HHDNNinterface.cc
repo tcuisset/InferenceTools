@@ -35,12 +35,18 @@ void HHDNNinterface::SetEventInputs(int channel, int is_boosted, int nvbf, unsig
   float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
   float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
   float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
-  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2)
+  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2, float DNN_res_mass)
 {
   DNN_e_channel_    = (Channel) channel;
   DNN_is_boosted_   = is_boosted;
   DNN_n_vbf_        = nvbf;
   DNN_evt_          = eventn;
+  /* To avoid changing anything for non-resonant, I set DNN_res_mass_=125 for the non-resonant case. I don't think it makes any difference,
+  but just to be sure */
+  if (DNN_res_mass < 0.)
+    DNN_res_mass_ = 125.;
+  else
+    DNN_res_mass_ = DNN_res_mass;
 
   // Taus
   DNN_l_1_.SetCoordinates(l1.Px(), l1.Py(), l1.Pz(), l1.M());
@@ -177,7 +183,7 @@ std::vector<float> HHDNNinterface::GetPredictionsWithInputs(
   float KinFitMass, float KinFitChi2, bool KinFitConv, bool SVfitConv, float MT2,
   float deepFlav1, float deepFlav2, float CvsL_b1, float CvsL_b2, float CvsL_vbf1, float CvsL_vbf2,
   float CvsB_b1, float CvsB_b2, float CvsB_vbf1, float CvsB_vbf2,
-  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2)
+  float HHbtag_b1, float HHbtag_b2, float HHbtag_vbf1, float HHbtag_vbf2, float DNN_res_mass)
 {
   SetEventInputs(channel, is_boosted, nvbf, eventn,
     b1, b2, l1, l2, 
@@ -185,6 +191,6 @@ std::vector<float> HHDNNinterface::GetPredictionsWithInputs(
     KinFitMass, KinFitChi2, KinFitConv, SVfitConv, MT2,
     deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
     CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2,
-    HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2);
+    HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2, DNN_res_mass);
   return GetPredictions();
 }
