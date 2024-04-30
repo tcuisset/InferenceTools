@@ -393,7 +393,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Zbb_Ztautau":
                 if self.resonant_dnn:
-                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ResZZbbtt-0/".format(
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-04-29/ResZZbbtt-0/".format(
                         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 else:
                     # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2023-08-02-0/".format( # old model
@@ -402,7 +402,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
                         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Zbb_Htautau": # or self.AnalysisType == "Ztautau_Hbb":
                 if self.resonant_dnn:
-                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ResZbbHtt-0/".format(
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-04-29/ResZbbHtt-0/".format(
                         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 else:
                     # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZbbHtt-0/".format( # old model 2018
@@ -410,7 +410,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
                         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             elif self.AnalysisType == "Ztautau_Hbb":
                 if self.resonant_dnn:
-                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-03-26/ResZttHbb-0/".format(
+                    model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-04-29/ResZttHbb-0/".format(
                         os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 else:
                     # model_dir = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZttHbb-0/".format( # old model 2018
