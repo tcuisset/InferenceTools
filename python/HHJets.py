@@ -242,7 +242,7 @@ def HHJets(**kwargs):
 
 
 class HHJetsRDFProducer(JetLepMetSyst):
-    def __init__(self, df_filter, *args, **kwargs):
+    def __init__(self, df_filter, model_version, *args, **kwargs):
         isUL = "true" if kwargs.pop("isUL") else "false"
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
 
@@ -251,7 +251,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         self.year = kwargs.pop("year")
         base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        models = [base_hhbtag + "/models/HHbtag_v1_par_%i" % i for i in range(2)]
+        models = [base_hhbtag + f"/models/HHbtag_v{model_version}_par_{i}" for i in range(2)]
 
         if not os.getenv("_HHJets"):
             os.environ["_HHJets"] = "_HHJets"
@@ -385,6 +385,8 @@ def HHJetsRDF(**kwargs):
     :param filter: whether to filter out output events if they don't have 2 bjet candidates
     :type filter: bool
 
+    :param model_version: version of the model to use. Can be 1 (pre-UL) or 2 (UL)
+
     YAML sintaxis:
 
     .. code-block:: yaml
@@ -400,4 +402,5 @@ def HHJetsRDF(**kwargs):
 
     """
     df_filter = kwargs.pop("filter")
-    return lambda: HHJetsRDFProducer(df_filter=df_filter, **kwargs)
+    model_version = kwargs.pop("model_version", "1")
+    return lambda: HHJetsRDFProducer(df_filter=df_filter, model_version=model_version, **kwargs)
