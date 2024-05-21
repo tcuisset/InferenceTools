@@ -769,7 +769,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             branches.append(branchName)
 
         if self.pairType_filter:
-            df = df.Filter("pairType >= 0")
+            df = df.Filter("pairType >= 0", "HHLeptonRDF")
 
         return df, branches
         # return df, []
