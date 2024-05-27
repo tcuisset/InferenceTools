@@ -444,8 +444,15 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
 
+        # DOCUMENTATION
+        # The list of triggers here is checked against the list of branches in NanoAOD, non-existent ones are replaced by false.
+        # A "Vbool triggers" array is built with the HLT_* trigger paths and passed to get_*tau_triggers functions
+        # Then a trig_req object is built. pass = HLT_* branch (or false in case it does not exist). 
+        # struct trig_req {bool pass; float pt1; float eta1; float pt2; float eta2; std::vector<std::vector<int>> bits; };
+        # the values here are used to make cuts on *offline* objects, nb1 is electron/muon/hadTau, nb2 is hadTau
+
         self.mutau_triggers = ["HLT_IsoMu22", "HLT_IsoMu22_eta2p1",
-            "HLT_IsoTkMu22", "HLT_IsoTkMu22_eta2p1", "HLT_IsoMu24", "HLT_IsoMu27",
+            "HLT_IsoTkMu24", "HLT_IsoTkMu22_eta2p1", "HLT_IsoMu24", "HLT_IsoMu27",
             "HLT_IsoMu19_eta2p1_LooseIsoPFTau20", "HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1",
             "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1",
             "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1"]
@@ -484,10 +491,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[0], 23, 2.3, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22
-                            trigger_reqs.push_back(trig_req({triggers[1], 23, 2.1, 20, 2.3, {{2}, {}}})); // HLT_IsoMu22_eta2p1
-                            trigger_reqs.push_back(trig_req({triggers[2], 23, 2.3, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu22
-                            trigger_reqs.push_back(trig_req({triggers[3], 23, 2.1, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu22_eta2p1
+                            // https://twiki.cern.ch/twiki/bin/view/CMS/MuonHLT2016
+                            // 2016 is special for trigger : see https://github.com/cms-sw/cmssw/blob/0ec1f22895570d81284e01d8189d86d5622e52ca/PhysicsTools/NanoAOD/python/triggerObjects_cff.py#L267
+                            // Trig filterBits : 2 is Iso, 8 is IsoTkMu
+                            trigger_reqs.push_back(trig_req({triggers[2], 26, 2.4, 20, 2.3, {{2}, {}}})); // HLT_IsoMu24
+                            trigger_reqs.push_back(trig_req({triggers[8], 26, 2.4, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu24
                             trigger_reqs.push_back(trig_req({triggers[6], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20
                             trigger_reqs.push_back(trig_req({triggers[7], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
                             return trigger_reqs;
@@ -535,8 +543,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
-                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.3, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
+                            // trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24 prescaled in 2017 -> do not use (we don't have SFs)
+                            trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
                             trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
                             return trigger_reqs;
                         }
@@ -635,13 +643,13 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24
-                            trigger_reqs.push_back(trig_req({triggers[5], 28, 2.1, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
+                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24 (not prescaled for 2018)
+                            // trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27 -> not to be used for 2018
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[8], 21, 2.3, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[9], 21, 2.1, 32, 2.1, {{4}, {1, 32}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[9], 21, 2.3, 32, 2.1, {{4}, {1, 32}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
                             }
                             return trigger_reqs;
                         }
