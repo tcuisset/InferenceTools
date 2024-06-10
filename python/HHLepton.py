@@ -494,32 +494,38 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // https://twiki.cern.ch/twiki/bin/view/CMS/MuonHLT2016
                             // 2016 is special for trigger : see https://github.com/cms-sw/cmssw/blob/0ec1f22895570d81284e01d8189d86d5622e52ca/PhysicsTools/NanoAOD/python/triggerObjects_cff.py#L267
                             // Trig filterBits : 2 is Iso, 8 is IsoTkMu
-                            trigger_reqs.push_back(trig_req({triggers[2], 26, 2.4, 20, 2.3, {{2}, {}}})); // HLT_IsoMu24
-                            trigger_reqs.push_back(trig_req({triggers[8], 26, 2.4, 20, 2.3, {{8}, {}}})); // HLT_IsoTkMu24
-                            trigger_reqs.push_back(trig_req({triggers[6], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20
-                            trigger_reqs.push_back(trig_req({triggers[7], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
+                            trigger_reqs.push_back(trig_req({triggers[2], 26, 2.4, 0, 0, 24, 0, {{2}, {}}})); // HLT_IsoMu24
+                            trigger_reqs.push_back(trig_req({triggers[8], 26, 2.4, 0, 0, 24, 0, {{8}, {}}})); // HLT_IsoTkMu24
+                            // https://twiki.cern.ch/twiki/bin/view/CMS/TauTrigger
+                            // For filter bits, TWiki seems wrong : says filterBits&32 but this bit does not exist 
+                            // We use 2 (Iso hltL3cr*IsoFiltered0p09) & 4 (OverlapFilter PFTau *OverlapFilter*IsoMu*PFTau*)
+                            // trigger_reqs.push_back(trig_req({triggers[6], 20, 2.1, 25, 2.1, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20 : not sure what it is, but not in list of recommended triggers by tau pog
+                            trigger_reqs.push_back(trig_req({triggers[7], 21, 2.1, 25, 2.1, 19, 0, {{2, 4}, {1, 32}}})); // HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf
+                            // Bit 1 (->2^1=2) is 1e (WPTight).
+                            // eta is 2.1 (pre-pixel upgrade for 2016)
+                            trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 0, 0, 25, 0, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf (from EG twiki : unprescaled but L1 turn on limited, still can be used)
+                            // no cross (?), we have no SFs for them anyway
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
                                 Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC) {
-                                if ((runEra >= 2) && (runEra <= 7)) {
-                                    trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
+                                if ((runEra >= 2) && (runEra <= 7)) { // B to G inclusive (tau twiki says F but is wrong)
+                                    trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
                                 }
-                                else if (runEra == 8) {
-                                    trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
+                                else if (runEra == 8) { // H
+                                    trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
                                 }               
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
-                                trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
+                                // trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg (data only)
                             }
                             return trigger_reqs;
                         }
@@ -543,34 +549,43 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            // trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24 prescaled in 2017 -> do not use (we don't have SFs)
-                            trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27
-                            trigger_reqs.push_back(trig_req({triggers[8], 21, 2.1, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+                            // trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, 24, 0, {{2, 8}, {}}})); // HLT_IsoMu24 prescaled in 2017 -> do not use (we don't have SFs)
+                            trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 0, 0, 27, 0, {{2, 8}, {}}})); // HLT_IsoMu27
+                            // No doc on this trigger in Tau twiki
+                            // Filter bits muon leg : 4 : Iso (not sure if needed but does not hurt), 64 : 1mu-1tau
+                            // Tau leg : bit 0 (-> 1) : LooseChargedIso, bit 9 (->512) : mu-tau
+                            trigger_reqs.push_back(trig_req({triggers[8], 22, 2.1, 32, 2.1, 20, 27, {{4, 64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
-                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
-                            trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                            // 2017 is special for EG (new pixels) -> big mess (https://twiki.cern.ch/twiki/bin/view/CMS/EgHLTRunIISummary and https://twiki.cern.ch/twiki/bin/view/CMS/Egamma2017DataRecommendations#Single_Electron_Triggers )
+                            // Our SFs are for Ele32 & use the special emulation of HLT_Ele32_WPTight_Gsf for data runs where this does not exist (see twiki)
+                            // bits : hltEle32L1DoubleEGWPTightGsfTrackIsoFilter -> bit 1 in Nano -> filter 2 =(2^1)
+                            // hltEGL1SingleEGOrFilter -> bit 10  in Nano -> filter 1024
+                            trigger_reqs.push_back(trig_req({triggers[1], 33, 2.5, 20, 2.3, 32, 0, {{2, 1024}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG with bits for HLT_Ele32_WPTight_Gsf emulation
+                            // trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf 
+                            // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, 35, 0, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            // Filter bits are difference nanoV9 vs v12
+                            // Tau leg : bit 0 (->1) : LooseChargedIso, bit 8 (->256) ditau
+                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
                                 Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
-                            trigger_reqs.push_back(trig_req({triggers[3], 45, 2.1, 45, 2.1, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
-                            trigger_reqs.push_back(trig_req({triggers[4], 45, 2.1, 45, 2.1, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
-                            if (!isMC) {
-                                if ((runEra >= 4) && (runEra <= 6)) {
-                                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg
-                                }
-                            }
-                            else {
-                                    trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg
-                            }
+                            // Tau POG doc for ditau : 
+                            // TrigObj_id == 15 && (TrigObj_filterBits&64)!=0 && (
+                            //        ( (TrigObj_filterBits&4)!=0 && (TrigObj_filterBits&16)!=0 ) ||
+                            //        ( TrigObj_pt > 40 && ( (TrigObj_filterBits&2)!=0 && (TrigObj_filterBits&16)!=0 ) 
+                            //    || (TrigObj_filterBits&4)!=0 ) ) 
+                            // Summary : (4&16&64) || (2&16&64&Trig_pt>40) || (4&64)
+                            // Filter bits :; 1(->2):MediumChargedIso, 2(->4):TightChargedIso, 4(->16):TightID OOSC photons (*TightOOSCPhotons*), 6(->64):charged iso di-tau (hlt*DoublePFTau*TrackPt1*ChargedIsolation*Dz02*)
+                            trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, 0, 0, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
+                            // the offline req is indeed 40 GeV according to tau pog twiki, + need to put online 40 GeV req.
+                            trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, 40, 40, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
+                            trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, 0, 0, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
@@ -643,39 +658,55 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu24 (not prescaled for 2018)
-                            // trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, {{2, 8}, {}}})); // HLT_IsoMu27 -> not to be used for 2018
+                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, 24, 0, {{2, 8}, {}}})); // HLT_IsoMu24 (not prescaled for 2018)
+                            // trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, 27, 0, {{2, 8}, {}}})); // HLT_IsoMu27 -> not to be used for 2018
+                            // https://twiki.cern.ch/twiki/bin/view/CMS/TauTrigger
+                            // The TWiki suggests using HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1 rather than HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1 but our SFs are presumably for the latter (trigger used for gamma gamma ->tautau)
+                            // Muon filter bits : 2(->4): *OverlapFilterIsoMu*PFTau*, 6(->64): hlt*OverlapFilterIsoMu*PFTau* (the 2 seem identical ?)
+                            // Tau filter bits : 0(->1): LooseChargedIso, 5(->32): *Hps*, 9(->512): hlt*OverlapFilterIsoMu*PFTau* (mutau)
+                            // Requiring HPS is not in  Tau POG wiki and probably is not needed as all paths matching hlt*OverlapFilterIsoMu*PFTau* are HPS when that is available
+                            // Requiring LooseChargedIso is also not in Tau POG twiki
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[8], 21, 2.3, 32, 2.1, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[8], 22, 2.1, 32, 2.1, 0, 27, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[9], 21, 2.3, 32, 2.1, {{4}, {1, 32}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
+                                // used to be {1, 32} for tau leg which is wrong I think ? that would require every tau LooseIso HPS trigger
+                                trigger_reqs.push_back(trig_req({triggers[9], 22, 2.1, 32, 2.1, 0, 27, {{64}, {1, 512}}})); // HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
                             }
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
-                            trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.5, 20, 2.3, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
+                            // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
+                            // gg->tautau analysis does OR with HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_TightID_CrossL1 but extremly few events pass this and not our trigger (<0.01% in ttbar)
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, {{8}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{8}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
                             }
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
                                 Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
+                            // Tau POG doc for ditau : (same as 2017)
+                            // TrigObj_id == 15 && (TrigObj_filterBits&64)!=0 && (
+                            //        ( (TrigObj_filterBits&4)!=0 && (TrigObj_filterBits&16)!=0 ) ||
+                            //        ( TrigObj_pt > 40 && ( (TrigObj_filterBits&2)!=0 && (TrigObj_filterBits&16)!=0 ) 
+                            //    || (TrigObj_filterBits&4)!=0 ) ) 
+                            // Summary : (4&16&64) || (2&16&64&Trig_pt>40) || (4&64)
+                            // Filter bits : 1(->2):MediumChargedIso, 2(->4):TightChargedIso, 4(->16):TightID OOSC photons (*TightOOSCPhotons*), 6(->64):charged iso di-tau (hlt*DoublePFTau*TrackPt1*ChargedIsolation*Dz02*)
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
-                                trigger_reqs.push_back(trig_req({triggers[3], 45, 2.1, 45, 2.1, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
-                                trigger_reqs.push_back(trig_req({triggers[4], 45, 2.1, 45, 2.1, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[2], 40, 2.1, 40, 2.1, 0, 0, {{4, 16, 64}, {4, 16, 64}}})); // HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
+                                // the offline req is indeed 40 GeV according to tau pog twiki, + need to put online 40 GeV req.
+                                trigger_reqs.push_back(trig_req({triggers[3], 40, 2.1, 40, 2.1, 40, 40, {{2, 16, 64}, {2, 16, 64}}})); // HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[4], 40, 2.1, 40, 2.1, 0, 0, {{4, 64}, {4, 64}}})); // HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, {{64}, {64}}})); // HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
+                                trigger_reqs.push_back(trig_req({triggers[5], 40, 2.1, 40, 2.1, 0, 0, {{64}, {64}}})); // HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
                             }
                             return trigger_reqs;
                         }
@@ -686,10 +717,10 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_vbf_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            if (!isMC && run < 317509)
-                                trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1
-                            else
-                                trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{1, 32}, {1, 32}}})); // HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1
+                            // if (!isMC && run < 317509)
+                            //     trigger_reqs.push_back(trig_req({triggers[1], 25, 2.1, 25, 2.1, {{1}, {1}}})); // HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1
+                            // else
+                            //     trigger_reqs.push_back(trig_req({triggers[2], 25, 2.1, 25, 2.1, {{1, 32}, {1, 32}}})); // HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1
                             return trigger_reqs;
                         }
                     """)
@@ -762,7 +793,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "Tau_idDeepTau{6}VSmu, Tau_idDeepTau{6}VSe, "
             "Tau_idDeepTau{6}VSjet, Tau_rawDeepTau{6}VSjet, "
             "Tau_dz, Tau_decayMode, Tau_charge, "
-            "TrigObj_id, TrigObj_filterBits, TrigObj_eta, TrigObj_phi, "
+            "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
             "mutau_triggers, etau_triggers, tautau_triggers, tautaujet_triggers, vbf_triggers"
         ")".format(self.muon_syst, self.electron_syst, self.tau_syst,
             Electron_mvaIso_WP80, Electron_mvaNoIso_WP90, Electron_mvaIso_WP90,

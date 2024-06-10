@@ -528,16 +528,17 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
         self.ispreVFP = kwargs.pop("ispreVFP")
         super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
 
+        # Thresholds to determine which trigger fired (cross or single lepton) 
         if self.year == 2016:
-            mutau_pt_th1 = 23.
-            mutau_pt_th2 = 25.
-            etau_pt_th1 = -1.
+            mutau_pt_th1 = 23. #singleMuon trigger threshold (used with offline). 
+            mutau_pt_th2 = 25. #cross mutau trigger tau leg threshold (used with offline)
+            etau_pt_th1 = -1. # no cross etau trigger for 2016
             etau_pt_th2 = -1.
         elif self.year in [2017, 2018]:
-            mutau_pt_th1 = 25.
+            mutau_pt_th1 = 25. 
             mutau_pt_th2 = 32.
             etau_pt_th1 = 33.
-            etau_pt_th2 = 35.
+            etau_pt_th2 = 35. # cross etau trigger tau leg threshold (offline)
 
         if self.isMC:
 
@@ -558,6 +559,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 base_mu = "{}/{}/src/HTT-utilities/MuPogSF_UL".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                # SFs from gammagamma->tautau analysis (Cecile Caillol), same as HH->bbtt resonant. Includes singleElectron and cross-e, cross-mu trigger SFs
                 base_cross = "{}/{}/src/HTT-utilities/trigSFs_UL_eleMu".format(
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
 

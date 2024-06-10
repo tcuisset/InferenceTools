@@ -35,12 +35,14 @@ struct tau_pair {
 };
 
 struct trig_req {
-  bool pass;
-  float pt1;
-  float eta1;
-  float pt2;
-  float eta2;
-  std::vector<std::vector<int>> bits;  
+  bool pass; // enable trigger
+  float pt1_offline; // min offline pt of first leg (ele/mu/tauh)
+  float eta1_offline; // max offline eta of first leg
+  float pt2_offline; // min offline pt of second leg (hadronic tau)
+  float eta2_offline; // max offline eta of second leg
+  float pt1_online; // min TrigObj_pt of first leg
+  float pt2_online; // min TrigObj_pt of second leg
+  std::vector<std::vector<int>> bits; // List of trigger bits to match, for each trigger leg (put expanded powers of 2, ie 1, 2, 4, 8, etc).
 };
 
 struct lepton_output {
@@ -115,7 +117,7 @@ class HHLeptonInterface {
       iRVec Tau_idDeepTauVSmu, iRVec Tau_idDeepTauVSe,
       iRVec Tau_idDeepTauVSjet, fRVec Tau_rawDeepTauVSjet,
       fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
-      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
       std::vector<trig_req> tautau_triggers, std::vector<trig_req> tautaujet_triggers, 
       std::vector<trig_req> vbf_triggers
@@ -132,10 +134,10 @@ class HHLeptonInterface {
       float off_pt1, float off_eta1, float off_phi1, int obj_id1,
       float off_pt2, float off_eta2, float off_phi2, int obj_id2,
       std::vector<trig_req> triggers, 
-      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi);
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi);
     
-    bool match_trigger_object(float off_eta, float off_phi, int obj_id,
-      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_eta, fRVec TrigObj_phi,
+    bool match_trigger_object(float off_eta, float off_phi, int obj_id, float trig_pt_threshold,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<int> bits);
 
   private:
