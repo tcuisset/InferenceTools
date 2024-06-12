@@ -118,7 +118,7 @@ output HHJetsInterface::GetHHJets(
       bjet1_idx = bjet2_idx;
       bjet2_idx = aux;
     }
-
+    /* // Disable VBF
     if (all_jet_indexes.size() >= 4) { // 2 bjets + 2 vbf jets
       std::vector <jet_pair_mass> vbfjet_indexes;
       for (size_t ijet = 0; ijet < all_jet_indexes.size(); ijet++) {
@@ -152,7 +152,8 @@ output HHJetsInterface::GetHHJets(
           vbfjet2_idx = aux;
         }
       }
-    }
+    }*/
+
 
     // additional central and forward jets
     for (auto & ijet : all_jet_indexes) {
@@ -163,25 +164,6 @@ output HHJetsInterface::GetHHJets(
         ctjet_indexes.push_back(ijet);
       else if (fabs(Jet_eta[ijet]) < 4.7 && Jet_pt[ijet] > 30)
         fwjet_indexes.push_back(ijet);
-    }
-
-    // is the event boosted?
-    // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
-    std::vector <jet_idx_btag> fatjet_indexes;
-    for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
-      auto fatjet_tlv = TLorentzVector();
-      fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
-        FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
-      if (fatjet_tlv.Pt() < 250) continue; 
-      if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
-      if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
-      if (FatJet_msoftdrop.at(ifatjet) < 30) continue;
-      fatjet_indexes.push_back(jet_idx_btag({(int) ifatjet, FatJet_particleNet_XbbVsQCD.at(ifatjet)}));
-    }
-    if (fatjet_indexes.size() != 0) {
-      isBoosted_ = 1;
-      std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
-      fatjet_idx = fatjet_indexes[0].idx;
     }
 
     // // is the event boosted?
@@ -213,6 +195,26 @@ output HHJetsInterface::GetHHJets(
     //   isBoosted_ = 1;
     // }
 
+  } // jet_indexes.size() >= 2
+  
+  // is the event boosted?
+  // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
+  std::vector <jet_idx_btag> fatjet_indexes;
+  for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
+    auto fatjet_tlv = TLorentzVector();
+    fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
+      FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
+    if (fatjet_tlv.Pt() < 250) continue; 
+    if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
+    if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
+    if (FatJet_msoftdrop.at(ifatjet) < 30) continue;
+    fatjet_indexes.push_back(jet_idx_btag({(int) ifatjet, FatJet_particleNet_XbbVsQCD.at(ifatjet)}));
+  }
+  
+  if (fatjet_indexes.size() != 0) {
+    isBoosted_ = 1;
+    std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
+    fatjet_idx = fatjet_indexes[0].idx;
   }
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
     ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});

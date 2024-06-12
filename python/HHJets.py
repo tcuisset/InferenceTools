@@ -377,7 +377,9 @@ def HHJetsRDF(**kwargs):
     """
     Returns the HHbtag output, the indexes from the 2 bjets and 2 vbfjets (if existing),
     the indexes of the additional central and forward jets (if existing) and if the
-    event has a boosted topology.
+    event has a boosted topology (ie it has an AK8 FatJet passing DeltaR, softdrop, pt requirements).
+    Note that an event can have isBoosted=True yet still be considered as resolved if it also has 2 AK4 jets incl. one passing b-tag WP.
+    The actual split between boosted and resolved (with priority to resolved) is done in Category selection
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
