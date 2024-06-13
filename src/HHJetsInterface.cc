@@ -94,7 +94,7 @@ output HHJetsInterface::GetHHJets(
     else if (pairType == 1)
       HHbtag_channel_ = 0;
     else if (pairType == 2)
-      HHbtag_channel_ = 1;
+      HHbtag_channel_ = 2; // updated, used to be 1!
 
     auto HHbtag_scores = HHbtagger_.GetScore(HHbtag_jet_pt_, HHbtag_jet_eta_,
       HHbtag_rel_jet_M_pt_, HHbtag_rel_jet_E_pt_, HHbtag_jet_htt_deta_,
