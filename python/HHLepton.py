@@ -509,7 +509,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // Bit 1 (->2^1=2) is 1e (WPTight).
                             // eta is 2.1 (pre-pixel upgrade for 2016)
                             trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 0, 0, 25, 0, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf (from EG twiki : unprescaled but L1 turn on limited, still can be used)
-                            // no cross (?), we have no SFs for them anyway
+                            // no cross (single ele has similar pt threshold)
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(

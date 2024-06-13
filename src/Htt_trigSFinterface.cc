@@ -55,6 +55,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
     if (fabs(dau2_eta) < 2.1) {
       int passSingle = (dau1_pt > mutau_pt_th1_) ? 1 : 0;
       int passCross = (dau2_pt > mutau_pt_th2_) ? 1 : 0;
+      assert(passSingle || passCross);
 
       // lepton trigger
       auto Eff_L_Data_nom = muTrgSF.get_EfficiencyData(dau1_pt, dau1_eta);
@@ -149,9 +150,13 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
 
     trigSF_single = muTrgSF.get_ScaleFactor(dau1_pt, dau1_eta);
 
+    //      'trigSF',   'trigSF_single', 'trigSF_cross', 'trigSF_muUp trigSF_muDown trigSF_eleUp
     return {trigSF_mu[1], trigSF_single, trigSF_cross, trigSF_mu[2], trigSF_mu[0], trigSF_mu[1],
+    //trigSF_eleDown trigSF_DM0Up    trigSF_DM1Up     trigSF_DM10Up    trigSF_DM11Up
       trigSF_mu[1], trigSF_tauup[0], trigSF_tauup[1], trigSF_tauup[2], trigSF_tauup[3],
+    //trigSF_DM0Down     trigSF_DM1Down     trigSF_DM10Down    trigSF_DM11Down
       trigSF_taudown[0], trigSF_taudown[1], trigSF_taudown[2], trigSF_taudown[3],
+    //trigSF_vbfjetUp trigSF_vbfjetDown
       trigSF_mu[1], trigSF_mu[1]};
 
   }
@@ -165,6 +170,7 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
     if (fabs(dau2_eta) < 2.1 && year_ != 2016) {
       int passSingle = (dau1_pt > etau_pt_th1_) ? 1 : 0;
       int passCross = (dau2_pt > etau_pt_th2_) ? 1 : 0;
+      assert(passSingle || passCross);
 
       // lepton trigger
       auto Eff_L_Data_nom = eTrgSF.get_EfficiencyData(dau1_pt, dau1_eta);
