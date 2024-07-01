@@ -36,7 +36,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                         self.branch_templates.append(tmp)
                 except ValueError:
                     raise ValueError("Systematic %s not available" % name)
-                
+            
             if len(kwargs) > 0:
                 print(f"### WARNING : dauIdIsoSFRDFProducer : remaining kwargs were not used : {kwargs}")
             
@@ -48,27 +48,33 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                             int pairType, int dau1_index, int dau2_index, Vfloat Tau_pt,
                             Vfloat musf_id, Vfloat musf_reliso, Vfloat elesf_reco, Vfloat elesf_idiso, 
                             Vfloat Tau_sfDeepTau2017v2p1VSjet_pt, Vfloat Tau_sfDeepTau2017v2p1VSjet_dm,
-                            Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu) {
+                            Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu_tautau, Vfloat Tau_sfDeepTau2017v2p1VSmu_lepton) {
+                        // We use separate VSmu WPs for tautau channel and for etau/mutau channel
                         double idAndIsoSF_leg1 = 1.;
                         if (pairType == 0) {
                             idAndIsoSF_leg1 = musf_id.at(dau1_index) * musf_reliso.at(dau1_index);
                         } else if (pairType == 1) {
                             idAndIsoSF_leg1 = elesf_reco.at(dau1_index) * elesf_idiso.at(dau1_index);
                         } else if (pairType == 2) {
-                            if (Tau_pt[dau1_index] < 40)
+                            if (Tau_pt[dau1_index] > 140)
                                 idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau1_index);
                             else idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau1_index);
 
                             idAndIsoSF_leg1 *= Tau_sfDeepTau2017v2p1VSe.at(dau1_index) *
-                                Tau_sfDeepTau2017v2p1VSmu.at(dau1_index);
+                                Tau_sfDeepTau2017v2p1VSmu_tautau.at(dau1_index);
                         }
                         double idAndIsoSF_leg2 = 1.;
-                        if (pairType == 2 && Tau_pt[dau1_index] > 40)
-                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
-                        else
+                        if (Tau_pt[dau2_index] > 140)
                             idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau2_index);
-                        idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index) *
-                            Tau_sfDeepTau2017v2p1VSmu.at(dau2_index);
+                        else
+                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
+                        
+                        if (pairType == 2)
+                            idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_tautau.at(dau2_index);
+                        else
+                            idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_lepton.at(dau2_index);
+    
+                        idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index);
                         return idAndIsoSF_leg1 * idAndIsoSF_leg2;
                     }
                 """)
@@ -85,7 +91,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                     "elesf_RecoAbove20{1[2]}, elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
                     "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[4]}, "
                     "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[5]},"
-                    "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[6]})".format(self.tau_syst, branch_template))
+                    "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[6]}, Tau_sfDeepTau2017v2p1VSmu_Tight{1[6]})".format(self.tau_syst, branch_template))
             branches.append("idAndIsoAndFakeSF%s" % branch_name)
 
         return df, branches
