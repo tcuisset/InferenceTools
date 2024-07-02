@@ -110,7 +110,8 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   std::vector<int> goodelectrons;
   for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
     if (!Electron_mvaFall17V2Iso_WP80[iele]
-        || fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2)
+        || fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2
+        || (fabs(Electron_eta[iele]) > 1.44 && fabs(Electron_eta[iele]) < 1.57)) // exclude barrel/endcap transition region (no SFs available for EGamma)
       continue;
     goodelectrons.push_back(iele);
   }  // loop over electrons
