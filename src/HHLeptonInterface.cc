@@ -35,7 +35,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   // mutau channel
   std::vector<int> goodmuons;
   for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
-    if (fabs(Muon_eta[imuon]) > 2.1 || Muon_pfRelIso04_all[imuon] > 0.15
+    if (fabs(Muon_eta[imuon]) > 2.4 || Muon_pfRelIso04_all[imuon] > 0.15
         || fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2
         || !Muon_tightId[imuon])
       continue;
