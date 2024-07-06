@@ -37,6 +37,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                 except ValueError:
                     raise ValueError("Systematic %s not available" % name)
             
+            kwargs.pop("year", None)
             if len(kwargs) > 0:
                 print(f"### WARNING : dauIdIsoSFRDFProducer : remaining kwargs were not used : {kwargs}")
             
