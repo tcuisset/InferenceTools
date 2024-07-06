@@ -427,7 +427,7 @@ def HHLeptonVariable(**kwargs):
 
 class HHLeptonRDFProducer(JetLepMetSyst):
     def __init__(self, isMC, year, runEra, pairType_filter, *args, **kwargs):
-        super(HHLeptonRDFProducer, self).__init__(isMC=isMC, *args, **kwargs)
+        super(HHLeptonRDFProducer, self).__init__(isMC=isMC, year=year, *args, **kwargs)
         self.isMC = isMC
         self.year = year
         self.runEra = runEra

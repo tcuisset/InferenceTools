@@ -522,11 +522,12 @@ def Htt_trigSF(**kwargs):
 
 class Htt_trigSFRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
+        super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
         self.isMC = kwargs["isMC"]
         self.year = kwargs.pop("year")
         self.isUL = kwargs.pop("isUL")
         self.ispreVFP = kwargs.pop("ispreVFP")
-        super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
+        
 
         # Thresholds to determine which trigger fired (cross or single lepton) 
         if self.year == 2016:
