@@ -269,14 +269,15 @@ class HHVarRDFProducer(JetLepMetSyst):
             ROOT.gInterpreter.Declare("""
                 #include <TLorentzVector.h>
                 using Vfloat = const ROOT::RVec<float>&;
-                ROOT::RVec<double> get_hh_features%s(int pairType,
-                        int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
+                ROOT::RVec<double> get_hh_features%s(int pairType, int isBoosted,
+                        int dau1_index, int dau2_index, int bjet1_index, int bjet2_index, int fatjet_index,
                         int vbfjet1_index, int vbfjet2_index,
                         Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
                         Vfloat electron_pt, Vfloat electron_eta,
                         Vfloat electron_phi, Vfloat electron_mass,
                         Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                        Vfloat fatjet_pt, Vfloat fatjet_eta, Vfloat fatjet_phi, Vfloat fatjet_mass,
                         float met_pt, float met_phi,
                         double Htt_svfit_pt, double Htt_svfit_eta,
                         double Htt_svfit_phi, double Htt_svfit_mass) {
@@ -303,19 +304,28 @@ class HHVarRDFProducer(JetLepMetSyst):
                     dau2_phi = tau_phi.at(dau2_index);
                     dau2_mass = tau_mass.at(dau2_index);
 
-                    auto bjet1_tlv = TLorentzVector();
-                    auto bjet2_tlv = TLorentzVector();
                     auto dau1_tlv = TLorentzVector();
                     auto dau2_tlv = TLorentzVector();
 
                     dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
                     dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
                     auto htt_tlv = dau1_tlv + dau2_tlv;
-                    bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                        jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                    bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                        jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
-                    auto hbb_tlv = bjet1_tlv + bjet2_tlv;
+                    
+                    
+                    auto hbb_tlv = TLorentzVector();
+                    if (!isBoosted) {
+                        auto bjet1_tlv = TLorentzVector();
+                        auto bjet2_tlv = TLorentzVector();
+                        bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
+                            jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
+                        bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
+                            jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+                        hbb_tlv = bjet1_tlv + bjet2_tlv;
+                    }
+                    else {
+                        hbb_tlv.SetPtEtaPhiM(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
+                            fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
+                    }
                     auto hh_tlv = htt_tlv + hbb_tlv;
 
                     auto met_tlv = TLorentzVector();
@@ -382,12 +392,13 @@ class HHVarRDFProducer(JetLepMetSyst):
         if features[0] in all_branches:
             return df, []
 
-        df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{6}(pairType, "
-            "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
+        df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{6}(pairType, isBoosted, "
+            "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
             "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
             "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
             "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
+            "FatJet_pt{3}, FatJet_eta, FatJet_phi, FatJet_mass{3}, "
             "MET{5}_pt{4}, MET{5}_phi{4}, "
             "{7}tt_svfit_pt{6}, {7}tt_svfit_eta{6}, {7}tt_svfit_phi{6}, {7}tt_svfit_mass{6})".format(
                 self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst,
@@ -414,6 +425,9 @@ def HHKinFitRDF(*args, **kwargs):
 
 
 def HHVarRDF(*args, **kwargs):
+    """ Computes variables relating to H/Z and to HH/ZZ/ZH (pt, eta, mass, phi) 
+    For bb, for non-boosted sums the 2 AK4 jets 4-vectors. For boosted uses the AK8 jet directly
+    """
     # The output of HHVarRDF is not affected by H or Z, but the output features
     # are called in different ways according to the ZZ or HH analysis
     AnalysisType = kwargs.pop("AnalysisType", False)

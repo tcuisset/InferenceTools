@@ -1,8 +1,8 @@
 #include "Tools/Tools/interface/HHJetsInterface.h"
 
 // Constructor
-HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL):
-  HHbtagger_(std::array<std::string, 2> { {model_0, model_1} })
+HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp):
+  HHbtagger_(std::array<std::string, 2> { {model_0, model_1} }), btag_wp_(btag_wp)
 {
   year_ = year;
   if (isUL) max_bjet_eta = 2.5;
@@ -197,7 +197,7 @@ output HHJetsInterface::GetHHJets(
 
   } // jet_indexes.size() >= 2
   
-  // is the event boosted?
+  // Looking for AK8 jets for boosted
   // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
   std::vector <jet_idx_btag> fatjet_indexes;
   for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
@@ -212,9 +212,13 @@ output HHJetsInterface::GetHHJets(
   }
   
   if (fatjet_indexes.size() != 0) {
-    isBoosted_ = 1;
+    
     std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
     fatjet_idx = fatjet_indexes[0].idx;
+    // Check if the event is not resolved
+    if (!(bjet1_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_))) {
+      isBoosted_ = 1;
+    }
   }
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
     ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});

@@ -275,9 +275,9 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
-            ROOT.gInterpreter.Declare("""
-                auto HHJets = HHJetsInterface("%s", "%s", %s, %s);
-            """ % (models[0], models[1], int(self.year), isUL))
+            ROOT.gInterpreter.Declare(f"""
+                auto HHJets = HHJetsInterface("{models[0]}", "{models[1]}", {int(self.year)}, {isUL}, {kwargs["btag_wp"]});
+            """)
 
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<float>&;
@@ -376,8 +376,9 @@ def HHJetsRDF(**kwargs):
     Returns the HHbtag output, the indexes from the 2 bjets and 2 vbfjets (if existing),
     the indexes of the additional central and forward jets (if existing) and if the
     event has a boosted topology (ie it has an AK8 FatJet passing DeltaR, softdrop, pt requirements).
-    Note that an event can have isBoosted=True yet still be considered as resolved if it also has 2 AK4 jets incl. one passing b-tag WP.
-    The actual split between boosted and resolved (with priority to resolved) is done in Category selection
+     - bjet_idx1 & bjet_idx2 will be filled in case there are at least 2 AK4 jets passing selections (no cut on btag)
+     - fatjet_idx will be filled in case there is an AK8 passing selection (even if event is resolved)
+     - isBoosted = 1 if there is an AK4 jet && event not in res1b|res2b (either <2 AK4 jets or >=2 AK4 but none pass Medium btag WP)
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
@@ -386,6 +387,9 @@ def HHJetsRDF(**kwargs):
     :type filter: bool
 
     :param model_version: version of the model to use. Can be 1 (pre-UL) or 2 (UL)
+
+    :param btag_wp: working point of Jet_btagDeepFlavB to use. Events with 2 AK4 jets incl. at least one passing this WP will be resolved. 
+      Otherwise, if an AK8 jet passes selection it will be boosted
 
     YAML sintaxis:
 
@@ -399,6 +403,7 @@ def HHJetsRDF(**kwargs):
                 isMC: self.dataset.process.isMC
                 isUL: self.dataset.has_tag('ul')
                 filter: True
+                btag_wp: self.config.btag.medium
 
     """
     df_filter = kwargs.pop("filter")
