@@ -340,18 +340,16 @@ class HHJetsRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        df = df.Define("HHJets", "get_hh_jets(event, "
-            "Jet_pt{5}, Jet_eta, Jet_phi, Jet_mass{5}, "
+        df = df.Define("HHJets", f"get_hh_jets(event, "
+            f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
-            "FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, "
+            f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
             "FatJet_msoftdrop, FatJet_particleNet_XbbVsQCD, "
             "pairType, dau1_index, dau2_index, "
-            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "MET{4}_pt{3}, MET{4}_phi{3})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
-                self.met_smear_tag, self.jet_syst))
+            f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
+            f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
+            f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, "
+            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst})")
 
         df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
         df = df.Define("bjet1_JetIdx", "HHJets.bjet_idx1")
