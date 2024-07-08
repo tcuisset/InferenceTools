@@ -909,20 +909,19 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = "dau1_pt{0}, dau1_mass{0}, dau2_pt{0}, dau2_mass{0}".format(self.lep_syst)
-        branches = branches.split(", ")
+        branches = [f"dau1_pt{self.lep_syst}", f"dau1_mass{self.lep_syst}", f"dau2_pt{self.tau_syst}", f"dau2_mass{self.tau_syst}"]
 
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
             return df, []
 
-        df = df.Define("lepton_values%s" % self.lep_syst, "get_lepton_values("
+        df = df.Define(f"lepton_values{self.lep_syst}{self.tau_syst}", "get_lepton_values("
             "pairType, dau1_index, dau2_index, "
             "Muon_pt{0}, Muon_mass{0}, Electron_pt{1}, Electron_mass{1}, "
             "Tau_pt{2}, Tau_mass{2})".format(self.muon_syst, self.electron_syst, self.tau_syst))
 
         for ib, branch in enumerate(branches):
-            df = df.Define(branch, "lepton_values%s[%s]" % (self.lep_syst, ib))
+            df = df.Define(branch, f"lepton_values{self.lep_syst}{self.tau_syst}[{ib}]")
 
         return df, branches
 

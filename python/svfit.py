@@ -140,12 +140,10 @@ class SVFitRDFProducer(JetLepMetSyst):
 
         df = df.Define("svfit_result%s" % self.systs,
             "compute_svfit(pairType, dau1_index, dau2_index, "
-                "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-                "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-                "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, Tau_decayMode, "
-                "MET{4}_pt{3}, MET{4}_phi{3}, MET_covXX, MET_covXY, MET_covYY)".format(
-                    self.muon_syst, self.electron_syst, self.tau_syst, self.met_syst,
-                    self.met_smear_tag)).Define(
+                f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
+                f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
+                f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, Tau_decayMode, "
+                f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY)").Define(
             "%stt_svfit_pt%s" % (p, self.systs), "svfit_result%s[0]" % self.systs).Define(
             "%stt_svfit_eta%s" % (p, self.systs), "svfit_result%s[1]" % self.systs).Define(
             "%stt_svfit_phi%s" % (p, self.systs), "svfit_result%s[2]" % self.systs).Define(
