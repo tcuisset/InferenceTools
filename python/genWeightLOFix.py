@@ -18,7 +18,7 @@ class GenWeightLOFixRDFProducer():
         else:
             df = df.Define("genWeightFixed", "genWeight")
 
-        return df, []
+        return df, ["genWeightFixed"]
 
 def GenWeightLOFixRDF(*args, **kwargs):
     setGenWeightToOne = kwargs.pop("setGenWeightToOne", False)

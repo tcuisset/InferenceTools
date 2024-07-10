@@ -133,7 +133,6 @@ def HH(**kwargs):
 
 class HHDNNInputRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
-        year = kwargs.pop("year")
         self.AnalysisType = AnalysisType
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
@@ -185,7 +184,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
             ROOT.gInterpreter.Declare("""
                 auto hhdnnInput = HHDNNinterface("%s", {%s}, {1.}, %s);
-            """ % (model_dir, req_features, year))
+            """ % (model_dir, req_features, self.year))
 
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
@@ -351,7 +350,6 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
 class HHDNNRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, DNN_res_mass:float, *args, **kwargs):
-        year = kwargs.pop("year")
         self.AnalysisType = AnalysisType
         self.DNN_res_mass = DNN_res_mass
         self.resonant_dnn = DNN_res_mass >= 0.
@@ -429,7 +427,7 @@ class HHDNNRDFProducer(JetLepMetSyst):
 
             ROOT.gInterpreter.Declare("""
                 auto hhdnn%s = HHDNNinterface("%s", {%s}, {1.}, %s);
-            """ % (self.resonant_suffix, model_dir, req_features, year))
+            """ % (self.resonant_suffix, model_dir, req_features, self.year))
 
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
