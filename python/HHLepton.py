@@ -909,7 +909,7 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        branches = [f"dau1_pt{self.lep_syst}", f"dau1_mass{self.lep_syst}", f"dau2_pt{self.tau_syst}", f"dau2_mass{self.tau_syst}"]
+        branches = [f"dau1_pt{self.lep_syst}", f"dau1_mass{self.lep_syst}", f"dau2_pt{self.lep_syst}", f"dau2_mass{self.lep_syst}"]
 
         all_branches = df.GetColumnNames()
         if branches[0] in all_branches:
@@ -932,6 +932,8 @@ def HHLeptonVarRDF(**kwargs):
 
     Lepton systematics (used for pt and mass variables) can be modified using the parameters from 
     :ref:`BaseModules_JetLepMetSyst`.
+
+    Output branches: dau1/2_pt/mass_{lep_syst}
 
     Required RDFModules: :ref:`HHLepton_HHLeptonRDF`.
 
