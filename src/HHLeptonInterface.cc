@@ -81,7 +81,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
       } // loop over goodtaus
     } // loop over goodmuons
     if (tau_pairs.size() > 0) {
-      std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSort);
+      std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSortHybrid);
 
       if (lepton_veto(tau_pairs[0].index1, -1,
           Muon_pt, Muon_eta, Muon_dz, Muon_dxy,
@@ -156,7 +156,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
       } // loop over goodtaus
     } // loop over goodelectrons
     if (tau_pairs.size() > 0) {
-      std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSort);
+      std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSortHybrid);
 
       if (lepton_veto(-1, tau_pairs[0].index1,
           Muon_pt, Muon_eta, Muon_dz, Muon_dxy,

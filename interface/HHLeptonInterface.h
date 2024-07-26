@@ -69,12 +69,46 @@ struct lepton_output {
     int dau2_idDeepTauVSjet;
 };
 
+// return true if pA > pB using the sorting criteria. For tautau (symmetrical)
 bool pairSort (const tau_pair& pA, const tau_pair& pB)
 {
   // first leg 1 iso
   float isoA = pA.iso1;
   float isoB = pB.iso1;
   if (isoA > isoB) return true; // NB: MVA iso ! Most iso --> highest MVA score
+  else if (isoA < isoB) return false;
+
+  // then leg 1 pt
+  float ptA = pA.pt1;
+  float ptB = pB.pt1;
+  if (ptA > ptB) return true;
+  else if (ptA < ptB) return false;
+
+  // then leg 2 iso
+  isoA = pA.iso2;
+  isoB = pB.iso2;
+  if (isoA > isoB) return true;
+  else if (isoA < isoB) return false;
+
+  // then leg 2 pt
+  ptA = pA.pt2;
+  ptB = pB.pt2;
+  if (ptA > ptB) return true;
+  else if (ptA < ptB) return false;
+
+  // should be never here..
+  return false;
+}
+
+// pairSorting for Lep+Tauh:
+//  - lepton leg: lower score --> more isolated
+//  - tauh leg: higher score --> more isolated
+// Sorting strategy: iso leg1 -> pT leg1 -> iso leg2 -> pT leg2
+bool pairSortHybrid (const tau_pair& pA, const tau_pair& pB)
+{
+  float isoA = pA.iso1;
+  float isoB = pB.iso1;
+  if (isoA < isoB) return true;
   else if (isoA < isoB) return false;
 
   // then leg 1 pt
