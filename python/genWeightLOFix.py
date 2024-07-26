@@ -9,10 +9,14 @@ ROOT = import_root()
 
 
 class GenWeightLOFixRDFProducer():
-    def __init__(self, setGenWeightToOne):
+    def __init__(self, setGenWeightToOne, isMC):
         self.setGenWeightToOne = setGenWeightToOne
+        self.isMC = isMC
 
     def run(self, df):
+        if not self.isMC:
+            return df, []
+        
         if self.setGenWeightToOne:
             df = df.Define("genWeightFixed", "1")
         else:
@@ -22,5 +26,6 @@ class GenWeightLOFixRDFProducer():
 
 def GenWeightLOFixRDF(*args, **kwargs):
     setGenWeightToOne = kwargs.pop("setGenWeightToOne", False)
+    isMC = kwargs.pop("isMC")
 
-    return lambda: GenWeightLOFixRDFProducer(setGenWeightToOne=setGenWeightToOne)
+    return lambda: GenWeightLOFixRDFProducer(setGenWeightToOne=setGenWeightToOne, isMC=isMC)
