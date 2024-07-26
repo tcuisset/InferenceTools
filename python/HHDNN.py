@@ -2,7 +2,7 @@ import os
 from array import array
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection, Object
-from analysis_tools.utils import import_root
+from analysis_tools.utils import import_root, randomize
 from Base.Modules.baseModules import JetLepMetModule, JetLepMetSyst
 
 ROOT = import_root()
@@ -136,86 +136,60 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
         self.AnalysisType = AnalysisType
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
-        if not os.getenv("_HHbbttDNNDefault"):
-            os.environ["_HHbbttDNNDefault"] = "HHbbttDNNDefault"
-
-            if os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc10":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                    "external/eigen/d812f411c3f9-cms/include/")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc10/"
-                    "external/tensorflow/2.5.0/include/")
-            elif os.path.expandvars("$CMT_SCRAM_ARCH") == "slc7_amd64_gcc820":
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/eigen/d812f411c3f9-bcolbf/include/eigen3")
-                ROOT.gROOT.ProcessLine(".include /cvmfs/cms.cern.ch/slc7_amd64_gcc820/"
-                    "external/tensorflow/2.1.0-bcolbf/include")
-            else:
-                raise ValueError("Architecture not considered")
-
+        if not os.getenv("_HHbbttDNNInterface"):
+            os.environ["_HHbbttDNNInterface"] = "_HHbbttDNNInterface"
             base = "{}/{}/src/Tools/Tools".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             ROOT.gSystem.Load("libToolsTools.so")
-            ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterface.h".format(base))
-            ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
+            ROOT.gROOT.ProcessLine(".L {}/interface/HHDNNinterfaceNew.h".format(base))
+            # ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
         if not self.AnalysisType:
-            feat_file = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/features.txt".format(
+            feature_file = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/features.txt".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         else:
-            feat_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/features.txt".format(
+            feature_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/features.txt".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        with open(feat_file) as f:
-            self.default_feat = [i.split('\n')[0] for i in f.readlines()]
-
-        model_dir = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/".format(
-            os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        ensemble = model_dir + "ensemble"
-        features = model_dir + "features.txt"
-
-        feature_file = kwargs.pop("feature_file", features)
+        feature_file = kwargs.pop("feature_file", feature_file)
         with open(feature_file) as f:
-            lines = f.readlines()
-        req_features = ', '.join(['"%s"' % line.strip() for line in lines])
+            self.features = [i.split('\n')[0] for i in f.readlines()]
 
-        model_dir = kwargs.pop("model_dir", ensemble)
+        makeStr = lambda l: (", ".join([str(x) for x in l]))
+        btag_wps = makeStr([0., kwargs["btag_wps"]["loose"], kwargs["btag_wps"]["medium"], kwargs["btag_wps"]["tight"]])
+        cvl_wps = makeStr([0., kwargs["cvl_wps"]["loose"], kwargs["cvl_wps"]["medium"], kwargs["cvl_wps"]["tight"]])
+        cvb_wps = makeStr([0.4,0.29,0.05,0.]) # hardcoded to the values used for Run2 legacy. The new WPs for cVSb don't have increasing thresholds so cannot be used with the current setup
+        # UL 2018 DeepFlavour WPs for example : loose 0.246, medium 0.325, tight 0.267 (they are used in conjunction with cvsl), see https://indico.cern.ch/event/967689/contributions/4083041/attachments/2130779/3592013/CTagger_WP_UltraLegacy2018_DeepCSV_DeepJet.pdf
 
-        if not os.getenv("_HHbbttDNNInput"):
-            os.environ["_HHbbttDNNInput"] = "HHbbttDNNInput"
+        self.variable_dnnInput = "hhdnninterface_" + "__".join(self.features)
 
+        if not os.getenv("_HHbbttDNNInterface_" + self.variable_dnnInput):
+            os.environ["_HHbbttDNNInterface_" + self.variable_dnnInput] = "_HHbbttDNNInterface_" + self.variable_dnnInput
             ROOT.gInterpreter.Declare("""
-                auto hhdnnInput = HHDNNinterface("%s", {%s}, {1.}, %s);
-            """ % (model_dir, req_features, self.year))
-
+                auto %s = HHDNNinterfaceNew(%s, {%s}, {%s}, {%s});
+            """ % (self.variable_dnnInput, self.year, btag_wps, cvl_wps, cvb_wps))
+            # // ROOT::RVec<Float_t> const hhdnn_placeholder(%s, -1.); // vector to be used when we cannot compute the DNN inputs (boosted case)
+            
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
-                ROOT::RVec<Float_t> get_dnn_inputs(int pairType, int isBoosted, int event,
+                HHDNNinterfaceNew get_dnn_inputs_%s(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, ULong64_t event,
                     int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
-                    int vbfjet1_index, int vbfjet2_index,
+                    int fatjet_index, int vbfjet1_index, int vbfjet2_index,
                     Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
                     Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
                     Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
                     Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                    Vfloat fatjet_pt, Vfloat fatjet_eta, Vfloat fatjet_phi, Vfloat fatjet_mass, Vfloat fatjet_msoftdrop,
                     float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
                     float HHKinFit_mass, float HHKinFit_chi2, float met_pt, float met_phi,
                     Vfloat Jet_btagDeepFlavB, Vfloat Jet_btagDeepFlavCvL, Vfloat Jet_btagDeepFlavCvB,
                     Vfloat Jet_HHbtag
                 )
-                {
+                {          
+                    using LVector = ROOT::Math::PtEtaPhiMVector;
                     float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
 
-                    // pairType | Our Def. | DNN
-                    // ------------------------
-                    // mutau   |    0     |  1
-                    // etau    |    1     |  2
-                    // tautau  |    2     |  0
-
-                    int channel;
-                    if(pairType == 0)
-                        channel = 1;
-                    else if (pairType == 1)
-                        channel = 2;
-                    else
-                        channel = 0;
+                    dnnInt.pairType = pairType;
+                    dnnInt.isBoosted = isBoosted;
 
                     if (pairType == 0) {
                         dau1_pt = muon_pt.at(dau1_index);
@@ -238,41 +212,65 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
                     dau2_phi = tau_phi.at(dau2_index);
                     dau2_mass = tau_mass.at(dau2_index);
 
-                    auto dau1_tlv = TLorentzVector();
-                    auto dau2_tlv = TLorentzVector();
-                    auto bjet1_tlv = TLorentzVector();
-                    auto bjet2_tlv = TLorentzVector();
-                    auto vbfjet1_tlv = TLorentzVector();
-                    auto vbfjet2_tlv = TLorentzVector();
+                    dnnInt.l1 = LVector(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
+                    dnnInt.l2 = LVector(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
 
-                    dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
-                    dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
-                    bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                        jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                    bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                        jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+                    dnnInt.SVfitConv = htt_sv_mass >= 0;
+                    
+                    dnnInt.met.SetPxPyPzE(met_pt * cos(met_phi), met_pt * sin(met_phi), 0, met_pt);
 
-                    int nvbf = 0;
-                    if (vbfjet1_index >= 0) {
-                        vbfjet1_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet1_index), jet_eta.at(vbfjet1_index),
-                            jet_phi.at(vbfjet1_index), jet_mass.at(vbfjet1_index));
-                        vbfjet2_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet2_index), jet_eta.at(vbfjet2_index),
-                            jet_phi.at(vbfjet2_index), jet_mass.at(vbfjet2_index));
-                        nvbf = 2;
-                    } else {
-                        vbfjet1_tlv.SetPtEtaPhiM(1., 1., 1., 1.);
-                        vbfjet2_tlv.SetPtEtaPhiM(1., 1., 1., 1.);
-                    }
-                    auto met_tlv = TLorentzVector();
-                    met_tlv.SetPxPyPzE(met_pt * cos(met_phi), met_pt * sin(met_phi), 0, met_pt);
-
-                    auto htt_svfit_tlv = TLorentzVector();
                     if (htt_sv_mass > 0)
-                        htt_svfit_tlv.SetPtEtaPhiM(htt_sv_pt, htt_sv_eta, htt_sv_phi, htt_sv_mass);
+                        dnnInt.svfit = LVector(htt_sv_pt, htt_sv_eta, htt_sv_phi, htt_sv_mass);
                     else
-                        htt_svfit_tlv.SetPtEtaPhiM(1., 1., 1., 1.);
+                        dnnInt.svfit = LVector(1., 1., 1., 1.);
+                    
+                    dnnInt.KinFitMass = HHKinFit_mass;
+                    dnnInt.KinFitChi2 = HHKinFit_chi2;
+                    if (!isBoosted) {
+                        dnnInt.b1 = LVector(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
+                            jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
+                        dnnInt.b2 = LVector(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
+                            jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+                        
+                        dnnInt.deepFlav1 = Jet_btagDeepFlavB.at(bjet1_index);
+                        dnnInt.deepFlav2 = Jet_btagDeepFlavB.at(bjet2_index);
+                        dnnInt.CvsL_b1 = Jet_btagDeepFlavCvL.at(bjet1_index);
+                        dnnInt.CvsL_b2 = Jet_btagDeepFlavCvL.at(bjet2_index);
+                        dnnInt.CvsB_b1 = Jet_btagDeepFlavCvB.at(bjet1_index);
+                        dnnInt.CvsB_b2 = Jet_btagDeepFlavCvB.at(bjet2_index);
+                        dnnInt.HHbtag_b1 = Jet_HHbtag.at(bjet1_index);
+                        dnnInt.HHbtag_b2 = Jet_HHbtag.at(bjet2_index);
+
+                        dnnInt.KinFitConv = HHKinFit_chi2 >= 0;
+                                      
+                        dnnInt.fatjet = LVector(0., 0., 0., 0.);
+                        dnnInt.fatjet_softDropMass = 0.;
+
+                    }
+                    else {
+                        dnnInt.fatjet = LVector(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
+                            fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
+                        dnnInt.fatjet_softDropMass = fatjet_msoftdrop.at(fatjet_index);
+                                      
+                        dnnInt.b1 = LVector(0., 0., 0., 0.);
+                        dnnInt.b2 = LVector(0., 0., 0., 0.);
+                                      
+                        dnnInt.deepFlav1 = 0.;
+                        dnnInt.deepFlav2 = 0.;
+                        dnnInt.CvsL_b1 = 0.;
+                        dnnInt.CvsL_b2 = 0.;
+                        dnnInt.CvsB_b1 = 0.;
+                        dnnInt.CvsB_b2 = 0.;
+                        dnnInt.HHbtag_b1 = 0.;
+                        dnnInt.HHbtag_b2 = 0.;
+
+                        dnnInt.KinFitConv = false; // No KinFit for boosted bb
+                    }
+                        
+
 
                     // MT2 computation
+                    /*
                     asymm_mt2_lester_bisect::disableCopyrightMessage();
                     double MT2 = asymm_mt2_lester_bisect::get_mT2(
                         bjet1_tlv.M(), bjet1_tlv.Px(), bjet1_tlv.Py(),
@@ -280,38 +278,12 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
                         dau1_tlv.Px() + dau2_tlv.Px() + met_tlv.Px(),
                         dau1_tlv.Py() + dau2_tlv.Py() + met_tlv.Py(),
                         dau1_tlv.M(), dau2_tlv.M(), 0.);
-
-                    float deepFlav1 = -1., deepFlav2 = -1., CvsL_b1 = -1., CvsL_b2 = -1.,
-                        CvsL_vbf1 = -1., CvsL_vbf2 = -1., CvsB_b1 = -1., CvsB_b2 = -1.,
-                        CvsB_vbf1 = -1., CvsB_vbf2 = -1., HHbtag_b1 = -1., HHbtag_b2 = -1.,
-                        HHbtag_vbf1 = -1., HHbtag_vbf2 = -1.;
-                    deepFlav1 = Jet_btagDeepFlavB.at(bjet1_index);
-                    deepFlav2 = Jet_btagDeepFlavB.at(bjet2_index);
-                    CvsL_b1 = Jet_btagDeepFlavCvL.at(bjet1_index);
-                    CvsL_b2 = Jet_btagDeepFlavCvL.at(bjet2_index);
-                    CvsB_b1 = Jet_btagDeepFlavCvB.at(bjet1_index);
-                    CvsB_b2 = Jet_btagDeepFlavCvB.at(bjet2_index);
-                    HHbtag_b1 = Jet_HHbtag.at(bjet1_index);
-                    HHbtag_b2 = Jet_HHbtag.at(bjet2_index);
-                    if (vbfjet1_index >= 0) {
-                        CvsL_vbf1 = Jet_btagDeepFlavCvL.at(vbfjet1_index);
-                        CvsL_vbf2 = Jet_btagDeepFlavCvL.at(vbfjet2_index);
-                        CvsB_vbf1 = Jet_btagDeepFlavCvB.at(vbfjet1_index);
-                        CvsB_vbf2 = Jet_btagDeepFlavCvB.at(vbfjet2_index);
-                        HHbtag_vbf1 = Jet_HHbtag.at(vbfjet1_index);
-                        HHbtag_vbf2 = Jet_HHbtag.at(vbfjet2_index);
-                    }
-
-                    return hhdnnInput.GetDeafultInputs(
-                      channel, isBoosted, nvbf, event,
-                      bjet1_tlv, bjet2_tlv, dau1_tlv, dau2_tlv, 
-                      vbfjet1_tlv, vbfjet2_tlv, met_tlv, htt_svfit_tlv, 
-                      HHKinFit_mass, HHKinFit_chi2, (HHKinFit_chi2 >= 0), (htt_sv_mass >= 0), MT2,
-                      deepFlav1, deepFlav2, CvsL_b1, CvsL_b2, CvsL_vbf1, CvsL_vbf2,
-                      CvsB_b1, CvsB_b2, CvsB_vbf1, CvsB_vbf2,
-                      HHbtag_b1, HHbtag_b2, HHbtag_vbf1, HHbtag_vbf2);
+                    */
+                    dnnInt.computeIntermediateVariables();
+                                      
+                    return dnnInt;
                 }
-            """)
+            """ % (self.variable_dnnInput))
 
     def run(self, df):
 
@@ -324,28 +296,27 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             if self.AnalysisType == "Zbb_Ztautau":      p_b = "Z"; p_t = "Z"; pp = "ZZ"; p_sv = "X"
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
-        
-        branches = ["{0}{1}".format(i, self.systs) for i in self.default_feat]
-        all_branches = df.GetColumnNames()
-        if branches[0] in all_branches:
-            return df, []
 
-        df = df.Define("dnn_input%s" % self.systs, "get_dnn_inputs("
-            "pairType, isBoosted, event, "
-            "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "
-            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0},"
-            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
-            "{7}tt_svfit_pt{4}, {7}tt_svfit_eta{4}, {7}tt_svfit_phi{4}, {7}tt_svfit_mass{4}, "
-            "{8}KinFit_mass{4}, {8}KinFit_chi2{4}, MET{5}_pt{6}, MET{5}_phi{6}, "
-            "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag)".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs,
-                self.met_smear_tag, self.met_syst, p_sv, pp)
-            )
 
-        for ib, branch in enumerate(branches):
-            df = df.Define(branch, "dnn_input%s[%s]" % (self.systs, ib))
+        df = df.Define("dnn_input%s" % self.systs, f"""get_dnn_inputs_{self.variable_dnnInput}(
+            {self.variable_dnnInput}, pairType, isBoosted, event, 
+            dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,
+            fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, 
+            Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst},
+            Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, 
+            Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, 
+            Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst},
+            FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, FatJet_mass, /* TODO TODO replace with FatJet_msoftdrop, */
+            {p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs}, 
+            {pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, 
+            Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB,
+            Jet_HHbtag)""")
+
+        branches = []
+        for feature in self.features:
+            branch = f"{feature}{self.systs}"
+            df = df.Define(branch, f"dnn_input{self.systs}.{feature}()")
+            branches.append(branch)
         return df, branches
 
 class HHDNNRDFProducer(JetLepMetSyst):
@@ -606,6 +577,9 @@ def HHDNNInputRDF(**kwargs):
                 isMC: self.dataset.process.isMC
                 year: self.config.year
                 AnalysisType: self.config.get_aux('AnalysisType', False)
+                btag_wps: self.config.btag_algo_wps
+                cvl_wps: self.config.ctag_algo_wps.CvL
+                cvb_wps: self.config.ctag_algo_wps.CvB
 
     """
     AnalysisType = kwargs.pop("AnalysisType", False)
