@@ -730,12 +730,13 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
             'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
             'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
-        df = df.Define("htt_trigsf", "get_htt_trigsf(pairType, isVBFtrigger, "
+        df = df.Define("htt_trigsf", "try { return " + ("get_htt_trigsf(pairType, isVBFtrigger, "
             "dau1_index, dau2_index, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             "Muon_pt{0}, Muon_eta, Electron_pt{1}, Electron_eta, "
             "Tau_pt{2}, Tau_eta, Tau_decayMode, "
             "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst))
+                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst)) 
+                + ';} catch (std::exception const& e) { std::cerr << "ERROR : exception thrown, run " << run << " lumi " << luminosityBlock << " event " << event << std::endl; throw; }')
         for ib, branch in enumerate(branches):
             df = df.Define(branch, "htt_trigsf[%s]" % (ib))
         return df, branches
