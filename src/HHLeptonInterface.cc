@@ -35,7 +35,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   // mutau channel
   std::vector<int> goodmuons;
   for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
-    if (fabs(Muon_eta[imuon]) > 2.4 || Muon_pfRelIso04_all[imuon] > 0.15
+    if (fabs(Muon_eta[imuon]) >= 2.4 || Muon_pfRelIso04_all[imuon] > 0.15
         || fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2
         || !Muon_tightId[imuon])
       continue;
@@ -111,6 +111,7 @@ lepton_output HHLeptonInterface::get_dau_indexes(
   for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
     if (!Electron_mvaFall17V2Iso_WP80[iele]
         || fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2
+        || fabs(Electron_eta[iele]) >= 2.5
         || (fabs(Electron_eta[iele]) > 1.44 && fabs(Electron_eta[iele]) < 1.57)) // exclude barrel/endcap transition region (no SFs available for EGamma)
       continue;
     goodelectrons.push_back(iele);
