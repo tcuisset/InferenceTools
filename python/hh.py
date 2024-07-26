@@ -168,6 +168,8 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                         Vfloat jet_resolution, float met_pt, float met_phi,
                         float met_covXX, float met_covXY, float met_covYY, int target1, int target2) {
+                    if (bjet1_index < 0 || bjet2_index < 0)
+                        return {-1., -1.}; // KinFit needs 2 b jets
                     float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
                     if (pairType == 0) {
                         dau1_pt = muon_pt.at(dau1_index);
@@ -381,12 +383,13 @@ class HHVarRDFProducer(JetLepMetSyst):
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
-        features = ("{0}bb_pt{3},{0}bb_eta{3},{0}bb_phi{3},{0}bb_mass{3},"
-            "{1}tt_pt{3},{1}tt_eta{3},{1}tt_phi{3},{1}tt_mass{3},"
-            "{1}tt_met_pt{3},{1}tt_met_eta{3},{1}tt_met_phi{3},{1}tt_met_mass{3},"
-            "{2}_pt{3},{2}_eta{3},{2}_phi{3},{2}_mass{3},"
-            "{2}_svfit_pt{3},{2}_svfit_eta{3},{2}_svfit_phi{3},{2}_svfit_mass{3},"
-            "VBFjj_mass{3},VBFjj_deltaEta{3},VBFjj_deltaPhi{3}".format(p_b, p_t, pp, self.systs))
+        features = (f"{p_b}bb_pt{self.jet_syst},{p_b}bb_eta,{p_b}bb_phi,{p_b}bb_mass{self.jet_syst},"
+            f"{p_t}tt_pt{self.lep_syst},{p_t}tt_eta,{p_t}tt_phi,{p_t}tt_mass{self.lep_syst},"
+            # basically every systematic is propagated to MET, thus to SVFit & KinFit. also they will change eta & phi probably
+            f"{p_t}tt_met_pt{self.systs},{p_t}tt_met_eta{self.systs},{p_t}tt_met_phi{self.systs},{p_t}tt_met_mass{self.systs},"
+            f"{pp}_pt{self.systs},{pp}_eta{self.systs},{pp}_phi{self.systs},{pp}_mass{self.systs},"
+            f"{pp}_svfit_pt{self.systs},{pp}_svfit_eta{self.systs},{pp}_svfit_phi{self.systs},{pp}_svfit_mass{self.systs},"
+            f"VBFjj_mass{self.systs},VBFjj_deltaEta,VBFjj_deltaPhi".format(p_b, p_t, pp, self.systs))
         features = list(features.split(","))
         all_branches = df.GetColumnNames()
         if features[0] in all_branches:
