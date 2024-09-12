@@ -1,3 +1,5 @@
+<use name="Base/Modules"/>
+<use name="correctionlib"/>
 <use name="PhysicsTools/TensorFlow"/>
 <use name="HHTools/HHbtag"/>
 <use name="TauAnalysis/ClassicSVfit"/>

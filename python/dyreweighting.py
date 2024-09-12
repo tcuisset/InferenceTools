@@ -48,22 +48,27 @@ def DYstitching(**kwargs):
         return lambda: DummyModule(**kwargs)
 
 class DYstitchingRDFProducer():
+    """ Read Drell-Yan stitching weights from correctionlib """
     def __init__(self, year, isDY, *args, **kwargs):
         self.isDY = isDY
-        isUL = "true" if kwargs.pop("isUL") else "false"
-        if self.isDY:
-            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
-                ROOT.gSystem.Load("libToolsTools.so")
 
-            base = "{}/{}/src/Tools/Tools".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-            ROOT.gROOT.ProcessLine(".L {}/interface/DYstitching.h".format(base))
-            ROOT.gInterpreter.Declare('auto dy_stitcher = DYstitching(%s, %s);' % (year, isUL))
+        json_input = os.environ['CMSSW_BASE'] + f"/src/Tools/Tools/data/dystitching/{year}.json"
+
+        if self.isDY:
+            os.environ["_DYstitchingRDFProducer"] = "_DYstitchingRDFProducer"
+
+            if "/libBaseModules.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gInterpreter.Load("libBaseModules.so")
+            # ROOT.gROOT.ProcessLine(".I /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/py3-correctionlib/2.1.0-86e9290d2e4ee05f7ffa864b595e4145/lib/python3.9/site-packages/correctionlib/include/correction.h")
+            ROOT.gInterpreter.ProcessLine(os.path.expandvars(
+                '.L $CMSSW_BASE/src/Base/Modules/interface/correctionWrapper.h'))
+            ROOT.gInterpreter.ProcessLine(
+                'auto corr_DYstitching = MyCorrections("drellYanStitchWeight", "%s");' % json_input
+            )
 
     def run(self, df):
         if self.isDY:
-            df = df.Define("DYstitchWeight",
-                "dy_stitcher.get_stitching_weight(LHE_Nb, LHE_Njets, LHE_HT)")
+            df = df.Define("DYstitchWeight", "corr_DYstitching.eval({LHE_NpNLO, LHE_Vpt}) ")
         else:
             df = df.Define("DYstitchWeight", "1")
         return df, ["DYstitchWeight"]
