@@ -276,79 +276,18 @@ class HHJetsRDFProducer(JetLepMetSyst):
             ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
             ROOT.gInterpreter.Declare(f"""
-                auto HHJets = HHJetsInterface("{models[0]}", "{models[1]}", {int(self.year)}, {isUL}, {kwargs["btag_wp"]});
-            """)
-
-            ROOT.gInterpreter.Declare("""
-                using Vfloat = const ROOT::RVec<float>&;
-                using VInt = const ROOT::RVec<int>&;
-                output get_hh_jets (
-                    unsigned long long int event,
-                    Vfloat Jet_pt, Vfloat Jet_eta, Vfloat Jet_phi, Vfloat Jet_mass,
-                    VInt Jet_puId, Vfloat Jet_jetId, Vfloat Jet_btagDeepFlavB,
-                    Vfloat FatJet_pt, Vfloat FatJet_eta, Vfloat FatJet_phi, Vfloat FatJet_mass,
-                    Vfloat FatJet_msoftdrop, Vfloat FatJet_particleNet_XbbVsQCD,
-                    int pairType, int dau1_index, int dau2_index,
-                    Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                    Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
-                    float met_pt, float met_phi
-                )
-                {
-                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                    if (pairType == 0) {
-                        dau1_pt = muon_pt.at(dau1_index);
-                        dau1_eta = muon_eta.at(dau1_index);
-                        dau1_phi = muon_phi.at(dau1_index);
-                        dau1_mass = muon_mass.at(dau1_index);
-                    } else if (pairType == 1) {
-                        dau1_pt = electron_pt.at(dau1_index);
-                        dau1_eta = electron_eta.at(dau1_index);
-                        dau1_phi = electron_phi.at(dau1_index);
-                        dau1_mass = electron_mass.at(dau1_index);
-                    } else if (pairType == 2) {
-                        dau1_pt = tau_pt.at(dau1_index);
-                        dau1_eta = tau_eta.at(dau1_index);
-                        dau1_phi = tau_phi.at(dau1_index);
-                        dau1_mass = tau_mass.at(dau1_index);
-                    } else {
-                        dau1_pt = -999.;
-                        dau1_eta = -999.;
-                        dau1_phi = -999.;
-                        dau1_mass = -999.;
-                        dau2_pt = -999.;
-                        dau2_eta = -999.;
-                        dau2_phi = -999.;
-                        dau2_mass = -999.;
-                    }
-                    if (pairType >= 0) {
-                        dau2_pt = tau_pt.at(dau2_index);
-                        dau2_eta = tau_eta.at(dau2_index);
-                        dau2_phi = tau_phi.at(dau2_index);
-                        dau2_mass = tau_mass.at(dau2_index);
-                    }
-
-                    return HHJets.GetHHJets(event, pairType,
-                        Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                        Jet_puId, Jet_jetId, Jet_btagDeepFlavB,
-                        FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
-                        FatJet_msoftdrop, FatJet_particleNet_XbbVsQCD,
-                        dau1_pt, dau1_eta, dau1_phi, dau1_mass,
-                        dau2_pt, dau2_eta, dau2_phi, dau2_mass,
-                        met_pt, met_phi);
-                }
+                auto HHJets = HHJetsInterface("{models[0]}", "{models[1]}", {int(self.year)}, {isUL}, {kwargs["btag_wp"]}, {kwargs["fatjet_bbtag_wp"]});
             """)
 
     def run(self, df):
-        df = df.Define("HHJets", f"get_hh_jets(event, "
+        fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_particleNetLegacy_Xbb)+fRVec(FatJet_particleNetLegacy_QCD))"
+        df = df.Define("HHJets", f"HHJets.GetHHJets(event, pairType, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
             f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
-            "FatJet_msoftdrop, FatJet_particleNet_XbbVsQCD, "
-            "pairType, dau1_index, dau2_index, "
-            f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
-            f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
-            f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, "
+            f"FatJet_msoftdrop, {fatjet_bb_tagging_branch}, "
+            f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
+            f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
             f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst})")
 
         df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
@@ -378,7 +317,7 @@ def HHJetsRDF(**kwargs):
     event has a boosted topology (ie it has an AK8 FatJet passing DeltaR, softdrop, pt requirements).
      - bjet_idx1 & bjet_idx2 will be filled in case there are at least 2 AK4 jets passing selections (no cut on btag)
      - fatjet_idx will be filled in case there is an AK8 passing selection (even if event is resolved)
-     - isBoosted = 1 if there is an AK4 jet && event not in res1b|res2b (either <2 AK4 jets or >=2 AK4 but none pass Medium btag WP)
+     - isBoosted = 1 in case there is an AK8 passing FatJet_particleNet_XbbVsQCD threshold (used to be if there is an AK4 jet && event not in res1b|res2b (either <2 AK4 jets or >=2 AK4 but none pass Medium btag WP))
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
@@ -388,8 +327,9 @@ def HHJetsRDF(**kwargs):
 
     :param model_version: version of the model to use. Can be 1 (pre-UL) or 2 (UL)
 
-    :param btag_wp: working point of Jet_btagDeepFlavB to use. Events with 2 AK4 jets incl. at least one passing this WP will be resolved. 
-      Otherwise, if an AK8 jet passes selection it will be boosted
+    :param btag_wp: working point of Jet_btagDeepFlavB to use for boosted/resolved orthogonality (not used currently)
+    
+    :param fatjet_bbtag_wp: working point of FatJet_particleNet_XbbVsQCD
 
     YAML sintaxis:
 

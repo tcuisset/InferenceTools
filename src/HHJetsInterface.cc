@@ -1,8 +1,8 @@
 #include "Tools/Tools/interface/HHJetsInterface.h"
 
 // Constructor
-HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp):
-  HHbtagger_(std::array<std::string, 2> { {model_0, model_1} }), btag_wp_(btag_wp)
+HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp, float fatjet_bbtag_wp):
+  HHbtagger_(std::array<std::string, 2> { {model_0, model_1} }), btag_wp_(btag_wp), fatjet_bbtag_wp_(fatjet_bbtag_wp)
 {
   year_ = year;
   if (isUL) max_bjet_eta = 2.5;
@@ -33,13 +33,13 @@ output HHJetsInterface::GetHHJets(
   int bjet2_idx = -1;
   int vbfjet1_idx = -1;
   int vbfjet2_idx = -1;
-  int isBoosted_ = 0;
+  int isBoosted = 0;
   int fatjet_idx = -1;
   std::vector <int> ctjet_indexes, fwjet_indexes;
 
   if (pairType < 0) {
     return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-      ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});
+      ctjet_indexes, fwjet_indexes, isBoosted, fatjet_idx});
   }
 
   auto dau1_tlv = TLorentzVector();
@@ -48,7 +48,8 @@ output HHJetsInterface::GetHHJets(
   dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
   dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
   met_tlv.SetPxPyPzE(met_pt * cos(met_phi), met_pt * sin(met_phi), 0, met_pt);
-
+  
+  // --- Resolved
   std::vector <jet_idx_btag> jet_indexes;
   std::vector <int> all_jet_indexes;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
@@ -88,7 +89,7 @@ output HHJetsInterface::GetHHJets(
     auto HHbtag_htt_pt_ = (float) htt_tlv.Pt();
     auto HHbtag_htt_eta_ = (float) htt_tlv.Eta();
     int HHbtag_channel_ = -1;
-
+    // Old HHbtag channel assignement. For Run3 this was changed to match analysis definition, but for run2 etau/mutau are swapped
     if (pairType == 0)
       HHbtag_channel_ = 1;
     else if (pairType == 1)
@@ -192,12 +193,12 @@ output HHJetsInterface::GetHHJets(
     //       (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
     //     continue;
     //   // setBoosted(1);
-    //   isBoosted_ = 1;
+    //   isBoosted = 1;
     // }
 
   } // jet_indexes.size() >= 2
   
-  // Looking for AK8 jets for boosted
+  // -- Boosted :  Looking for AK8 jets for boosted
   // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
   std::vector <jet_idx_btag> fatjet_indexes;
   for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
@@ -212,16 +213,20 @@ output HHJetsInterface::GetHHJets(
   }
   
   if (fatjet_indexes.size() != 0) {
-    
     std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
     fatjet_idx = fatjet_indexes[0].idx;
-    // Check if the event is not resolved
-    if (!(bjet1_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_))) {
-      isBoosted_ = 1;
-    }
   }
+
+  // Logic for removing overlap between boosted & resolved
+  // Giving priority to boosted
+  isBoosted = fatjet_idx >= 0 && FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_;
+  // Giving priority to resolved
+  // if (!(bjet1_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_))) {
+  //    = 1;
+  // }
+
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-    ctjet_indexes, fwjet_indexes, isBoosted_, fatjet_idx});
+    ctjet_indexes, fwjet_indexes, isBoosted, fatjet_idx});
 }
 
 
