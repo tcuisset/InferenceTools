@@ -48,6 +48,14 @@ class SVfitinterface {
     double tau2_pt, double tau2_eta, double tau2_phi, double tau2_mass,
     double met_pt, double met_phi,
     double met_covXX, double met_covXY, double met_covYY);
+
+  std::vector<double> FitAndGetResultWithInputs_FastMTT(
+    int verbosity, int pairType, int DM1, int DM2,
+    double tau1_pt, double tau1_eta, double tau1_phi, double tau1_mass,
+    double tau2_pt, double tau2_eta, double tau2_phi, double tau2_mass,
+    double met_pt, double met_phi,
+    double met_covXX, double met_covXY, double met_covYY);
+
 };
 
 #endif // SVfitinterface_h

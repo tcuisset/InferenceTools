@@ -63,6 +63,13 @@ class SVFitProducer(JetLepMetModule):
 class SVFitRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
+        self.algo = kwargs.pop("algo", "ClassicSVFit")
+        if self.algo == "ClassicSVFit":
+            self.svfitFctName = "FitAndGetResultWithInputs"
+        elif self.algo == "FastMTT":
+            self.svfitFctName = "FitAndGetResultWithInputs_FastMTT"
+        else:
+            raise ValueError()
         super(SVFitRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_SVFIT"):
             os.environ["_SVFIT"] = "svfit"
@@ -78,7 +85,6 @@ class SVFitRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-
         # DEBUG
         if not self.AnalysisType:
             p = "H"
@@ -98,7 +104,7 @@ class SVFitRDFProducer(JetLepMetSyst):
             return df, []
 
         df = df.Define("svfit_result%s" % self.systs,
-            "svfit.FitAndGetResultWithInputs(0, pairType, dau1_decayMode, dau2_decayMode, "
+            f"svfit.{self.svfitFctName}(0, pairType, dau1_decayMode, dau2_decayMode, "
                 f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
                 f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
                 f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY)").Define(
@@ -114,6 +120,11 @@ def SVFit(**kwargs):
 
 
 def SVFitRDF(*args, **kwargs):
+    """ Compute SVFit or FastMTT
+    Parameters : 
+     - AnalysisType (not used anymore)
+     - algo : can be SVFit or FastMTT. Make sure that the TauAnalysis/ClassicSVfit has been installed with the correct branch, and that Tools/Tools has been built with the FASTMTT_SUPPORT CppDefine for FastMTT
+     """
     # The output of SVFit is not affected by H or Z, but the output features
     # are called in different ways according to the analysis
     AnalysisType = kwargs.pop("AnalysisType", False)

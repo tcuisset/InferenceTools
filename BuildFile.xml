@@ -16,5 +16,6 @@
 <use name="root"/>
 <use name="rootdataframe"/>
 <use name="rootvecops"/>
+<flags CPPDEFINES="FASTMTT_SUPPPORT=1"/>
 <export><lib name="1"/></export>
 
