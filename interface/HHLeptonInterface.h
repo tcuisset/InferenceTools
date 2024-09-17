@@ -22,6 +22,7 @@
 typedef ROOT::VecOps::RVec<float> fRVec;
 typedef ROOT::VecOps::RVec<bool> bRVec;
 typedef ROOT::VecOps::RVec<int> iRVec;
+typedef ROOT::VecOps::RVec<int16_t> sRVec;
 
 struct tau_pair {
   int index1;
@@ -137,8 +138,30 @@ bool pairSortHybrid (const tau_pair& pA, const tau_pair& pB)
 class HHLeptonInterface {
 
   public:
-    HHLeptonInterface (int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu);
+    HHLeptonInterface (
+      int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu, // HPS DeepTau thresholds
+      int BT_VsMu_threshold, int BT_VsE_threshold, int BT_VsJet_threshold // DeepBoostedTau thresholds
+      );
     ~HHLeptonInterface ();
+    // Trying to find suitable boosted taus (before looking at regular HPS taus)
+    lepton_output get_boosted_dau_indexes(
+      fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
+      fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
+      bRVec Muon_looseId, bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
+      fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
+      bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
+      bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
+      fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
+      fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
+      iRVec boostedTau_idDeepTauVSmu, iRVec boostedTau_idDeepTauVSe,
+      iRVec boostedTau_idDeepTauVSjet, fRVec boostedTau_rawDeepTauVSjet,
+      iRVec boostedTau_decayMode, iRVec boostedTau_charge,
+      iRVec boostedTau_muonCount, std::array<sRVec, 3> BT_muon_idx, 
+      std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
+      iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
+      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso
+    );
+
     lepton_output get_dau_indexes(
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
       fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
@@ -175,11 +198,17 @@ class HHLeptonInterface {
       std::vector<int> bits);
 
   private:
+    // HPS taus DeepTau thresholds
     int vvvl_vsjet_;
     int vl_vse_;
     int vvl_vse_;
     int t_vsmu_;
     int vl_vsmu_;
+
+    // boostedTaus DeepBoostedTaus threhols
+    int BT_VsMu_threshold_;
+    int BT_VsE_threshold_;
+    int BT_VsJet_threshold_;
 };
 
 #endif // HHLeptonInterface_h

@@ -3,16 +3,208 @@
 // Constructors
 
 HHLeptonInterface::HHLeptonInterface (
-    int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu) {
+    int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu,
+    int BT_VsMu_threshold, int BT_VsE_threshold, int BT_VsJet_threshold) {
   vvvl_vsjet_ = vvvl_vsjet;
   vl_vse_ = vl_vse;
   vvl_vse_ = vvl_vse;
   t_vsmu_ = t_vsmu;
   vl_vsmu_ = vl_vsmu;
+  BT_VsMu_threshold_ = BT_VsMu_threshold;
+  BT_VsE_threshold_ = BT_VsE_threshold;
+  BT_VsJet_threshold_ = BT_VsJet_threshold;
 };
 
 // Destructor
 HHLeptonInterface::~HHLeptonInterface() {}
+
+lepton_output HHLeptonInterface::get_boosted_dau_indexes(
+      fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
+      fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
+      bRVec Muon_looseId, bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
+      fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
+      bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
+      bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
+      fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
+      fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
+      iRVec boostedTau_idDeepTauVSmu, iRVec boostedTau_idDeepTauVSe,
+      iRVec boostedTau_idDeepTauVSjet, fRVec boostedTau_rawDeepTauVSjet,
+      iRVec boostedTau_decayMode, iRVec boostedTau_charge,
+      iRVec boostedTau_muonCount, std::array<sRVec, 3> BT_muon_idx, 
+      std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
+      iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
+      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso
+    )
+{
+  std::vector<int> goodBoostedTaus;
+  for (size_t itau = 0; itau < boostedTau_pt.size(); itau ++) {
+    if (boostedTau_pt[itau] < 40) continue; // Pt threshold arbitrary (Wisconsin uses >20, central Nano uses >40)
+    if (boostedTau_idDeepTauVSmu[itau] < BT_VsMu_threshold_ || boostedTau_idDeepTauVSe[itau] < BT_VsE_threshold_
+        || boostedTau_idDeepTauVSjet[itau] < BT_VsJet_threshold_)
+      continue;
+    if (boostedTau_decayMode[itau] != 0 && boostedTau_decayMode[itau] != 1
+        && boostedTau_decayMode[itau] != 10 && boostedTau_decayMode[itau] != 11)
+      continue;
+    goodBoostedTaus.push_back(itau);
+  } // loop over boostedTaus
+
+  // ---------------- MU-TAU channel  ----------------------
+  std::vector<tau_pair> tau_pairs;
+  for (auto & itau: goodBoostedTaus) {
+    for (int imuonFromBT = 0; imuonFromBT < std::min(boostedTau_muonCount[itau], 3); imuonFromBT++) {
+      int imuon = BT_muon_idx[imuonFromBT][itau];
+      if (imuon < 0) continue; // Muon that was not selected in NanoAOD muon. Should be very rare
+
+      if (fabs(Muon_eta[imuon]) >= 2.4 || fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2
+        || !Muon_looseId[imuon])
+        continue; // No ISO requirement yet
+      
+      if (Muon_pt[imuon] < 30) continue; // arbitrary threshold
+
+      if (BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau] > 0.25) continue;
+
+      // TODO trigger check
+
+      tau_pairs.push_back(tau_pair({imuon, BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau], Muon_pt[imuon],
+          itau, boostedTau_rawDeepTauVSjet[itau], boostedTau_pt[itau], 0, 0}));
+        
+    }
+  }
+
+  if (tau_pairs.size() > 0) {
+    std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSortHybrid);
+
+    if (lepton_veto(tau_pairs[0].index1, -1,
+        Muon_pt, Muon_eta, Muon_dz, Muon_dxy,
+        Muon_pfRelIso04_all, Muon_mediumId, Muon_tightId,
+        Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
+        Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
+        Electron_pfRelIso03_all))
+      return lepton_output({
+        -1, -1, -1, -1, -1, -1,
+        -1., -1., -1., -1, -1, -1, -1,
+        -1., -1., -1, -1, -1, -1});
+    int ind1 = tau_pairs[0].index1;
+    int ind2 = tau_pairs[0].index2;
+    int isOS = (int) (Muon_charge[ind1] != boostedTau_charge[ind2]);
+
+    return lepton_output({0, ind1, ind2, 0, 0, isOS,
+      Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
+      boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
+      boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+      boostedTau_idDeepTauVSjet[ind2]});
+  }
+
+  // ---------------- E-TAU channel  ----------------------
+  tau_pairs.clear();
+
+  for (auto & itau: goodBoostedTaus) {
+    // boostedTau_electronCount can be up to 4 which is a bug
+    for (int ielectronFromBT = 0; ielectronFromBT < std::min(boostedTau_electronCount[itau], 3); ielectronFromBT++) {
+      int iele = BT_electron_idx[ielectronFromBT][itau];
+      if (iele < 0) continue; // Electron that was not selected in NanoAOD electron. Should be very rare
+
+      if (!Electron_mvaFall17V2noIso_WP90[iele] // NoISO MVA 
+        || fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2
+        || fabs(Electron_eta[iele]) >= 2.5
+        || (fabs(Electron_eta[iele]) > 1.44 && fabs(Electron_eta[iele]) < 1.57)) // exclude barrel/endcap transition region (no SFs available for EGamma)
+      
+      if (Electron_pt[iele] < 30) continue; // arbitrary threshold
+
+      // Isolation cut from https://indico.cern.ch/event/1420456/contributions/5991451/attachments/2878187/5041085/HeavyMassResonance_B2G_DIB_June_14_2024.pdf
+      float isoOverPt = BT_electron_correctedIso[ielectronFromBT][itau]/BT_electron_pt[ielectronFromBT][itau];
+      if (fabs(Electron_eta[iele]) < 1.479 &&  isoOverPt >=  0.112 + 0.506 / BT_electron_pt[ielectronFromBT][itau])
+        continue;
+      if (fabs(Electron_eta[iele]) >= 1.479 &&  isoOverPt >=  0.108 + 0.963 / BT_electron_pt[ielectronFromBT][itau])
+        continue;
+
+      // TODO trigger check
+
+      tau_pairs.push_back(tau_pair({iele, BT_electron_correctedIso[ielectronFromBT][itau]/BT_electron_pt[ielectronFromBT][itau], Electron_pt[iele],
+          itau, boostedTau_rawDeepTauVSjet[itau], boostedTau_pt[itau], 0, 0}));
+        
+    }
+  }
+
+  if (tau_pairs.size() > 0) {
+    std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSortHybrid);
+
+    if (lepton_veto(tau_pairs[0].index1, -1,
+        Muon_pt, Muon_eta, Muon_dz, Muon_dxy,
+        Muon_pfRelIso04_all, Muon_mediumId, Muon_tightId,
+        Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
+        Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
+        Electron_pfRelIso03_all))
+      return lepton_output({
+        -1, -1, -1, -1, -1, -1,
+        -1., -1., -1., -1, -1, -1, -1,
+        -1., -1., -1, -1, -1, -1});
+    int ind1 = tau_pairs[0].index1;
+    int ind2 = tau_pairs[0].index2;
+    int isOS = (int) (Electron_charge[ind1] != boostedTau_charge[ind2]);
+
+    return lepton_output({1, ind1, ind2, 0, 0, isOS,
+      Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1, -1, -1, -1,
+      boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
+      boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+      boostedTau_idDeepTauVSjet[ind2]});
+  }
+
+  // ---------------- TAU-TAU channel  ----------------------
+  tau_pairs.clear();
+
+  if (goodBoostedTaus.size() >= 2) {
+    for (auto & itau1 : goodBoostedTaus) {
+      auto tau1_tlv = TLorentzVector();
+      tau1_tlv.SetPtEtaPhiM(boostedTau_pt[itau1], boostedTau_eta[itau1], boostedTau_phi[itau1], boostedTau_mass[itau1]);
+      for (auto & itau2 : goodBoostedTaus) {
+        if (itau1 == itau2)
+          continue;
+        auto tau2_tlv = TLorentzVector();
+        tau2_tlv.SetPtEtaPhiM(boostedTau_pt[itau2], boostedTau_eta[itau2], boostedTau_phi[itau2], boostedTau_mass[itau2]);
+        if (tau1_tlv.DeltaR(tau2_tlv) > 0.8)
+          continue;
+
+        // TODO trigger
+
+        tau_pairs.push_back(tau_pair({itau1, boostedTau_rawDeepTauVSjet[itau1], boostedTau_pt[itau1],
+          itau2, boostedTau_rawDeepTauVSjet[itau2], boostedTau_pt[itau2], false, false}));
+      }
+    }
+    if (tau_pairs.size() > 0) {
+      std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSort);
+
+      if (lepton_veto(-1, -1,
+          Muon_pt, Muon_eta, Muon_dz, Muon_dxy,
+          Muon_pfRelIso04_all, Muon_mediumId, Muon_tightId,
+          Electron_pt, Electron_eta, Electron_dz, Electron_dxy,
+          Electron_mvaFall17V2noIso_WP90, Electron_mvaFall17V2Iso_WP90,
+          Electron_pfRelIso03_all))
+        return lepton_output({
+          -1, -1, -1, -1, -1, -1,
+          -1., -1., -1., -1, -1, -1, -1,
+          -1., -1., -1, -1, -1, -1});
+
+      int ind1 = tau_pairs[0].index1;
+      int ind2 = tau_pairs[0].index2;
+      int isOS = (int) (boostedTau_charge[ind1] != boostedTau_charge[ind2]);
+
+      return lepton_output({2, ind1, ind2,
+        0, 0, isOS,
+        boostedTau_eta[ind1], boostedTau_phi[ind1], -1., boostedTau_decayMode[ind1],
+        boostedTau_idDeepTauVSe[ind1], boostedTau_idDeepTauVSmu[ind1],
+        boostedTau_idDeepTauVSjet[ind1],
+        boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
+        boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+        boostedTau_idDeepTauVSjet[ind2]});
+    }
+  }
+
+  return lepton_output({
+    -1, -1, -1, -1, -1, -1,
+    -1., -1., -1., -1, -1, -1, -1,
+    -1., -1., -1, -1, -1, -1});
+}
 
 lepton_output HHLeptonInterface::get_dau_indexes(
     fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,

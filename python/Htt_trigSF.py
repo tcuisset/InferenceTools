@@ -673,54 +673,6 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                     muTauTrgSF, muTauTrgName, muTauTrgBool,
                     tauTrgSF_ditau, tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
 
-                ROOT.gInterpreter.Declare("""
-                    using Vfloat = const ROOT::RVec<float>&;
-                    using VInt = const ROOT::RVec<int>&;
-                    std::vector<double> get_htt_trigsf (
-                        int pairType, int isVBFtrigger,
-                        int dau1_index, int dau2_index, int vbfjet1_index, int vbfjet2_index,
-                        Vfloat muon_pt, Vfloat muon_eta, Vfloat electron_pt, Vfloat electron_eta,
-                        Vfloat tau_pt, Vfloat tau_eta, VInt tau_decayMode,
-                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass
-                    )
-                    {
-                        float dau1_pt=-999, dau1_eta=-999;
-                        int dau1_decayMode = -1;
-                        if (pairType == 0) {
-                            dau1_pt = muon_pt.at(dau1_index);
-                            dau1_eta = muon_eta.at(dau1_index);
-                        } else if (pairType == 1) {
-                            dau1_pt = electron_pt.at(dau1_index);
-                            dau1_eta = electron_eta.at(dau1_index);
-                        } else if (pairType == 2) {
-                            dau1_pt = tau_pt.at(dau1_index);
-                            dau1_eta = tau_eta.at(dau1_index);
-                            dau1_decayMode = tau_decayMode.at(dau1_index);
-                        }
-                        float dau2_pt = tau_pt.at(dau2_index);
-                        float dau2_eta = tau_eta.at(dau2_index);
-                        int dau2_decayMode = tau_decayMode.at(dau2_index);
-
-                        float vbfjet1_pt=-999, vbfjet1_eta=-999, vbfjet1_phi=-999, vbfjet1_mass=-999;
-                        float vbfjet2_pt=-999, vbfjet2_eta=-999, vbfjet2_phi=-999, vbfjet2_mass=-999;
-                        if (vbfjet1_index >= 0 && vbfjet2_index >= 0) {
-                            vbfjet1_pt = jet_pt.at(vbfjet1_index);
-                            vbfjet1_eta = jet_eta.at(vbfjet1_index);
-                            vbfjet1_phi = jet_phi.at(vbfjet1_index);
-                            vbfjet1_mass = jet_mass.at(vbfjet1_index);
-                            vbfjet2_pt = jet_pt.at(vbfjet2_index);
-                            vbfjet2_eta = jet_eta.at(vbfjet2_index);
-                            vbfjet2_phi = jet_phi.at(vbfjet2_index);
-                            vbfjet2_mass = jet_mass.at(vbfjet2_index);
-                        }
-
-                        return Htt_trigSF.get_scale_factors(pairType, isVBFtrigger,
-                            dau1_decayMode, dau1_pt, dau1_eta,
-                            dau2_decayMode, dau2_pt, dau2_eta,
-                            vbfjet1_pt, vbfjet1_eta, vbfjet1_phi, vbfjet1_mass,
-                            vbfjet2_pt, vbfjet2_eta, vbfjet2_phi, vbfjet2_mass);
-                    }
-                """)
 
     def run(self, df):
         if not self.isMC:
@@ -730,12 +682,14 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
             'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
             'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
-        df = df.Define("htt_trigsf", "try { return " + ("get_htt_trigsf(pairType, isVBFtrigger, "
-            "dau1_index, dau2_index, VBFjet1_JetIdx, VBFjet2_JetIdx, "
-            "Muon_pt{0}, Muon_eta, Electron_pt{1}, Electron_eta, "
-            "Tau_pt{2}, Tau_eta, Tau_decayMode, "
-            "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst)) 
+        df = df.Define("htt_trigsf", "try { return " + (
+            "isBoostedTau ? std::vector<double>({1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}) : " # TODO boostedTau trigger scale factors
+            "Htt_trigSF.get_scale_factors(pairType, isVBFtrigger, "
+            f"dau1_decayMode, dau1_pt{self.lep_syst}, dau1_eta, "
+            f"dau2_decayMode, dau2_pt{self.lep_syst}, dau2_eta, "
+            "-999, -999, -999, -999, "
+            "-999, -999, -999, -999)"
+            ) 
                 + ';} catch (std::exception const& e) { std::cerr << "ERROR : exception thrown, run " << run << " lumi " << luminosityBlock << " event " << event << std::endl; throw; }')
         for ib, branch in enumerate(branches):
             df = df.Define(branch, "htt_trigsf[%s]" % (ib))

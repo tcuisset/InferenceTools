@@ -172,11 +172,10 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
                 HHDNNinterfaceNew get_dnn_inputs_%s(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, ULong64_t event,
-                    int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
+                    int bjet1_index, int bjet2_index,
                     int fatjet_index, int vbfjet1_index, int vbfjet2_index,
-                    Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                    Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                    float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
+                    float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
                     Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                     Vfloat fatjet_pt, Vfloat fatjet_eta, Vfloat fatjet_phi, Vfloat fatjet_mass, Vfloat fatjet_msoftdrop,
                     float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
@@ -186,31 +185,9 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
                 )
                 {          
                     using LVector = ROOT::Math::PtEtaPhiMVector;
-                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
 
                     dnnInt.pairType = pairType;
                     dnnInt.isBoosted = isBoosted;
-
-                    if (pairType == 0) {
-                        dau1_pt = muon_pt.at(dau1_index);
-                        dau1_eta = muon_eta.at(dau1_index);
-                        dau1_phi = muon_phi.at(dau1_index);
-                        dau1_mass = muon_mass.at(dau1_index);
-                    } else if (pairType == 1) {
-                        dau1_pt = electron_pt.at(dau1_index);
-                        dau1_eta = electron_eta.at(dau1_index);
-                        dau1_phi = electron_phi.at(dau1_index);
-                        dau1_mass = electron_mass.at(dau1_index);
-                    } else if (pairType == 2) {
-                        dau1_pt = tau_pt.at(dau1_index);
-                        dau1_eta = tau_eta.at(dau1_index);
-                        dau1_phi = tau_phi.at(dau1_index);
-                        dau1_mass = tau_mass.at(dau1_index);
-                    }
-                    dau2_pt = tau_pt.at(dau2_index);
-                    dau2_eta = tau_eta.at(dau2_index);
-                    dau2_phi = tau_phi.at(dau2_index);
-                    dau2_mass = tau_mass.at(dau2_index);
 
                     dnnInt.l1 = LVector(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
                     dnnInt.l2 = LVector(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
@@ -300,13 +277,12 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
         df = df.Define("dnn_input%s" % self.systs, f"""get_dnn_inputs_{self.variable_dnnInput}(
             {self.variable_dnnInput}, pairType, isBoosted, event, 
-            dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,
+            bjet1_JetIdx, bjet2_JetIdx,
             fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, 
-            Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst},
-            Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, 
-            Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, 
+            dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, 
+            dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, 
             Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst},
-            FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, FatJet_mass, /* TODO TODO replace with FatJet_msoftdrop, */
+            FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, FatJet_msoftdrop,
             {p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs}, 
             {pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, 
             Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB,

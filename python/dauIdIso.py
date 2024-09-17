@@ -42,7 +42,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                 ROOT.gInterpreter.Declare("""
                     using Vfloat = const ROOT::RVec<float>&;
                     double get_dauIdIso_sf(
-                            int pairType, int dau1_index, int dau2_index, Vfloat Tau_pt,
+                            int pairType, bool isBoostedTau, int dau1_index, int dau2_index, Vfloat Tau_pt,
                             Vfloat musf_id, Vfloat musf_reliso, Vfloat elesf_reco, Vfloat elesf_idiso, 
                             Vfloat Tau_sfDeepTau2017v2p1VSjet_pt, Vfloat Tau_sfDeepTau2017v2p1VSjet_dm,
                             Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu_tautau, Vfloat Tau_sfDeepTau2017v2p1VSmu_lepton) {
@@ -52,7 +52,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                             idAndIsoSF_leg1 = musf_id.at(dau1_index) * musf_reliso.at(dau1_index);
                         } else if (pairType == 1) {
                             idAndIsoSF_leg1 = elesf_reco.at(dau1_index) * elesf_idiso.at(dau1_index);
-                        } else if (pairType == 2) {
+                        } else if (pairType == 2 && !isBoostedTau) {
                             if (Tau_pt[dau1_index] > 140)
                                 idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau1_index);
                             else idAndIsoSF_leg1 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau1_index);
@@ -61,17 +61,19 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                                 Tau_sfDeepTau2017v2p1VSmu_tautau.at(dau1_index);
                         }
                         double idAndIsoSF_leg2 = 1.;
-                        if (Tau_pt[dau2_index] > 140)
-                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau2_index);
-                        else
-                            idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
-                        
-                        if (pairType == 2)
-                            idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_tautau.at(dau2_index);
-                        else
-                            idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_lepton.at(dau2_index);
-    
-                        idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index);
+                        if (!isBoostedTau) {
+                            if (Tau_pt[dau2_index] > 140)
+                                idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_pt.at(dau2_index);
+                            else
+                                idAndIsoSF_leg2 = Tau_sfDeepTau2017v2p1VSjet_dm.at(dau2_index);
+                            
+                            if (pairType == 2)
+                                idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_tautau.at(dau2_index);
+                            else
+                                idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSmu_lepton.at(dau2_index);
+        
+                            idAndIsoSF_leg2 *= Tau_sfDeepTau2017v2p1VSe.at(dau2_index);
+                        }
                         return idAndIsoSF_leg1 * idAndIsoSF_leg2;
                     }
                 """)
@@ -83,7 +85,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
         for branch_name, branch_template in zip(self.branch_names, self.branch_templates):
             assert(len(branch_template) == 7)
             df = df.Define("idAndIsoAndFakeSF%s" % branch_name,
-                "get_dauIdIso_sf(pairType, dau1_index, dau2_index, Tau_pt{0}, "
+                "get_dauIdIso_sf(pairType, isBoostedTau, dau1_index, dau2_index, Tau_pt{0}, "
                     "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "
                     "elesf_RecoAbove20{1[2]}, elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
                     "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[4]}, "
@@ -100,6 +102,11 @@ def dauIdIsoSFRDF(**kwargs):
 
     Required RDFModules: :ref:`HHLepton_HHLeptonRDF`, :ref:`Electron_eleSFRDF`,
     :ref:`Muon_muSFRDF`, :ref:`Tau_tauSFRDF`
+    Input branches : 
+     - musf_tight_id, musf_tight_reliso
+     - elesf_RecoAbove20, elesf_wp80iso
+     - Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium & Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium
+     - Tau_sfDeepTau2017v2p1VSmu_Tight & Tau_sfDeepTau2017v2p1VSmu_VLoose : the DeepTau SFS for the etau/mutau and the tautau channels respectively (different VsMu working points -> different SFs)
 
     Systematics considered : [``central``, ``muon_id``, ``muon_iso``,
         ```ele_reco```, ``ele_iso``, ``tau_vsjet``, ``tau_vse``, ``tau_vsmu``]. 

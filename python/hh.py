@@ -161,36 +161,14 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
                 using Vfloat = const ROOT::RVec<float>&;
                 ROOT::RVec<double> compute_hhkinfit(
-                        bool isMC, int pairType, int dau1_index, int dau2_index, int bjet1_index, int bjet2_index,
-                        Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                        Vfloat electron_pt, Vfloat electron_eta, Vfloat electron_phi, Vfloat electron_mass,
-                        Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                        bool isMC, int pairType, int bjet1_index, int bjet2_index,
+                        float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
+                        float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                         Vfloat jet_resolution, float met_pt, float met_phi,
                         float met_covXX, float met_covXY, float met_covYY, int target1, int target2) {
                     if (bjet1_index < 0 || bjet2_index < 0)
                         return {-1., -1.}; // KinFit needs 2 b jets
-                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                    if (pairType == 0) {
-                        dau1_pt = muon_pt.at(dau1_index);
-                        dau1_eta = muon_eta.at(dau1_index);
-                        dau1_phi = muon_phi.at(dau1_index);
-                        dau1_mass = muon_mass.at(dau1_index);
-                    } else if (pairType == 1) {
-                        dau1_pt = electron_pt.at(dau1_index);
-                        dau1_eta = electron_eta.at(dau1_index);
-                        dau1_phi = electron_phi.at(dau1_index);
-                        dau1_mass = electron_mass.at(dau1_index);
-                    } else if (pairType == 2) {
-                        dau1_pt = tau_pt.at(dau1_index);
-                        dau1_eta = tau_eta.at(dau1_index);
-                        dau1_phi = tau_phi.at(dau1_index);
-                        dau1_mass = tau_mass.at(dau1_index);
-                    }
-                    dau2_pt = tau_pt.at(dau2_index);
-                    dau2_eta = tau_eta.at(dau2_index);
-                    dau2_phi = tau_phi.at(dau2_index);
-                    dau2_mass = tau_mass.at(dau2_index);
 
                     auto bjet1_tlv = TLorentzVector();
                     auto bjet2_tlv = TLorentzVector();
@@ -248,15 +226,13 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
-        df = df.Define("hhkinfit_result%s" % self.systs,
-            "compute_hhkinfit({6}, pairType, dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, "
-                "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-                "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-                "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-                "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, {7},"
-                "MET{5}_pt{4}, MET{5}_phi{4}, MET_covXX, MET_covXY, MET_covYY, {8}, {9})".format(
-                    self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.met_syst,
-                    self.met_smear_tag, isMC, jet_resolution, target1, target2)
+        df = df.Define(f"hhkinfit_result{self.systs}",
+            f"compute_hhkinfit({isMC}, pairType, bjet1_JetIdx, bjet2_JetIdx, "
+                f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
+                f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
+                f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, {jet_resolution},"
+                f"MET{self.met_smear_tag}_pt{self.muon_syst}, MET{self.met_smear_tag}_phi{self.muon_syst}, MET_covXX, MET_covXY, MET_covYY, "
+                f"{target1}, {target2})"
             ).Define("%sKinFit_mass%s" % (pp, self.systs), "hhkinfit_result%s[0]" % self.systs
             ).Define("%sKinFit_chi2%s" % (pp, self.systs), "hhkinfit_result%s[1]" % self.systs)
         return df, branches
@@ -272,39 +248,15 @@ class HHVarRDFProducer(JetLepMetSyst):
                 #include <TLorentzVector.h>
                 using Vfloat = const ROOT::RVec<float>&;
                 ROOT::RVec<double> get_hh_features%s(int pairType, int isBoosted,
-                        int dau1_index, int dau2_index, int bjet1_index, int bjet2_index, int fatjet_index,
+                        int bjet1_index, int bjet2_index, int fatjet_index,
                         int vbfjet1_index, int vbfjet2_index,
-                        Vfloat muon_pt, Vfloat muon_eta, Vfloat muon_phi, Vfloat muon_mass,
-                        Vfloat electron_pt, Vfloat electron_eta,
-                        Vfloat electron_phi, Vfloat electron_mass,
-                        Vfloat tau_pt, Vfloat tau_eta, Vfloat tau_phi, Vfloat tau_mass,
+                        float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
+                        float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
                         Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
                         Vfloat fatjet_pt, Vfloat fatjet_eta, Vfloat fatjet_phi, Vfloat fatjet_mass,
                         float met_pt, float met_phi,
                         double Htt_svfit_pt, double Htt_svfit_eta,
                         double Htt_svfit_phi, double Htt_svfit_mass) {
-
-                    float dau1_pt, dau1_eta, dau1_phi, dau1_mass, dau2_pt, dau2_eta, dau2_phi, dau2_mass;
-                    if (pairType == 0) {
-                        dau1_pt = muon_pt.at(dau1_index);
-                        dau1_eta = muon_eta.at(dau1_index);
-                        dau1_phi = muon_phi.at(dau1_index);
-                        dau1_mass = muon_mass.at(dau1_index);
-                    } else if (pairType == 1) {
-                        dau1_pt = electron_pt.at(dau1_index);
-                        dau1_eta = electron_eta.at(dau1_index);
-                        dau1_phi = electron_phi.at(dau1_index);
-                        dau1_mass = electron_mass.at(dau1_index);
-                    } else if (pairType == 2) {
-                        dau1_pt = tau_pt.at(dau1_index);
-                        dau1_eta = tau_eta.at(dau1_index);
-                        dau1_phi = tau_phi.at(dau1_index);
-                        dau1_mass = tau_mass.at(dau1_index);
-                    }
-                    dau2_pt = tau_pt.at(dau2_index);
-                    dau2_eta = tau_eta.at(dau2_index);
-                    dau2_phi = tau_phi.at(dau2_index);
-                    dau2_mass = tau_mass.at(dau2_index);
 
                     auto dau1_tlv = TLorentzVector();
                     auto dau2_tlv = TLorentzVector();
@@ -395,17 +347,15 @@ class HHVarRDFProducer(JetLepMetSyst):
         if features[0] in all_branches:
             return df, []
 
-        df = df.Define("hhfeatures%s" % self.systs, ("get_hh_features{6}(pairType, isBoosted, "
-            "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
-            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
-            "FatJet_pt{3}, FatJet_eta, FatJet_phi, FatJet_mass{3}, "
-            "MET{5}_pt{4}, MET{5}_phi{4}, "
-            "{7}tt_svfit_pt{6}, {7}tt_svfit_eta{6}, {7}tt_svfit_phi{6}, {7}tt_svfit_mass{6})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst,
-                self.met_syst, self.met_smear_tag, self.systs, p_sv)))
+        df = df.Define("hhfeatures%s" % self.systs, (f"get_hh_features{self.systs}(pairType, isBoosted, "
+            f"bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
+            f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
+            f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
+            f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
+            f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
+            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, "
+            f"{p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs})"
+        ))
 
         for ifeat, feature in enumerate(features):
             df = df.Define(feature, "hhfeatures%s[%s]" % (self.systs, ifeat))

@@ -434,12 +434,22 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.isRun3 = kwargs.pop("isRun3", False)
         self.pairType_filter = pairType_filter
         self.deeptau_version = kwargs.pop("deeptau_version", "2017v2p1")
+        self.deepboostedtau_version = kwargs.pop("deepboostedtau_version", "2018v2p7")
         self.isV10 = kwargs.pop("isV10", False)
+        self.useBoostedTaus = kwargs.pop("useBoostedTaus")
+        # HPS tau deepTau working points
         vvvl_vsjet = kwargs.pop("vvvl_vsjet")
         vl_vse = kwargs.pop("vl_vse")
         vvl_vse = kwargs.pop("vvl_vse")
         t_vsmu = kwargs.pop("t_vsmu")
         vl_vsmu = kwargs.pop("vl_vsmu")
+        # deepBoostedTau WPs
+        if self.useBoostedTaus:
+            boostedTau_VsMu_threshold = kwargs.pop("boostedTau_VsMu_threshold")
+            boostedTau_VsE_threshold = kwargs.pop("boostedTau_VsE_threshold")
+            boostedTau_VsJet_threshold = kwargs.pop("boostedTau_VsJet_threshold")
+        else:
+            boostedTau_VsMu_threshold, boostedTau_VsE_threshold, boostedTau_VsJet_threshold = 0, 0, 0
 
         if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
             ROOT.gSystem.Load("libToolsTools.so")
@@ -478,9 +488,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             base = "{}/{}/src/Tools/Tools".format(
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             ROOT.gROOT.ProcessLine(".L {}/interface/HHLeptonInterface.h".format(base))
-            ROOT.gInterpreter.Declare("""
-                auto HHLepton = HHLeptonInterface(%s, %s, %s, %s, %s);
-            """ % (vvvl_vsjet, vl_vse, vvl_vse, t_vsmu, vl_vsmu))
+            ROOT.gInterpreter.Declare(f"""
+                auto HHLepton = HHLeptonInterface(
+                    {vvvl_vsjet}, {vl_vse}, {vvl_vse}, {t_vsmu}, {vl_vsmu},
+                    {boostedTau_VsMu_threshold}, {boostedTau_VsE_threshold}, {boostedTau_VsJet_threshold});
+            """)
 
             if self.year == 2016:
                 if not self.isV10:
@@ -783,23 +795,58 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         if Electron_mvaNoIso_WP90 not in all_branches:
             Electron_mvaNoIso_WP90 = "Electron_mvaFall17V2noIso_WP90"
 
-        df = df.Define("hh_lepton_results", "HHLepton.get_dau_indexes("
-            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0}, "
-            "Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, Muon_charge, "
-            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "{3}, {4}, {5}, Electron_pfRelIso03_all, "
-            "Electron_dxy, Electron_dz, Electron_charge, "
-            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "Tau_idDeepTau{6}VSmu, Tau_idDeepTau{6}VSe, "
-            "Tau_idDeepTau{6}VSjet, Tau_rawDeepTau{6}VSjet, "
+        branches = []
+        
+        if self.useBoostedTaus:
+            # boosted taus
+            df = df.Define("hh_lepton_results_boostedTaus", "HHLepton.get_boosted_dau_indexes("
+                f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
+                f"Muon_pfRelIso04_all, Muon_dxy, Muon_dz, "
+                f"Muon_looseId, Muon_mediumId, Muon_tightId, Muon_charge, "
+                f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
+                f"{Electron_mvaIso_WP80}, {Electron_mvaNoIso_WP90}, {Electron_mvaIso_WP90}, Electron_pfRelIso03_all, "
+                f"Electron_dxy, Electron_dz, Electron_charge, "
+                # TODO boostedTau systematic variations on pt & mass
+                f"boostedTau_pt, boostedTau_eta, boostedTau_phi, boostedTau_mass, "
+                f"boostedTau_idDeepTau{self.deepboostedtau_version}VSmu, boostedTau_idDeepTau{self.deepboostedtau_version}VSe, "
+                f"boostedTau_idDeepTau{self.deepboostedtau_version}VSjet, boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet, "
+                "boostedTau_decayMode, boostedTau_charge, "
+                "boostedTau_Mcounter, { {boostedTau_LeadingMuon_muonIdx, boostedTau_SubLeadingMuon_muonIdx, boostedTau_SubSubLeadingMuon_muonIdx} }, "
+                "{ {boostedTau_LeadingMuonPt, boostedTau_SubLeadingMuonPt, boostedTau_SubSubLeadingMuonPt} }, { {boostedTau_LeadingMuonCorrIso, boostedTau_SubLeadingMuonCorrIso, boostedTau_SubSubLeadingMuonCorrIso} }, "
+                "boostedTau_Ecounter, { {boostedTau_LeadingElectron_electronIdx, boostedTau_SubLeadingElectron_electronIdx, boostedTau_SubSubLeadingElectron_electronIdx} }, "
+                "{ {boostedTau_LeadingElectronPt, boostedTau_SubLeadingElectronPt, boostedTau_SubSubLeadingElectronPt} }, { {boostedTau_LeadingElectronCorrIso, boostedTau_SubLeadingElectronCorrIso, boostedTau_SubSubLeadingElectronCorrIso} } "
+            ")"
+            )
+            df = df.Define("pairType_boostedTaus", "hh_lepton_results_boostedTaus.pairType")
+            branches.append("pairType_boostedTaus")
+
+        # HPS taus
+        df = df.Define("hh_lepton_results_HPStaus", "HHLepton.get_dau_indexes("
+            f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
+            f"Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, Muon_charge, "
+            f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
+            f"{Electron_mvaIso_WP80}, {Electron_mvaNoIso_WP90}, {Electron_mvaIso_WP90}, Electron_pfRelIso03_all, "
+            f"Electron_dxy, Electron_dz, Electron_charge, "
+            f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, "
+            f"Tau_idDeepTau{self.deeptau_version}VSmu, Tau_idDeepTau{self.deeptau_version}VSe, "
+            f"Tau_idDeepTau{self.deeptau_version}VSjet, Tau_rawDeepTau{self.deeptau_version}VSjet, "
             "Tau_dz, Tau_decayMode, Tau_charge, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
             "mutau_triggers, etau_triggers, tautau_triggers, tautaujet_triggers, vbf_triggers"
-        ")".format(self.muon_syst, self.electron_syst, self.tau_syst,
-            Electron_mvaIso_WP80, Electron_mvaNoIso_WP90, Electron_mvaIso_WP90,
-            self.deeptau_version))
+        ")"
+        )
+        df = df.Define("pairType_HPSTaus", "hh_lepton_results_HPStaus.pairType")
+        branches.append("pairType_HPSTaus")
 
-        branches = []
+        if self.useBoostedTaus:
+            # Give priority to boostedTaus
+            df = df.Define("hh_lepton_results", "hh_lepton_results_boostedTaus.pairType >= 0 ? hh_lepton_results_boostedTaus : hh_lepton_results_HPStaus")
+            df = df.Define("isBoostedTau", "hh_lepton_results_boostedTaus.pairType >= 0")
+        else:
+            df = df.Alias("hh_lepton_results", "hh_lepton_results_HPStaus")
+            df = df.Define("isBoostedTau", "False")
+        branches.append("isBoostedTau")
+
         for var in variables:
             branchName = var
             if "DeepTau" in branchName:
@@ -883,10 +930,11 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
                 using Vfloat = const ROOT::RVec<float>&;
                 using VInt = const ROOT::RVec<int>&;
                 std::vector<float> get_lepton_values (
-                    int pairType, int dau1_index, int dau2_index,
+                    int pairType, bool isBoostedTau, int dau1_index, int dau2_index,
                     Vfloat muon_pt, Vfloat muon_mass,
                     Vfloat electron_pt, Vfloat electron_mass,
-                    Vfloat tau_pt, Vfloat tau_mass
+                    Vfloat tau_pt, Vfloat tau_mass,
+                    Vfloat boostedtau_pt, Vfloat boostedtau_mass
                 )
                 {
                     float dau1_pt, dau1_mass, dau2_pt, dau2_mass;
@@ -896,14 +944,23 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
                     } else if (pairType == 1) {
                         dau1_pt = electron_pt.at(dau1_index);
                         dau1_mass = electron_mass.at(dau1_index);
-                    } else if (pairType == 2) {
+                    } else if (pairType == 2 && !isBoostedTau) {
                         dau1_pt = tau_pt.at(dau1_index);
                         dau1_mass = tau_mass.at(dau1_index);
+                    } else if (pairType == 2 && isBoostedTau) {
+                        dau1_pt = boostedtau_pt.at(dau1_index);
+                        dau1_mass = boostedtau_mass.at(dau1_index);
                     } else {
                         return {-999., -999., -999., -999.};
                     }
-                    dau2_pt = tau_pt.at(dau2_index);
-                    dau2_mass = tau_mass.at(dau2_index);
+                    
+                    if (isBoostedTau) {
+                        dau2_pt = boostedtau_pt.at(dau2_index);
+                        dau2_mass = boostedtau_mass.at(dau2_index);
+                    } else {
+                        dau2_pt = tau_pt.at(dau2_index);
+                        dau2_mass = tau_mass.at(dau2_index);
+                    }
                     return {dau1_pt, dau1_mass, dau2_pt, dau2_mass};
                 }
             """)
@@ -916,9 +973,9 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
             return df, []
 
         df = df.Define(f"lepton_values{self.lep_syst}{self.tau_syst}", "get_lepton_values("
-            "pairType, dau1_index, dau2_index, "
+            "pairType, isBoostedTau, dau1_index, dau2_index, "
             "Muon_pt{0}, Muon_mass{0}, Electron_pt{1}, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_mass{2})".format(self.muon_syst, self.electron_syst, self.tau_syst))
+            "Tau_pt{2}, Tau_mass{2}, boostedTau_pt{3}, boostedTau_mass{3})".format(self.muon_syst, self.electron_syst, self.tau_syst, "")) # TODO boostedTau systematics
 
         for ib, branch in enumerate(branches):
             df = df.Define(branch, f"lepton_values{self.lep_syst}{self.tau_syst}[{ib}]")
