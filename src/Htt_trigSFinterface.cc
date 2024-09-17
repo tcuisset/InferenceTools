@@ -53,8 +53,9 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
     std::vector<double> trigSF_mu, trigSF_tauup, trigSF_taudown;
     double trigSF_single, trigSF_cross;
     if (fabs(dau2_eta) < 2.1) {
-      int passSingle = (dau1_pt > mutau_pt_th1_) ? 1 : 0;
-      int passCross = (dau2_pt > mutau_pt_th2_) ? 1 : 0;
+      // Use >= instead of > as it is possible that the pt is exactly equal to the threshold
+      int passSingle = (dau1_pt >= mutau_pt_th1_) ? 1 : 0;
+      int passCross = (dau2_pt >= mutau_pt_th2_) ? 1 : 0;
       assert(passSingle || passCross);
 
       // lepton trigger
@@ -168,8 +169,9 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
     std::vector<double> trigSF_e, trigSF_tauup, trigSF_taudown;
     double trigSF_single, trigSF_cross;
     if (fabs(dau2_eta) < 2.1 && year_ != 2016) {
-      int passSingle = (dau1_pt > etau_pt_th1_) ? 1 : 0;
-      int passCross = (dau2_pt > etau_pt_th2_) ? 1 : 0;
+      // Use >= instead of > as it is possible that the pt is exactly equal to the threshold
+      int passSingle = (dau1_pt >= etau_pt_th1_) ? 1 : 0;
+      int passCross = (dau2_pt >= etau_pt_th2_) ? 1 : 0;
       assert(passSingle || passCross);
 
       // lepton trigger
