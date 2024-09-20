@@ -461,15 +461,19 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         # struct trig_req {bool pass; float pt1; float eta1; float pt2; float eta2; std::vector<std::vector<int>> bits; };
         # the values here are used to make cuts on *offline* objects, nb1 is electron/muon/hadTau, nb2 is hadTau
 
+        # boostedTau triggers are not actually used if we use MET trigger
+
         self.mutau_triggers = ["HLT_IsoMu22", "HLT_IsoMu22_eta2p1",
             "HLT_IsoTkMu24", "HLT_IsoTkMu22_eta2p1", "HLT_IsoMu24", "HLT_IsoMu27",
             "HLT_IsoMu19_eta2p1_LooseIsoPFTau20", "HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1",
             "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1",
             "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1"]
+        self.mu_boostedTau_triggers = ["HLT_Mu50", "HLT_OldMu100", "HLT_TkMu100"]
         self.etau_triggers = ["HLT_Ele25_eta2p1_WPTight_Gsf", "HLT_Ele32_WPTight_Gsf_L1DoubleEG",
             "HLT_Ele32_WPTight_Gsf", "HLT_Ele35_WPTight_Gsf",
             "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1",
             "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1"]
+        self.e_boostedTau_triggers = ["HLT_Ele115_CaloIdVT_GsfTrkIdT", "HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165"] # TODO see if we should include HLT_Photon200
         self.tautau_triggers = ["HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg",
             "HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg",
             "HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg",
@@ -477,6 +481,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg",
             "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg",
             "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1"]
+        self.boostedTau_boostedTau_triggers = ["HLT_AK8PFHT800_TrimMass50"]
         self.tautaujet_triggers = ["HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60"]
         self.vbf_triggers = ["HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg",
             "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
@@ -687,6 +692,19 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             }
                             return trigger_reqs;
                         }
+                        std::vector<trig_req> get_mu_boostedTau_triggers(
+                                Vbool triggers, bool isMC, int run, int runEra) {
+                            std::vector<trig_req> trigger_reqs; 
+                            // TODO checked for 2018 but 2016 is different !!!!!!!!!!!! TODO check 2016
+                            // https://indico.cern.ch/event/1080036/contributions/4542924/attachments/2318322/3947065/210928_ULTriggerSF_kHwang.pdf
+                            // TrigObj filter bits : 
+                            // 10: ["hltL3fL1sMu*L3Filtered50*","hltL3fL1sMu*TkFiltered50*"],"1mu (Mu50)"
+                            // 11: ["hltL3fL1sMu*L3Filtered100*","hltL3fL1sMu*TkFiltered100*"],"1mu (Mu100)"
+                            trigger_reqs.push_back(trig_req({triggers[0], 52, 2.4, 20, 2.3, 50, 0, {{10}, {}}})); // HLT_Mu50 ie hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q
+                            trigger_reqs.push_back(trig_req({triggers[1], 52, 2.4, 20, 2.3, 100, 0, {{11}, {}}})); // HLT_OldMu100 ie hltL3fL1sMu22Or25L1f0L2f10QL3Filtered100Q
+                            trigger_reqs.push_back(trig_req({triggers[2], 52, 2.4, 20, 2.3, 100, 0, {{11}, {}}})); // HLT_TkMu100 ie hltL3fL1sMu25f0TkFiltered100Q
+                            return trigger_reqs;
+                        }
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
@@ -699,6 +717,16 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             else {
                                 trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{8}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
                             }
+                            return trigger_reqs;
+                        }
+                        std::vector<trig_req> get_e_boostedTau_triggers(
+                                Vbool triggers, bool isMC, int run, int runEra) {
+                            std::vector<trig_req> trigger_reqs; // filter bits checked for 2018 but TODO check for 2016 !! + TODO check thresholds for SFs when we have SFs
+                            // Filter bits (2018)
+                            // 11: "filter('hltEle*CaloIdVTGsfTrkIdTGsfDphiFilter')","1e (CaloIdVT_GsfTrkIdT)"
+                            // 12: path('HLT_Ele*PFJet*')","1e (PFJet)"
+                            trigger_reqs.push_back(trig_req({triggers[0], 120, 2.5, 20, 2.3, 115, 0, {{11}, {}}})); // HLT_Ele115_CaloIdVT_GsfTrkIdT ie hltEle115CaloIdVTGsfTrkIdTGsfDphiFilter
+                            trigger_reqs.push_back(trig_req({triggers[1], 55, 2.5, 20, 2.3, 50, 0, {{11, 12}, {}}})); // HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 ie hltEle50CaloIdVTGsfTrkIdTCentralPFJet165EleCleaned
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
@@ -722,6 +750,22 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             }
                             return trigger_reqs;
                         }
+                        std::vector<trig_req> get_boostedTau_boostedTau_triggers(
+                                Vbool triggers, bool isMC, int run, int runEra) {
+                            std::vector<trig_req> trigger_reqs;
+                            // TrigObj bits for FatJet : filterBits done, TODO trigger matching & thresholds etc
+                            /* 0: mksel("coll('hltAK8PFJetsCorrected')"),    #1, always present
+                               1: mksel(["hltAK8SingleCaloJet200"]),         #2, always present
+                               2: mksel("coll('hltAK8PFSoftDropJets230')"),  #4, present if nothing else below is fired, otherwise 12, 20, 28, 52, 60
+                               3: mksel(["hltAK8SinglePFJets230SoftDropMass40BTagParticleNetBB0p35",
+                               4: "hltAK8SinglePFJets250SoftDropMass40BTagParticleNetBB0p35",
+                               5: "hltAK8SinglePFJets275SoftDropMass40BTagParticleNetBB0p35"]), # 12 if nothing below is fired, #28 if also "hltAK8DoublePFJetSDModMass30", #60 if also "hltAK8DoublePFJetSDModMass50" 
+                               6: mksel(["hltAK8DoublePFJetSDModMass30"]), # 16 if onthing else (except #1), 20 if also #4, 28 if also #12
+                               7: mksel(["hltAK8DoublePFJetSDModMass50"]), # 48 if also (obviously) "hltAK8DoublePFJetSDModMass30", 52 if also #4, #60 if all above
+                            */
+                            trigger_reqs.push_back(trig_req({triggers[0], 0, 0, 0, 0, 0, 0, {{0}, {}}})); // HLT_AK8PFHT800_TrimMass50
+                            return trigger_reqs;
+                        }
                         std::vector<trig_req> get_tautaujet_triggers(Vbool triggers, bool isRun3) {
                             std::vector<trig_req> trigger_reqs;
                             return trigger_reqs;
@@ -736,6 +780,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                     """)
+                    self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
 
     def run(self, df):
         variables = ["pairType", "dau1_index", "dau2_index",
@@ -775,11 +820,17 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         df = df.Define("mutau_triggers", "get_mutau_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.mutau_triggers), ("true" if self.isMC else "false"), runEra))
+        df = df.Define("mu_boostedTau_triggers", "get_mu_boostedTau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.mu_boostedTau_triggers), ("true" if self.isMC else "false"), runEra))
         df = df.Define("etau_triggers", "get_etau_triggers({%s}, %s, run, %s)" % (
             ", ".join(self.etau_triggers), ("true" if self.isMC else "false"), runEra))
+        df = df.Define("e_boostedTau_triggers", "get_e_boostedTau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.e_boostedTau_triggers), ("true" if self.isMC else "false"), runEra))
         df = df.Define("tautau_triggers", "get_tautau_triggers({%s}, %s, %s, run, %s)" % (
             ", ".join(self.tautau_triggers), ("true" if self.isMC else "false"),
             ("true" if self.isRun3 else "false"), runEra))
+        df = df.Define("boostedTau_boostedTau_triggers", "get_boostedTau_boostedTau_triggers({%s}, %s, run, %s)" % (
+            ", ".join(self.boostedTau_boostedTau_triggers), ("true" if self.isMC else "false"), runEra))
         df = df.Define("tautaujet_triggers", "get_tautaujet_triggers({%s}, %s)" % (
             ", ".join(self.tautaujet_triggers), ("true" if self.isRun3 else "false")))
         df = df.Define("vbf_triggers", "get_vbf_triggers({%s}, %s, run, %s)" % (
@@ -814,7 +865,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 "boostedTau_Mcounter, { {boostedTau_LeadingMuon_muonIdx, boostedTau_SubLeadingMuon_muonIdx, boostedTau_SubSubLeadingMuon_muonIdx} }, "
                 "{ {boostedTau_LeadingMuonPt, boostedTau_SubLeadingMuonPt, boostedTau_SubSubLeadingMuonPt} }, { {boostedTau_LeadingMuonCorrIso, boostedTau_SubLeadingMuonCorrIso, boostedTau_SubSubLeadingMuonCorrIso} }, "
                 "boostedTau_Ecounter, { {boostedTau_LeadingElectron_electronIdx, boostedTau_SubLeadingElectron_electronIdx, boostedTau_SubSubLeadingElectron_electronIdx} }, "
-                "{ {boostedTau_LeadingElectronPt, boostedTau_SubLeadingElectronPt, boostedTau_SubSubLeadingElectronPt} }, { {boostedTau_LeadingElectronCorrIso, boostedTau_SubLeadingElectronCorrIso, boostedTau_SubSubLeadingElectronCorrIso} } "
+                "{ {boostedTau_LeadingElectronPt, boostedTau_SubLeadingElectronPt, boostedTau_SubSubLeadingElectronPt} }, { {boostedTau_LeadingElectronCorrIso, boostedTau_SubLeadingElectronCorrIso, boostedTau_SubSubLeadingElectronCorrIso} }, "
+                "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
+                "mu_boostedTau_triggers, e_boostedTau_triggers, boostedTau_boostedTau_triggers"
             ")"
             )
             df = df.Define("pairType_boostedTaus", "hh_lepton_results_boostedTaus.pairType")
@@ -840,8 +893,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         if self.useBoostedTaus:
             # Give priority to boostedTaus
-            df = df.Define("hh_lepton_results", "hh_lepton_results_boostedTaus.pairType >= 0 ? hh_lepton_results_boostedTaus : hh_lepton_results_HPStaus")
-            df = df.Define("isBoostedTau", "hh_lepton_results_boostedTaus.pairType >= 0")
+            # boostedTau category need MET trigger fired && offline MET cut to avoid MET turn on (offline cut from Wisconsin analysis)
+            df = df.Define("isBoostedTau", f"hh_lepton_results_boostedTaus.pairType >= 0 && ({self.boostedTau_MET_triggers}) && MET_pt > 180")
+            df = df.Define("hh_lepton_results", "isBoostedTau ? hh_lepton_results_boostedTaus : hh_lepton_results_HPStaus")
         else:
             df = df.Alias("hh_lepton_results", "hh_lepton_results_HPStaus")
             df = df.Define("isBoostedTau", "False")

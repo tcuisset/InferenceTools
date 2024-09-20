@@ -159,7 +159,10 @@ class HHLeptonInterface {
       iRVec boostedTau_muonCount, std::array<sRVec, 3> BT_muon_idx, 
       std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
       iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
-      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso
+      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
+      std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
+      std::vector<trig_req> tautau_triggers
     );
 
     lepton_output get_dau_indexes(

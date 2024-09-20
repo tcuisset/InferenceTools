@@ -682,15 +682,14 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
             'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
             'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
-        df = df.Define("htt_trigsf", "try { return " + (
+        df = df.Define("htt_trigsf", (
             "isBoostedTau ? std::vector<double>({1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}) : " # TODO boostedTau trigger scale factors
             "Htt_trigSF.get_scale_factors(pairType, isVBFtrigger, "
             f"dau1_decayMode, dau1_pt{self.lep_syst}, dau1_eta, "
             f"dau2_decayMode, dau2_pt{self.lep_syst}, dau2_eta, "
             "-999, -999, -999, -999, "
             "-999, -999, -999, -999)"
-            ) 
-                + ';} catch (std::exception const& e) { std::cerr << "ERROR : exception thrown, run " << run << " lumi " << luminosityBlock << " event " << event << std::endl; throw; }')
+            ))
         for ib, branch in enumerate(branches):
             df = df.Define(branch, "htt_trigsf[%s]" % (ib))
         return df, branches

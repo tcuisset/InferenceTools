@@ -1,5 +1,7 @@
 #include "Tools/Tools/interface/HHLeptonInterface.h"
 
+#include <algorithm>
+
 // Constructors
 
 HHLeptonInterface::HHLeptonInterface (
@@ -33,7 +35,10 @@ lepton_output HHLeptonInterface::get_boosted_dau_indexes(
       iRVec boostedTau_muonCount, std::array<sRVec, 3> BT_muon_idx, 
       std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
       iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
-      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso
+      std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso,
+      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
+      std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
+      std::vector<trig_req> tautau_triggers
     )
 {
   std::vector<int> goodBoostedTaus;
@@ -63,7 +68,16 @@ lepton_output HHLeptonInterface::get_boosted_dau_indexes(
 
       if (BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau] > 0.25) continue;
 
-      // TODO trigger check
+      auto muon_tlv = TLorentzVector();
+      muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon], Muon_phi[imuon], Muon_mass[imuon]);
+      auto tau_tlv = TLorentzVector();
+      tau_tlv.SetPtEtaPhiM(boostedTau_pt[itau], boostedTau_eta[itau], boostedTau_phi[itau], boostedTau_mass[itau]);
+      // No trigger matching for MET trigger
+      // if (!pass_trigger(
+      //       muon_tlv.Pt(), muon_tlv.Eta(), muon_tlv.Phi(), 13,
+      //       tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
+      //       mutau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
+      //     continue;
 
       tau_pairs.push_back(tau_pair({imuon, BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau], Muon_pt[imuon],
           itau, boostedTau_rawDeepTauVSjet[itau], boostedTau_pt[itau], 0, 0}));
@@ -117,8 +131,18 @@ lepton_output HHLeptonInterface::get_boosted_dau_indexes(
         continue;
       if (fabs(Electron_eta[iele]) >= 1.479 &&  isoOverPt >=  0.108 + 0.963 / BT_electron_pt[ielectronFromBT][itau])
         continue;
-
-      // TODO trigger check
+      
+      auto electron_tlv = TLorentzVector();
+      electron_tlv.SetPtEtaPhiM(Electron_pt[iele], Electron_eta[iele],
+          Electron_phi[iele], Electron_mass[iele]);
+      auto tau_tlv = TLorentzVector();
+      tau_tlv.SetPtEtaPhiM(boostedTau_pt[itau], boostedTau_eta[itau], boostedTau_phi[itau], boostedTau_mass[itau]);
+      // no trigger matching for MET trigger
+      // if (!pass_trigger(
+      //       electron_tlv.Pt(), electron_tlv.Eta(), electron_tlv.Phi(), 11,
+      //       tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
+      //       mutau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
+      //     continue;
 
       tau_pairs.push_back(tau_pair({iele, BT_electron_correctedIso[ielectronFromBT][itau]/BT_electron_pt[ielectronFromBT][itau], Electron_pt[iele],
           itau, boostedTau_rawDeepTauVSjet[itau], boostedTau_pt[itau], 0, 0}));
@@ -165,7 +189,10 @@ lepton_output HHLeptonInterface::get_boosted_dau_indexes(
         if (tau1_tlv.DeltaR(tau2_tlv) > 0.8)
           continue;
 
-        // TODO trigger
+        // trigger matching (not used for MET trigger)
+        // if (!std::any_of(tautau_triggers.begin(), tautau_triggers.end(),
+        //        [](auto const& trigger) { return trigger.pass;}))
+        //   continue;
 
         tau_pairs.push_back(tau_pair({itau1, boostedTau_rawDeepTauVSjet[itau1], boostedTau_pt[itau1],
           itau2, boostedTau_rawDeepTauVSjet[itau2], boostedTau_pt[itau2], false, false}));
