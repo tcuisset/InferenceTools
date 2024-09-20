@@ -171,7 +171,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             
             ROOT.gInterpreter.Declare("""
                 using Vfloat = const ROOT::RVec<Float_t>&;
-                HHDNNinterfaceNew get_dnn_inputs_%s(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, ULong64_t event,
+                HHDNNinterfaceNew get_dnn_inputs_%s(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int isBoostedTau, ULong64_t event,
                     int bjet1_index, int bjet2_index,
                     int fatjet_index, int vbfjet1_index, int vbfjet2_index,
                     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
@@ -188,6 +188,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
                     dnnInt.pairType = pairType;
                     dnnInt.isBoosted = isBoosted;
+                    dnnInt.isBoostedTau = isBoostedTau;
 
                     dnnInt.l1 = LVector(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
                     dnnInt.l2 = LVector(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
@@ -276,7 +277,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
 
         df = df.Define("dnn_input%s" % self.systs, f"""get_dnn_inputs_{self.variable_dnnInput}(
-            {self.variable_dnnInput}, pairType, isBoosted, event, 
+            {self.variable_dnnInput}, pairType, isBoosted, isBoostedTau, event, 
             bjet1_JetIdx, bjet2_JetIdx,
             fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, 
             dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, 

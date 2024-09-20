@@ -26,6 +26,7 @@ class HHDNNinterfaceNew {
 
     unsigned short year() const { return year_; }; // Year for DNN input (ie 0, 1, 2)
     bool boosted() const { return isBoosted; }
+    bool boostedTau() const { return isBoostedTau; }
     short channel() const { 
       // pairType | Our Def. | DNN
       // ------------------------
@@ -104,33 +105,34 @@ class HHDNNinterfaceNew {
   public:
     unsigned short year_;
     short pairType;
-    bool isBoosted;
+    bool isBoosted; // boosted-bb (FatJet) versus resolved (2*AK4)
+    bool isBoostedTau; // boostedTau vs HPS tau reconstruction
     unsigned long long int eventn;
 
-    // 4-vectors of b-jets and of leptons
+    // 4-vectors of b-jets (for resolved b)
     LorentzVector b1;
     LorentzVector b2;
-    LorentzVector fatjet; // FatJet with raw jet mass
-    float fatjet_softDropMass;
+    LorentzVector fatjet; // FatJet with raw jet mass (for boosted bb)
+    float fatjet_softDropMass; //Maybe could use ParticleNet regressed mass ?
     // float fatjet_nsubjettiness // possible future boosted DNN feature
 
-    LorentzVector l1;
+    LorentzVector l1; // leptons
     LorentzVector l2;
     
     LorentzVector met;
-    LorentzVector svfit;
+    LorentzVector svfit; // tautau 4-vector from SVFit
     
     float KinFitMass;
     float KinFitChi2;
-    bool KinFitConv;
+    bool KinFitConv; // did kinematic fit converge ?
     bool SVfitConv;
-    float deepFlav1;
+    float deepFlav1; // b-tagging scores of 2 AK4 jets (only for resolved category)
     float deepFlav2;
     float CvsL_b1;
     float CvsL_b2;
     float CvsB_b1;
     float CvsB_b2;
-    float HHbtag_b1;
+    float HHbtag_b1; // HHbtag score (resolved only)
     float HHbtag_b2;
 
     float DNN_res_mass; // Resonant mass for parametrized DNN
