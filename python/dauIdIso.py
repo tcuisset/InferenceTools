@@ -46,6 +46,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                             Vfloat musf_id, Vfloat musf_reliso, Vfloat elesf_reco, Vfloat elesf_idiso, 
                             Vfloat Tau_sfDeepTau2017v2p1VSjet_pt, Vfloat Tau_sfDeepTau2017v2p1VSjet_dm,
                             Vfloat Tau_sfDeepTau2017v2p1VSe, Vfloat Tau_sfDeepTau2017v2p1VSmu_tautau, Vfloat Tau_sfDeepTau2017v2p1VSmu_lepton) {
+                        if (pairType < 0) return 1.;
                         // We use separate VSmu WPs for tautau channel and for etau/mutau channel
                         double idAndIsoSF_leg1 = 1.;
                         if (pairType == 0) {
