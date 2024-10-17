@@ -429,6 +429,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
     def __init__(self, isMC, year, runEra, pairType_filter, *args, **kwargs):
         super(HHLeptonRDFProducer, self).__init__(isMC=isMC, year=year, *args, **kwargs)
         self.isMC = isMC
+        self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
         self.year = year
         self.runEra = runEra
         self.isRun3 = kwargs.pop("isRun3", False)
@@ -486,6 +487,10 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.vbf_triggers = ["HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1_Reg",
             "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
             "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
+        
+        # 2018 only
+        assert self.year == 2018
+        self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
 
         if not os.getenv("_HHLepton"):
             os.environ["_HHLepton"] = "_HHLepton"
@@ -618,6 +623,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
             if self.year == 2018 or self.year == 2022:
                 if not self.isV10:
+                    assert False
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
@@ -780,7 +786,6 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             return trigger_reqs;
                         }
                     """)
-                    self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
 
     def run(self, df):
         variables = ["pairType", "dau1_index", "dau2_index",
@@ -848,30 +853,53 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         branches = []
         
+        muonGenPartIdx_branch = "Muon_genPartIdx" if self.doGenCutFlow else "{}"
+        electronGenPartIdx_branch = "Electron_genPartIdx" if self.doGenCutFlow else "{}"
+        boostedTau_genPartIdx_branch = "boostedTau_genPartIdx, boostedTau_genPartFlav" if self.doGenCutFlow else "{}, {}"
+        genPairTypeEtc_branch = "GenPairType, genDau1_genPartIdx, genDau2_genPartIdx" if self.doGenCutFlow else "-1, -1, -1"
         if self.useBoostedTaus:
             # boosted taus
             df = df.Define("hh_lepton_results_boostedTaus", "HHLepton.get_boosted_dau_indexes("
+                f"{str(self.doGenCutFlow).lower()}, "
                 f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
                 f"Muon_pfRelIso04_all, Muon_dxy, Muon_dz, "
                 f"Muon_looseId, Muon_mediumId, Muon_tightId, Muon_charge, "
+                f"{muonGenPartIdx_branch}, "
                 f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
                 f"{Electron_mvaIso_WP80}, {Electron_mvaNoIso_WP90}, {Electron_mvaIso_WP90}, Electron_pfRelIso03_all, "
                 f"Electron_dxy, Electron_dz, Electron_charge, "
+                f"{electronGenPartIdx_branch}, "
                 # TODO boostedTau systematic variations on pt & mass
                 f"boostedTau_pt, boostedTau_eta, boostedTau_phi, boostedTau_mass, "
                 f"boostedTau_idDeepTau{self.deepboostedtau_version}VSmu, boostedTau_idDeepTau{self.deepboostedtau_version}VSe, "
                 f"boostedTau_idDeepTau{self.deepboostedtau_version}VSjet, boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet, "
                 "boostedTau_decayMode, boostedTau_charge, "
+                f"{boostedTau_genPartIdx_branch}, "
                 "boostedTau_Mcounter, { {boostedTau_LeadingMuon_muonIdx, boostedTau_SubLeadingMuon_muonIdx, boostedTau_SubSubLeadingMuon_muonIdx} }, "
                 "{ {boostedTau_LeadingMuonPt, boostedTau_SubLeadingMuonPt, boostedTau_SubSubLeadingMuonPt} }, { {boostedTau_LeadingMuonCorrIso, boostedTau_SubLeadingMuonCorrIso, boostedTau_SubSubLeadingMuonCorrIso} }, "
                 "boostedTau_Ecounter, { {boostedTau_LeadingElectron_electronIdx, boostedTau_SubLeadingElectron_electronIdx, boostedTau_SubSubLeadingElectron_electronIdx} }, "
                 "{ {boostedTau_LeadingElectronPt, boostedTau_SubLeadingElectronPt, boostedTau_SubSubLeadingElectronPt} }, { {boostedTau_LeadingElectronCorrIso, boostedTau_SubLeadingElectronCorrIso, boostedTau_SubSubLeadingElectronCorrIso} }, "
                 "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
-                "mu_boostedTau_triggers, e_boostedTau_triggers, boostedTau_boostedTau_triggers"
+                "mu_boostedTau_triggers, e_boostedTau_triggers, boostedTau_boostedTau_triggers, "
+                f"{genPairTypeEtc_branch}"
             ")"
             )
-            df = df.Define("pairType_boostedTaus", "hh_lepton_results_boostedTaus.pairType")
+            df = df.Define("pairType_boostedTaus", "hh_lepton_results_boostedTaus.first.pairType")
             branches.append("pairType_boostedTaus")
+
+            if self.doGenCutFlow:
+                import cppyy
+                # save all FailReason attributes to a branch
+                for dauId in [1, 2]:
+                    for failReason in dir(cppyy.gbl.FailReason): # this lists all attributes of the C++ object FailReason
+                        if failReason.startswith("_") or failReason == "pass":
+                            continue
+                        df = df.Define(f"cutflow_boostedTaus_dau{dauId}_{failReason}", f"hh_lepton_results_boostedTaus.second.dau{dauId}_fail.{failReason}")
+                        branches.append(f"cutflow_boostedTaus_dau{dauId}_{failReason}")
+                df = df.Define("cutflow_boostedTaus_leptonVetoFail", "hh_lepton_results_boostedTaus.second.leptonVetoFail")
+                branches.append("cutflow_boostedTaus_leptonVetoFail")
+                df = df.Define("cutflow_boostedTaus_deltaR", "hh_lepton_results_boostedTaus.second.deltaR")
+                branches.append("cutflow_boostedTaus_deltaR")
 
         # HPS taus
         df = df.Define("hh_lepton_results_HPStaus", "HHLepton.get_dau_indexes("
@@ -894,8 +922,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         if self.useBoostedTaus:
             # Give priority to boostedTaus
             # boostedTau category need MET trigger fired && offline MET cut to avoid MET turn on (offline cut from Wisconsin analysis)
-            df = df.Define("isBoostedTau", f"hh_lepton_results_boostedTaus.pairType >= 0 && ({self.boostedTau_MET_triggers}) && MET_pt > 180")
-            df = df.Define("hh_lepton_results", "isBoostedTau ? hh_lepton_results_boostedTaus : hh_lepton_results_HPStaus")
+            df = df.Define("isBoostedTau", f"hh_lepton_results_boostedTaus.first.pairType >= 0 && ({self.boostedTau_MET_triggers}) && MET_pt > 180")
+            df = df.Define("hh_lepton_results", "isBoostedTau ? hh_lepton_results_boostedTaus.first : hh_lepton_results_HPStaus")
         else:
             df = df.Alias("hh_lepton_results", "hh_lepton_results_HPStaus")
             df = df.Define("isBoostedTau", "False")

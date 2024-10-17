@@ -23,6 +23,7 @@ typedef ROOT::VecOps::RVec<float> fRVec;
 typedef ROOT::VecOps::RVec<bool> bRVec;
 typedef ROOT::VecOps::RVec<int> iRVec;
 typedef ROOT::VecOps::RVec<int16_t> sRVec;
+typedef ROOT::VecOps::RVec<UChar_t> uRVec;
 
 struct tau_pair {
   int index1;
@@ -68,6 +69,35 @@ struct lepton_output {
     int dau2_idDeepTauVSe;
     int dau2_idDeepTauVSmu;
     int dau2_idDeepTauVSjet;
+};
+
+struct FailReason {
+  FailReason() : Reco(false), Pt(false), Eta(false), Vertex(false), LeptonID(false), LeptonIso(false), TauIdVsMu(false), TauIdVsE(false), TauIdVsJet(false), TauDM(false), DeltaR(false), WrongPair(false)
+  {}
+  bool pass() { return !(Reco || Pt || Eta || Vertex || LeptonID || LeptonIso || TauIdVsMu || TauIdVsE || TauIdVsJet || TauDM || DeltaR || WrongPair); }
+
+  bool Reco;
+
+  bool Pt; bool Eta;
+  bool Vertex;
+  bool LeptonID; bool LeptonIso;
+  bool TauIdVsMu;
+  bool TauIdVsE;
+  bool TauIdVsJet;
+  bool TauDM;
+
+  bool DeltaR;
+
+  bool WrongPair;
+};
+
+struct cutflow_output {
+    // cutflow_output() : dau1_fail(), dau2_fail(), leptonVetoFail(false), deltaR(false)
+    // {}
+    FailReason dau1_fail;
+    FailReason dau2_fail;
+    bool leptonVetoFail;
+    bool deltaR;
 };
 
 // return true if pA > pB using the sorting criteria. For tautau (symmetrical)
@@ -144,25 +174,30 @@ class HHLeptonInterface {
       );
     ~HHLeptonInterface ();
     // Trying to find suitable boosted taus (before looking at regular HPS taus)
-    lepton_output get_boosted_dau_indexes(
+    std::pair<lepton_output, cutflow_output> get_boosted_dau_indexes(
+      bool doGenCutFlow,
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
       fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
       bRVec Muon_looseId, bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
+      sRVec Muon_genPartIdx,
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
       bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
       bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
+      sRVec Electron_genPartIdx,
       fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
       iRVec boostedTau_idDeepTauVSmu, iRVec boostedTau_idDeepTauVSe,
       iRVec boostedTau_idDeepTauVSjet, fRVec boostedTau_rawDeepTauVSjet,
       iRVec boostedTau_decayMode, iRVec boostedTau_charge,
+      sRVec boostedTau_genPartIdx,ROOT::VecOps::RVec<UChar_t> boostedTau_genPartFlav,
       iRVec boostedTau_muonCount, std::array<sRVec, 3> BT_muon_idx, 
       std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
       iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
       std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-      std::vector<trig_req> tautau_triggers
+      std::vector<trig_req> tautau_triggers,
+      int GenPairType, int genDau1_genPart_idx, int genDau2_genPart_idx
     );
 
     lepton_output get_dau_indexes(
@@ -213,5 +248,6 @@ class HHLeptonInterface {
     int BT_VsE_threshold_;
     int BT_VsJet_threshold_;
 };
+
 
 #endif // HHLeptonInterface_h
