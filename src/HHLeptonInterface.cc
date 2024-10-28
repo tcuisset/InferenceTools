@@ -29,7 +29,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       sRVec Muon_genPartIdx,
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
       bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
-      bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
+      bRVec Electron_mvaFall17V2Iso_WP90, iRVec Electron_vidNestedWPBitmap, fRVec Electron_pfRelIso03_all,
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       sRVec Electron_genPartIdx,
       fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
@@ -62,12 +62,13 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
   dau2_gen_failReason.Reco = true;
   bool deltaRFail = false;
   std::vector<int> goodBoostedTaus;
+  int genDau2_boostedTau_idx = -1; // Index in boostedTau collection of genmatched boostedTau
   for (size_t itau = 0; itau < boostedTau_pt.size(); itau ++) {
     FailReason failReason;
     if (boostedTau_pt[itau] < 40) failReason.Pt = true; // Pt threshold arbitrary (Wisconsin uses >20, central Nano uses >40)
-    if (boostedTau_idDeepTauVSmu[itau] < BT_VsMu_threshold_) failReason.TauIdVsMu = true;
-    if (boostedTau_idDeepTauVSe[itau] < BT_VsE_threshold_) failReason.TauIdVsE = true;
-    if (boostedTau_idDeepTauVSjet[itau] < BT_VsJet_threshold_) failReason.TauIdVsJet = true;
+    //if (boostedTau_idDeepTauVSmu[itau] < BT_VsMu_threshold_) failReason.TauIdVsMu = true;
+    //if (boostedTau_idDeepTauVSe[itau] < BT_VsE_threshold_) failReason.TauIdVsE = true;
+    if (boostedTau_rawDeepTauVSjet[itau] < BT_VsJet_threshold_) failReason.TauIdVsJet = true;
     
     if (boostedTau_decayMode[itau] != 0 && boostedTau_decayMode[itau] != 1
         && boostedTau_decayMode[itau] != 10 && boostedTau_decayMode[itau] != 11)
@@ -76,28 +77,33 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       goodBoostedTaus.push_back(itau);
 
     if (doGenCutFlow) {
-      if (boostedTauGenMatch(itau, genDau2_genPart_idx))
+      if (boostedTauGenMatch(itau, genDau2_genPart_idx)) {
         dau2_gen_failReason = failReason; // this will unset the Reco flag
-      else if (GenPairType == 2 && boostedTauGenMatch(itau, genDau1_genPart_idx))
+        genDau2_boostedTau_idx = itau;
+      } else if (GenPairType == 2 && boostedTauGenMatch(itau, genDau1_genPart_idx))
         dau1_gen_failReason = failReason; // same
     }
   } // loop over boostedTaus
 
   // ---------------- MU-TAU channel  ----------------------
   std::vector<tau_pair> tau_pairs;
+  bool foundMuonInBoostedTauCollection = false; // true if a genmatched muon has been found in the boostedTau muon collection
   for (auto & itau: goodBoostedTaus) {
     for (int imuonFromBT = 0; imuonFromBT < std::min(boostedTau_muonCount[itau], 3); imuonFromBT++) {
       FailReason failReason;
       int imuon = BT_muon_idx[imuonFromBT][itau];
-      if (imuon < 0) continue; // Muon that was not selected in NanoAOD muon. Should be very rare
+      if (imuon < 0) {
+        std::cerr << "Muon that was not selected in NanoAOD electron" << std::endl;// Should be very rare
+        continue;
+      }
       assert(imuon < (int)Muon_eta.size());
 
       if (fabs(Muon_eta[imuon]) >= 2.4) failReason.Eta = true;
       if (fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2) failReason.Vertex = true;
-      if (!Muon_looseId[imuon]) failReason.LeptonID = true;
+      if (!Muon_looseId[imuon]) failReason.LeptonID = true; // this cannot happen in theory, cut already at Nano level
       // No ISO requirement yet
       
-      if (Muon_pt[imuon] < 30) failReason.Pt = true; // arbitrary threshold
+      if (Muon_pt[imuon] < 20) failReason.Pt = true; // arbitrary threshold
 
       if (BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau] > 0.25) failReason.LeptonIso = true;
 
@@ -118,6 +124,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         
       if (doGenCutFlow && GenPairType == 0 && Muon_genPartIdx[imuon] == genDau1_genPart_idx) {
         dau1_gen_failReason = failReason;
+        foundMuonInBoostedTauCollection = true;
       }
     }
   }
@@ -128,7 +135,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
     int ind2 = tau_pairs[0].index2;
     int isOS = (int) (Muon_charge[ind1] != boostedTau_charge[ind2]);
     
-    if (doGenCutFlow && Muon_genPartIdx[ind1] != genDau1_genPart_idx)
+    if (doGenCutFlow && GenPairType == 0 && Muon_genPartIdx[ind1] != genDau1_genPart_idx)
       dau1_gen_failReason.WrongPair = true;
     if (doGenCutFlow && !boostedTauGenMatch(ind2, genDau2_genPart_idx))
       dau2_gen_failReason.WrongPair = true;
@@ -142,28 +149,58 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       return {lepton_output({
         -1, -1, -1, -1, -1, -1,
         -1., -1., -1., -1, -1, -1, -1,
-        -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, false})};
+        -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, false, GenPairType != 0})};
 
 
     return {lepton_output({0, ind1, ind2, 0, 0, isOS,
       Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
       boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
       boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
-      boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, false})};
+      boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, false, GenPairType != 0})};
+  }
+
+  // Finding muons that were not in the boostedTau collections
+  // gen study on muons : because boostedTau muons branches have selection on ID, and we want to separate reco from ID in cutflow
+  if (doGenCutFlow && GenPairType == 0 && !foundMuonInBoostedTauCollection) {
+    for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
+      if (Muon_genPartIdx[imuon] == genDau1_genPart_idx) {
+        // We found a reco muon matching truth : Could be because of deltaR failure or because of ID fail
+        dau1_gen_failReason.Reco = false;
+
+        // Now we try to reproduce selections done at NanoAOD level
+
+        if (genDau2_boostedTau_idx >= 0) {
+          auto muon_tlv = TLorentzVector();
+          muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon],
+              Muon_phi[imuon], Muon_mass[imuon]);
+          auto tau_tlv = TLorentzVector();
+          tau_tlv.SetPtEtaPhiM(boostedTau_pt[genDau2_boostedTau_idx], boostedTau_eta[genDau2_boostedTau_idx], boostedTau_phi[genDau2_boostedTau_idx], boostedTau_mass[genDau2_boostedTau_idx]);
+
+          if (muon_tlv.DeltaR(tau_tlv) > 0.7 || muon_tlv.DeltaR(tau_tlv) <= 0.05)
+            deltaRFail = true;
+        }
+        dau1_gen_failReason.LeptonID = !Muon_looseId[imuon];
+      }
+    }  // loop over electrons
   }
 
   // ---------------- E-TAU channel  ----------------------
   tau_pairs.clear();
 
+  bool foundElectronInBoostedTauCollection = false;
   for (auto & itau: goodBoostedTaus) {
     // boostedTau_electronCount can be up to 4 which is a bug
     for (int ielectronFromBT = 0; ielectronFromBT < std::min(boostedTau_electronCount[itau], 3); ielectronFromBT++) {
       FailReason failReason;
       int iele = BT_electron_idx[ielectronFromBT][itau];
-      if (iele < 0) continue; // Electron that was not selected in NanoAOD electron. Should be very rare
+      if (iele < 0) {
+        std::cerr << "Electron that was not selected in NanoAOD electron" << std::endl;
+        continue;
+      }
       assert(iele < (int)Electron_eta.size());
 
-      if (!Electron_mvaFall17V2noIso_WP90[iele]) failReason.LeptonID = true;  // NoISO MVA 
+      // Isolation is done already when selecting electrons in boostedTau cone
+      //if (!Electron_mvaFall17V2noIso_WP90[iele]) failReason.LeptonID = true;  // NoISO MVA 
       if (fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2) failReason.Vertex = true;
       if (fabs(Electron_eta[iele]) >= 2.5
         || (fabs(Electron_eta[iele]) > 1.44 && fabs(Electron_eta[iele]) < 1.57)) // exclude barrel/endcap transition region (no SFs available for EGamma)
@@ -196,6 +233,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       
       if (doGenCutFlow && GenPairType == 1 && Electron_genPartIdx[iele] == genDau1_genPart_idx) {
         dau1_gen_failReason = failReason;
+        foundElectronInBoostedTauCollection = true;
       }
         
     }
@@ -222,13 +260,51 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       return {lepton_output({
         -1, -1, -1, -1, -1, -1,
         -1., -1., -1., -1, -1, -1, -1,
-        -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, false})};
+        -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, false, GenPairType != 1})};
 
     return {lepton_output({1, ind1, ind2, 0, 0, isOS,
       Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1, -1, -1, -1,
       boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
       boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
-      boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, false})};
+      boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, false, GenPairType != 1})};
+  }
+
+  // Finding electrons that were not in the boostedTau collections
+  // gen study on electrons : because boostedTau electron branches have selection on ID, and we want to separate reco from ID in cutflow
+  if (doGenCutFlow && GenPairType == 1 && !foundElectronInBoostedTauCollection) {
+    for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
+      if (Electron_genPartIdx[iele] == genDau1_genPart_idx) {
+        // We found a reco electron matching truth : Could be because of deltaR failure or because of ID fail
+        dau1_gen_failReason.Reco = false;
+
+        // Now we try to reproduce selections done at NanoAOD level
+
+        if (genDau2_boostedTau_idx >= 0) {
+          auto electron_tlv = TLorentzVector();
+          electron_tlv.SetPtEtaPhiM(Electron_pt[iele], Electron_eta[iele],
+              Electron_phi[iele], Electron_mass[iele]);
+          auto tau_tlv = TLorentzVector();
+          tau_tlv.SetPtEtaPhiM(boostedTau_pt[genDau2_boostedTau_idx], boostedTau_eta[genDau2_boostedTau_idx], boostedTau_phi[genDau2_boostedTau_idx], boostedTau_mass[genDau2_boostedTau_idx]);
+
+          if (electron_tlv.DeltaR(tau_tlv) > 0.6 || electron_tlv.DeltaR(tau_tlv) <= 0.05)
+            deltaRFail = true;
+        }
+
+        // Checking electron ID using Electron_vidNestedWPBitmap
+        // Electron_vidNestedWPBitmap is split in 10 groups of 3bits (see https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2)
+        // Each group consists of 3bits that has to be interpreted as a number (not a bitmask!), where 0=fail,1=veto,2=loose,3=medium,4=tight (NB 4->100 in binary) 
+        // Other documenation on this : https://cms-talk.web.cern.ch/t/nanoaod-v9-bitmap/24831/3 https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCMSDataAnalysisSchoolCERN2020EgammaShortExercise 
+        bool failLooseIdWithoutIso = false;
+        for (unsigned bit_nb = 0; bit_nb <= 9; bit_nb++) {
+          if (bit_nb == 7) continue; // We ignore bit 7 ie GsfEleRelPFIsoScaledCut
+          //                                                   start bit        bits per cut   
+          int cut_value = (Electron_vidNestedWPBitmap[iele] >> (bit_nb*3)) & ((1 << 3    ) - 1);
+          if (cut_value < 2) // 2 is loose
+            failLooseIdWithoutIso = true;
+        }
+        dau1_gen_failReason.LeptonID = failLooseIdWithoutIso;
+      }
+    }  // loop over electrons
   }
 
   // ---------------- TAU-TAU channel  ----------------------
@@ -244,21 +320,14 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         FailReason failReason;
         auto tau2_tlv = TLorentzVector();
         tau2_tlv.SetPtEtaPhiM(boostedTau_pt[itau2], boostedTau_eta[itau2], boostedTau_phi[itau2], boostedTau_mass[itau2]);
-        if (tau1_tlv.DeltaR(tau2_tlv) > 0.8)
-          failReason.DeltaR = true;
-
-        // trigger matching (not used for MET trigger)
-        // if (!std::any_of(tautau_triggers.begin(), tautau_triggers.end(),
-        //        [](auto const& trigger) { return trigger.pass;}))
-        //   continue;
-        if (failReason.pass())
+        if (tau1_tlv.DeltaR(tau2_tlv) <= 0.8) {
+          // trigger matching (not used for MET trigger)
           tau_pairs.push_back(tau_pair({itau1, boostedTau_rawDeepTauVSjet[itau1], boostedTau_pt[itau1],
             itau2, boostedTau_rawDeepTauVSjet[itau2], boostedTau_pt[itau2], 0, 0}));
-        
-        if (doGenCutFlow && GenPairType == 2 && !failReason.pass() &&
-          ((boostedTauGenMatch(itau1, genDau1_genPart_idx) && boostedTauGenMatch(itau2, genDau2_genPart_idx))
-          || (boostedTauGenMatch(itau1, genDau2_genPart_idx) && boostedTauGenMatch(itau2, genDau1_genPart_idx)))) {
-            deltaRFail = true;
+        } else if (doGenCutFlow && GenPairType == 2 && // failed deltaR : log it in case boostedTaus are both genmatched
+            ((boostedTauGenMatch(itau1, genDau1_genPart_idx) && boostedTauGenMatch(itau2, genDau2_genPart_idx))
+            || (boostedTauGenMatch(itau1, genDau2_genPart_idx) && boostedTauGenMatch(itau2, genDau1_genPart_idx)))) {
+              deltaRFail = true;
         }
       }
     }
@@ -284,7 +353,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         return {lepton_output({
           -1, -1, -1, -1, -1, -1,
           -1., -1., -1., -1, -1, -1, -1,
-          -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, deltaRFail})};
+          -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, true, deltaRFail, GenPairType != 2})};
 
       return {lepton_output({2, ind1, ind2,
         0, 0, isOS,
@@ -293,14 +362,14 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         boostedTau_idDeepTauVSjet[ind1],
         boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
         boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
-        boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, deltaRFail})};
+        boostedTau_idDeepTauVSjet[ind2]}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, deltaRFail, GenPairType != 2})};
     }
   }
 
   return {lepton_output({
     -1, -1, -1, -1, -1, -1,
     -1., -1., -1., -1, -1, -1, -1,
-    -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, deltaRFail})};
+    -1., -1., -1, -1, -1, -1}), cutflow_output({dau1_gen_failReason, dau2_gen_failReason, false, deltaRFail, !(GenPairType==0 || GenPairType==1 || GenPairType==2)})};
 }
 
 lepton_output HHLeptonInterface::get_dau_indexes(

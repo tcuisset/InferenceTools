@@ -72,9 +72,9 @@ struct lepton_output {
 };
 
 struct FailReason {
-  FailReason() : Reco(false), Pt(false), Eta(false), Vertex(false), LeptonID(false), LeptonIso(false), TauIdVsMu(false), TauIdVsE(false), TauIdVsJet(false), TauDM(false), DeltaR(false), WrongPair(false)
+  FailReason() : Reco(false), Pt(false), Eta(false), Vertex(false), LeptonID(false), LeptonIso(false), TauIdVsMu(false), TauIdVsE(false), TauIdVsJet(false), TauDM(false), WrongPair(false)
   {}
-  bool pass() { return !(Reco || Pt || Eta || Vertex || LeptonID || LeptonIso || TauIdVsMu || TauIdVsE || TauIdVsJet || TauDM || DeltaR || WrongPair); }
+  bool pass() { return !(Reco || Pt || Eta || Vertex || LeptonID || LeptonIso || TauIdVsMu || TauIdVsE || TauIdVsJet || TauDM || WrongPair); }
 
   bool Reco;
 
@@ -86,8 +86,6 @@ struct FailReason {
   bool TauIdVsJet;
   bool TauDM;
 
-  bool DeltaR;
-
   bool WrongPair;
 };
 
@@ -98,6 +96,7 @@ struct cutflow_output {
     FailReason dau2_fail;
     bool leptonVetoFail;
     bool deltaR;
+    bool wrongChannel;
 };
 
 // return true if pA > pB using the sorting criteria. For tautau (symmetrical)
@@ -182,7 +181,7 @@ class HHLeptonInterface {
       sRVec Muon_genPartIdx,
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
       bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
-      bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
+      bRVec Electron_mvaFall17V2Iso_WP90, iRVec Electron_vidNestedWPBitmap, fRVec Electron_pfRelIso03_all,
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       sRVec Electron_genPartIdx,
       fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
