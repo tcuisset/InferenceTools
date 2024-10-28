@@ -267,7 +267,7 @@ class HHVarRDFProducer(JetLepMetSyst):
                     
                     
                     auto hbb_tlv = TLorentzVector();
-                    if (!isBoosted) {
+                    if (!isBoosted && bjet1_index >= 0 && bjet2_index >= 0) {
                         auto bjet1_tlv = TLorentzVector();
                         auto bjet2_tlv = TLorentzVector();
                         bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
@@ -276,7 +276,7 @@ class HHVarRDFProducer(JetLepMetSyst):
                             jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
                         hbb_tlv = bjet1_tlv + bjet2_tlv;
                     }
-                    else {
+                    else if (isBoosted && fatjet_index >= 0) {
                         hbb_tlv.SetPtEtaPhiM(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
                             fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
                     }
