@@ -205,7 +205,8 @@ output HHJetsInterface::GetHHJets(
     auto fatjet_tlv = TLorentzVector();
     fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
       FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
-    if (fatjet_tlv.Pt() < 250) continue; 
+    if (fatjet_tlv.Pt() < 250) continue; // Probably this could be reduced to 200 ???
+    if (FatJet_eta[ifatjet] >= 2.4) continue;
     if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
     if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
     if (FatJet_msoftdrop.at(ifatjet) < 30) continue;
