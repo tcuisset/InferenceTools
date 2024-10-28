@@ -241,7 +241,10 @@ class BBTauTauFilterRDFProducer():
                 # print(" ### DEBUG: isBBTT == 0")
                 df = df.Filter("GenPairType == -1", "BBTauTauFilterRDF")
                 
-        return df, ["GenPairType", "genDau1_genPartIdx", "genDau2_genPartIdx"]
+            return df, ["GenPairType", "genDau1_genPartIdx", "genDau2_genPartIdx"]
+        
+        else:
+            return df, []
 
 class BBTauTauFilterDummyRDFProducer():
     def run(self, df):
