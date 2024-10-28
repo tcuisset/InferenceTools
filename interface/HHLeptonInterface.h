@@ -170,7 +170,7 @@ class HHLeptonInterface {
   public:
     HHLeptonInterface (
       int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu, // HPS DeepTau thresholds
-      int BT_VsMu_threshold, int BT_VsE_threshold, int BT_VsJet_threshold // DeepBoostedTau thresholds
+      double BT_VsMu_threshold, double BT_VsE_threshold, double BT_VsJet_threshold // DeepBoostedTau thresholds
       );
     ~HHLeptonInterface ();
     // Trying to find suitable boosted taus (before looking at regular HPS taus)
@@ -244,9 +244,9 @@ class HHLeptonInterface {
     int vl_vsmu_;
 
     // boostedTaus DeepBoostedTaus threhols
-    int BT_VsMu_threshold_;
-    int BT_VsE_threshold_;
-    int BT_VsJet_threshold_;
+    double BT_VsMu_threshold_;
+    double BT_VsE_threshold_;
+    double BT_VsJet_threshold_;
 };
 
 

@@ -7,7 +7,7 @@
 
 HHLeptonInterface::HHLeptonInterface (
     int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu,
-    int BT_VsMu_threshold, int BT_VsE_threshold, int BT_VsJet_threshold) {
+    double BT_VsMu_threshold, double BT_VsE_threshold, double BT_VsJet_threshold) {
   vvvl_vsjet_ = vvvl_vsjet;
   vl_vse_ = vl_vse;
   vvl_vse_ = vvl_vse;
