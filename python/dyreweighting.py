@@ -7,6 +7,8 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from Base.Modules.baseModules import DummyModule
 from analysis_tools.utils import import_root
 
+import correctionlib
+correctionlib.register_pyroot_binding()
 
 ROOT = import_root()
 
@@ -57,13 +59,16 @@ class DYstitchingRDFProducer():
         if self.isDY:
             os.environ["_DYstitchingRDFProducer"] = "_DYstitchingRDFProducer"
 
-            if "/libBaseModules.so" not in ROOT.gSystem.GetLibraries():
-                ROOT.gInterpreter.Load("libBaseModules.so")
-            # ROOT.gROOT.ProcessLine(".I /cvmfs/cms.cern.ch/slc7_amd64_gcc10/external/py3-correctionlib/2.1.0-86e9290d2e4ee05f7ffa864b595e4145/lib/python3.9/site-packages/correctionlib/include/correction.h")
-            ROOT.gInterpreter.ProcessLine(os.path.expandvars(
-                '.L $CMSSW_BASE/src/Base/Modules/interface/correctionWrapper.h'))
+            if not os.getenv("_corr"):
+                os.environ["_corr"] = "_corr"
+
+                if "/libBaseModules.so" not in ROOT.gSystem.GetLibraries():
+                    ROOT.gInterpreter.Load("libBaseModules.so")
+                ROOT.gInterpreter.Declare(os.path.expandvars(
+                    '#include "$CMSSW_BASE/src/Base/Modules/interface/correctionWrapper.h"'))
+
             ROOT.gInterpreter.ProcessLine(
-                'auto corr_DYstitching = MyCorrections("drellYanStitchWeight", "%s");' % json_input
+                'auto corr_DYstitching = MyCorrections("%s", "drellYanStitchWeight");' % json_input
             )
 
     def run(self, df):
