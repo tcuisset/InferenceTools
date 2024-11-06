@@ -49,7 +49,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
 {
   auto boostedTauGenMatch = [&] (int iBoostedTau_reco, int genVisTauToMatchTo) -> bool { 
     // Gen-matching boostedTau
-    // genPartFlav means true hadronic tau, in which case genPartIdx points to GenVisTau collection (otherwise points to GenParticle collection)
+    // genPartFlav==5 means true hadronic tau, in which case genPartIdx points to GenVisTau collection (otherwise points to GenParticle collection)
     // This needs to be used in case genVisTauToMatchTo is from the GenVisTau collection
     //std::cout << "GenMatch genPartFlav=" << (int)boostedTau_genPartFlav[iBoostedTau_reco] << " genPartIdx=" << (int)boostedTau_genPartIdx[iBoostedTau_reco] << std::endl;
     return boostedTau_genPartFlav[iBoostedTau_reco] == 5 && boostedTau_genPartIdx[iBoostedTau_reco] == genVisTauToMatchTo;

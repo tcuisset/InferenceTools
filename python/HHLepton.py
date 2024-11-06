@@ -889,6 +889,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             )
             df = df.Define("pairType_boostedTaus", "hh_lepton_results_boostedTaus.first.pairType")
             branches.append("pairType_boostedTaus")
+            df = df.Define("dau1_boostedTaus_index", "hh_lepton_results_boostedTaus.first.dau1_index")
+            df = df.Define("dau2_boostedTaus_index", "hh_lepton_results_boostedTaus.first.dau2_index")
+            branches += ["dau1_boostedTaus_index", "dau2_boostedTaus_index"]
 
             if self.doGenCutFlow:
                 import cppyy
@@ -921,6 +924,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         )
         df = df.Define("pairType_HPSTaus", "hh_lepton_results_HPStaus.pairType")
         branches.append("pairType_HPSTaus")
+        df = df.Define("dau1_HPSTaus_index", "hh_lepton_results_HPStaus.dau1_index")
+        df = df.Define("dau2_HPSTaus_index", "hh_lepton_results_HPStaus.dau2_index")
+        branches += ["dau1_HPSTaus_index", "dau2_HPSTaus_index"]
 
         if self.useBoostedTaus:
             # boostedTau category need MET trigger fired && offline MET cut to avoid MET turn on (offline cut from Wisconsin analysis)
