@@ -858,7 +858,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         muonGenPartIdx_branch = "Muon_genPartIdx" if self.doGenCutFlow else "{}"
         electronGenPartIdx_branch = "Electron_genPartIdx" if self.doGenCutFlow else "{}"
         boostedTau_genPartIdx_branch = "boostedTau_genPartIdx, boostedTau_genPartFlav" if self.doGenCutFlow else "{}, {}"
-        genPairTypeEtc_branch = "GenPairType, genDau1_genPartIdx, genDau2_genPartIdx" if self.doGenCutFlow else "-1, -1, -1"
+        genPairTypeEtc_branch = "genPairType, genDau1_GenPartVisIdx, genDau2_GenPartVisIdx" if self.doGenCutFlow else "-1, -1, -1"
         if self.useBoostedTaus:
             # boosted taus
             df = df.Define("hh_lepton_results_boostedTaus", "HHLepton.get_boosted_dau_indexes("

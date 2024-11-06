@@ -1,3 +1,4 @@
+# OUTDATED
 # Tools (genFilters and elliptical cut) for ZH->bbtautau analysis (both non-resonant and resonant)
 
 import os
