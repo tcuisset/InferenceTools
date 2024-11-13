@@ -857,6 +857,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         
         muonGenPartIdx_branch = "Muon_genPartIdx" if self.doGenCutFlow else "{}"
         electronGenPartIdx_branch = "Electron_genPartIdx" if self.doGenCutFlow else "{}"
+        HPSTau_genPartIdx_branch = "Tau_genPartIdx, Tau_genPartFlav" if self.doGenCutFlow else "{}, {}"
         boostedTau_genPartIdx_branch = "boostedTau_genPartIdx, boostedTau_genPartFlav" if self.doGenCutFlow else "{}, {}"
         genPairTypeEtc_branch = "genPairType, genDau1_GenPartVisIdx, genDau2_GenPartVisIdx" if self.doGenCutFlow else "-1, -1, -1"
         if self.useBoostedTaus:
@@ -902,46 +903,63 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             continue
                         df = df.Define(f"cutflow_boostedTaus_dau{dauId}_{failReason}", f"hh_lepton_results_boostedTaus.second.dau{dauId}_fail.{failReason}")
                         branches.append(f"cutflow_boostedTaus_dau{dauId}_{failReason}")
-                df = df.Define("cutflow_boostedTaus_leptonVetoFail", "hh_lepton_results_boostedTaus.second.leptonVetoFail")
-                branches.append("cutflow_boostedTaus_leptonVetoFail")
-                df = df.Define("cutflow_boostedTaus_deltaR", "hh_lepton_results_boostedTaus.second.deltaR")
-                branches.append("cutflow_boostedTaus_deltaR")
+                for branch in ["leptonVetoFail", "deltaR", "wrongChannel"]:
+                    df = df.Define(f"cutflow_boostedTaus_{branch}", f"hh_lepton_results_boostedTaus.second.{branch}")
+                    branches.append(f"cutflow_boostedTaus_{branch}")
 
         # HPS taus
-        df = df.Define("hh_lepton_results_HPStaus", "HHLepton.get_dau_indexes("
+        df = df.Define("hh_lepton_results_HPSTaus", "HHLepton.get_dau_indexes("
+            f"{str(self.doGenCutFlow).lower()}, "
             f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst}, "
             f"Muon_pfRelIso04_all, Muon_dxy, Muon_dz, Muon_mediumId, Muon_tightId, Muon_charge, "
+            f"{muonGenPartIdx_branch}, "
             f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
             f"{Electron_mvaIso_WP80}, {Electron_mvaNoIso_WP90}, {Electron_mvaIso_WP90}, Electron_pfRelIso03_all, "
             f"Electron_dxy, Electron_dz, Electron_charge, "
+            f"{electronGenPartIdx_branch}, "
             f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, "
             f"Tau_idDeepTau{self.deeptau_version}VSmu, Tau_idDeepTau{self.deeptau_version}VSe, "
             f"Tau_idDeepTau{self.deeptau_version}VSjet, Tau_rawDeepTau{self.deeptau_version}VSjet, "
             "Tau_dz, Tau_decayMode, Tau_charge, "
+            f"{HPSTau_genPartIdx_branch}, "
             "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
-            "mutau_triggers, etau_triggers, tautau_triggers, tautaujet_triggers, vbf_triggers"
+            "mutau_triggers, etau_triggers, tautau_triggers, tautaujet_triggers, vbf_triggers, "
+            f"{genPairTypeEtc_branch}"
         ")"
         )
-        df = df.Define("pairType_HPSTaus", "hh_lepton_results_HPStaus.pairType")
+        df = df.Define("pairType_HPSTaus", "hh_lepton_results_HPSTaus.first.pairType")
         branches.append("pairType_HPSTaus")
-        df = df.Define("dau1_HPSTaus_index", "hh_lepton_results_HPStaus.dau1_index")
-        df = df.Define("dau2_HPSTaus_index", "hh_lepton_results_HPStaus.dau2_index")
+        df = df.Define("dau1_HPSTaus_index", "hh_lepton_results_HPSTaus.first.dau1_index")
+        df = df.Define("dau2_HPSTaus_index", "hh_lepton_results_HPSTaus.first.dau2_index")
         branches += ["dau1_HPSTaus_index", "dau2_HPSTaus_index"]
+
+        if self.doGenCutFlow:
+            import cppyy
+            # save all FailReason attributes to a branch
+            for dauId in [1, 2]:
+                for failReason in dir(cppyy.gbl.FailReason): # this lists all attributes of the C++ object FailReason
+                    if failReason.startswith("_") or failReason == "pass":
+                        continue
+                    df = df.Define(f"cutflow_HPSTaus_dau{dauId}_{failReason}", f"hh_lepton_results_HPSTaus.second.dau{dauId}_fail.{failReason}")
+                    branches.append(f"cutflow_HPSTaus_dau{dauId}_{failReason}")
+            for branch in ["leptonVetoFail", "deltaR", "wrongChannel", "triggerFail"]:
+                    df = df.Define(f"cutflow_HPSTaus_{branch}", f"hh_lepton_results_HPSTaus.second.{branch}")
+                    branches.append(f"cutflow_HPSTaus_{branch}")
 
         if self.useBoostedTaus:
             # boostedTau category need MET trigger fired && offline MET cut to avoid MET turn on (offline cut from Wisconsin analysis)
             boostedTau_trigger_req = f"({self.boostedTau_MET_triggers}) && MET_pt > 180"
             if self.tau_priority == "HPS":
-                df = df.Define("isBoostedTau", f"hh_lepton_results_HPStaus.pairType < 0 && {boostedTau_trigger_req}")
+                df = df.Define("isBoostedTau", f"hh_lepton_results_HPSTaus.first.pairType < 0 && {boostedTau_trigger_req}")
             elif self.tau_priority == "boosted":
                 df = df.Define("isBoostedTau", f"hh_lepton_results_boostedTaus.first.pairType >= 0 && ({boostedTau_trigger_req})")
             else:
                 raise ValueError("tau_priority should be 'HPS' or 'boosted'")
             
-            df = df.Define("hh_lepton_results", "isBoostedTau ? hh_lepton_results_boostedTaus.first : hh_lepton_results_HPStaus")
+            df = df.Define("hh_lepton_results", "isBoostedTau ? hh_lepton_results_boostedTaus.first : hh_lepton_results_HPSTaus.first")
         else:
-            df = df.Alias("hh_lepton_results", "hh_lepton_results_HPStaus")
-            df = df.Define("isBoostedTau", "False")
+            df = df.Define("hh_lepton_results", "hh_lepton_results_HPSTaus.first")
+            df = df.Define("isBoostedTau", "false")
         branches.append("isBoostedTau")
 
         for var in variables:
@@ -952,16 +970,26 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             branches.append(branchName)
         
         # add raw DeepBoostedTau score
-        df = df.Define("dau1_rawIdDeepTauVSjet", """
-            if (pairType == 2) { """
-                  f"return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau1_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau1_index];"
-            """
-            } else {
-                return -1.f; 
-            }"""      
-        )
+        if self.useBoostedTaus:
+            df = df.Define("dau1_rawIdDeepTauVSjet", """
+                if (pairType == 2) { """
+                    f"return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau1_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau1_index];"
+                """
+                } else {
+                    return -1.f; 
+                }"""      
+            )
+            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType >=0) return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
+        else:
+            df = df.Define("dau1_rawIdDeepTauVSjet", f"""
+                if (pairType == 2) 
+                    return Tau_rawDeepTau{self.deeptau_version}VSjet[dau1_index];
+                else 
+                    return -1.f; 
+                """      
+            )
+            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType >=0) return Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
         branches.append("dau1_rawIdDeepTauVSjet")
-        df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType >=0) return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
         branches.append("dau2_rawIdDeepTauVSjet")
 
         if self.pairType_filter:
@@ -1088,10 +1116,15 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
+        if "boostedTau_pt" in df.GetColumnNames():
+            boostedTau_branches = f"boostedTau_pt, boostedTau_mass" # TODO boostedTau systematics
+        else:
+            # placeholder in case we are running on no-boosted-tau dataset
+            boostedTau_branches = f"ROOT::RVec<float>(0), ROOT::RVec<float>(0)"
         df = df.Define(f"lepton_values{self.lep_syst}{self.tau_syst}", "get_lepton_values("
             "pairType, isBoostedTau, dau1_index, dau2_index, "
             "Muon_pt{0}, Muon_mass{0}, Electron_pt{1}, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_mass{2}, boostedTau_pt{3}, boostedTau_mass{3})".format(self.muon_syst, self.electron_syst, self.tau_syst, "")) # TODO boostedTau systematics
+            "Tau_pt{2}, Tau_mass{2}, {3})".format(self.muon_syst, self.electron_syst, self.tau_syst, boostedTau_branches)) 
 
         for ib, branch in enumerate(branches):
             df = df.Define(branch, f"lepton_values{self.lep_syst}{self.tau_syst}[{ib}]")

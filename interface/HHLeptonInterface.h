@@ -71,6 +71,7 @@ struct lepton_output {
     int dau2_idDeepTauVSjet;
 };
 
+/** Record for a dau of which cuts failed */
 struct FailReason {
   FailReason() : Reco(false), Pt(false), Eta(false), Vertex(false), LeptonID(false), LeptonIso(false), TauIdVsMu(false), TauIdVsE(false), TauIdVsJet(false), TauDM(false), WrongPair(false)
   {}
@@ -94,9 +95,13 @@ struct cutflow_output {
     // {}
     FailReason dau1_fail;
     FailReason dau2_fail;
-    bool leptonVetoFail;
-    bool deltaR;
-    bool wrongChannel;
+    bool leptonVetoFail = false;
+    bool deltaR = false;
+    bool wrongChannel = false;
+    bool triggerFail = false;
+
+    cutflow_output& setWrongChannel(bool wrongChannel_) { wrongChannel = wrongChannel_; return *this; }
+    cutflow_output& setLeptonVeto(bool leptonVeto_ = true) { leptonVetoFail = leptonVeto_; return *this; }
 };
 
 // return true if pA > pB using the sorting criteria. For tautau (symmetrical)
@@ -199,22 +204,27 @@ class HHLeptonInterface {
       int GenPairType, int genDau1_genPart_idx, int genDau2_genPart_idx
     );
 
-    lepton_output get_dau_indexes(
+    std::pair<lepton_output, cutflow_output> get_dau_indexes(
+      bool doGenCutFlow,
       fRVec Muon_pt, fRVec Muon_eta, fRVec Muon_phi, fRVec Muon_mass,
       fRVec Muon_pfRelIso04_all, fRVec Muon_dxy, fRVec Muon_dz,
       bRVec Muon_mediumId, bRVec Muon_tightId, iRVec Muon_charge,
+      sRVec Muon_genPartIdx,
       fRVec Electron_pt, fRVec Electron_eta, fRVec Electron_phi, fRVec Electron_mass,
       bRVec Electron_mvaFall17V2Iso_WP80, bRVec Electron_mvaFall17V2noIso_WP90,
       bRVec Electron_mvaFall17V2Iso_WP90, fRVec Electron_pfRelIso03_all,
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
+      sRVec Electron_genPartIdx,
       fRVec Tau_pt, fRVec Tau_eta, fRVec Tau_phi, fRVec Tau_mass,
       iRVec Tau_idDeepTauVSmu, iRVec Tau_idDeepTauVSe,
       iRVec Tau_idDeepTauVSjet, fRVec Tau_rawDeepTauVSjet,
       fRVec Tau_dz, iRVec Tau_decayMode, iRVec Tau_charge,
+      sRVec Tau_genPartIdx, ROOT::VecOps::RVec<UChar_t> Tau_genPartFlav,
       iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
       std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-      std::vector<trig_req> tautau_triggers, std::vector<trig_req> tautaujet_triggers, 
-      std::vector<trig_req> vbf_triggers
+      std::vector<trig_req> tautau_triggers, std::vector<trig_req> tautaujet_triggers,
+      std::vector<trig_req> vbf_triggers,
+      int GenPairType, int genDau1_genPart_idx, int genDau2_genPart_idx
     );
 
     bool lepton_veto(int muon_index, int electron_index,
