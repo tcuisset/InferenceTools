@@ -324,7 +324,8 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         FailReason failReason;
         auto tau2_tlv = TLorentzVector();
         tau2_tlv.SetPtEtaPhiM(boostedTau_pt[itau2], boostedTau_eta[itau2], boostedTau_phi[itau2], boostedTau_mass[itau2]);
-        if (tau1_tlv.DeltaR(tau2_tlv) <= 0.8) {
+        float deltaR = tau1_tlv.DeltaR(tau2_tlv);
+        if (deltaR <= 0.8 && deltaR >= 0.05) {
           // trigger matching (not used for MET trigger)
           tau_pairs.push_back(tau_pair({itau1, boostedTau_rawDeepTauVSjet[itau1], boostedTau_pt[itau1],
             itau2, boostedTau_rawDeepTauVSjet[itau2], boostedTau_pt[itau2], 0, 0}));
