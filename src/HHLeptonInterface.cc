@@ -3,6 +3,26 @@
 #include <algorithm>
 #include <cassert>
 
+
+// Checking electron ID using Electron_vidNestedWPBitmap
+// Electron_vidNestedWPBitmap is split in 10 groups of 3bits (see https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2)
+// Each group consists of 3bits that has to be interpreted as a number (not a bitmask!), where 0=fail,1=veto,2=loose,3=medium,4=tight (NB 4->100 in binary) 
+// Other documenation on this : https://cms-talk.web.cern.ch/t/nanoaod-v9-bitmap/24831/3 https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCMSDataAnalysisSchoolCERN2020EgammaShortExercise 
+static bool checkElectronIdWithoutIsolationCut(int vidNestedWPBitmap)
+{
+  bool passLooseIdWithoutIso = true;
+  for (unsigned bit_nb = 0; bit_nb <= 9; bit_nb++) {
+    if (bit_nb == 7) continue; // We ignore bit 7 ie GsfEleRelPFIsoScaledCut
+    //                                                   start bit        bits per cut   
+    int cut_value = (vidNestedWPBitmap >> (bit_nb*3)) & ((1 << 3    ) - 1);
+    if (cut_value < 2) // 2 is loose
+      passLooseIdWithoutIso = false;
+  }
+  return passLooseIdWithoutIso;
+}
+
+        
+
 // Constructors
 
 HHLeptonInterface::HHLeptonInterface (
@@ -64,6 +84,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
   for (size_t itau = 0; itau < boostedTau_pt.size(); itau ++) {
     FailReason failReason;
     if (boostedTau_pt[itau] < 40) failReason.Pt = true; // Pt threshold arbitrary (Wisconsin uses >20, central Nano uses >40)
+    if (boostedTau_eta[itau] >= 2.5) failReason.Eta = true;
     //if (boostedTau_idDeepTauVSmu[itau] < BT_VsMu_threshold_) failReason.TauIdVsMu = true;
     //if (boostedTau_idDeepTauVSe[itau] < BT_VsE_threshold_) failReason.TauIdVsE = true;
     if (boostedTau_rawDeepTauVSjet[itau] < BT_VsJet_threshold_) failReason.TauIdVsJet = true;
@@ -71,8 +92,51 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
     if (boostedTau_decayMode[itau] != 0 && boostedTau_decayMode[itau] != 1
         && boostedTau_decayMode[itau] != 10 && boostedTau_decayMode[itau] != 11)
       failReason.TauDM = true;
-    if (failReason.pass())
+    
+    auto tau_tlv = TLorentzVector();
+    tau_tlv.SetPtEtaPhiM(boostedTau_pt[itau], boostedTau_eta[itau], boostedTau_phi[itau], boostedTau_mass[itau]);
+        
+    if (failReason.pass() || doGenCutFlow) {
+      // Cleaning procedure from Wisconsin. If we are not doing cutflow, do it only for a boostedTau that passes the selections (to avoid a double-nested loop)
+      // Look for any muon with deltaR < 0.05 to the boostedTau
+      for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
+        if (fabs(Muon_eta[imuon]) >= 2.4 
+         // || fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2
+          || !Muon_looseId[imuon]
+          || Muon_pt[imuon] < 15)
+          continue;
+        
+        auto muon_tlv = TLorentzVector();
+        muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon],
+              Muon_phi[imuon], Muon_mass[imuon]);
+        if (tau_tlv.DeltaR(muon_tlv) < 0.05) {
+          failReason.TauIdVsMu = true;
+          break;
+        }
+      }
+
+      for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
+        if (fabs(Electron_eta[iele]) >= 2.5
+          // || (fabs(Electron_eta[iele]) > 1.44 && fabs(Electron_eta[iele]) < 1.57)
+          //|| fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2
+          || !checkElectronIdWithoutIsolationCut(Electron_vidNestedWPBitmap[iele])
+          || Electron_pt[iele] < 20
+        )
+          continue;
+        
+        auto electron_tlv = TLorentzVector();
+        electron_tlv.SetPtEtaPhiM(Electron_pt[iele], Electron_eta[iele],
+              Electron_phi[iele], Electron_mass[iele]);
+        if (tau_tlv.DeltaR(electron_tlv) < 0.05) {
+          failReason.TauIdVsE = true;
+        }
+      }
+    }
+
+    if (failReason.pass()) {
       goodBoostedTaus.push_back(itau);
+    }
+      
 
     if (doGenCutFlow) {
       if (boostedTauGenMatch(itau, genDau2_genPart_idx)) {
@@ -99,11 +163,11 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       if (fabs(Muon_eta[imuon]) >= 2.4) failReason.Eta = true;
       if (fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2) failReason.Vertex = true;
       if (!Muon_looseId[imuon]) failReason.LeptonID = true; // this cannot happen in theory, cut already at Nano level
-      // No ISO requirement yet
       
       if (Muon_pt[imuon] < 20) failReason.Pt = true; // arbitrary threshold
 
       if (BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau] > 0.25) failReason.LeptonIso = true;
+      // 0.05 < DeltaR(mu, tau) < 0.7 is applied at Nano level
 
       auto muon_tlv = TLorentzVector();
       muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon], Muon_phi[imuon], Muon_mass[imuon]);
@@ -295,18 +359,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
         }
 
         // Checking electron ID using Electron_vidNestedWPBitmap
-        // Electron_vidNestedWPBitmap is split in 10 groups of 3bits (see https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2)
-        // Each group consists of 3bits that has to be interpreted as a number (not a bitmask!), where 0=fail,1=veto,2=loose,3=medium,4=tight (NB 4->100 in binary) 
-        // Other documenation on this : https://cms-talk.web.cern.ch/t/nanoaod-v9-bitmap/24831/3 https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCMSDataAnalysisSchoolCERN2020EgammaShortExercise 
-        bool failLooseIdWithoutIso = false;
-        for (unsigned bit_nb = 0; bit_nb <= 9; bit_nb++) {
-          if (bit_nb == 7) continue; // We ignore bit 7 ie GsfEleRelPFIsoScaledCut
-          //                                                   start bit        bits per cut   
-          int cut_value = (Electron_vidNestedWPBitmap[iele] >> (bit_nb*3)) & ((1 << 3    ) - 1);
-          if (cut_value < 2) // 2 is loose
-            failLooseIdWithoutIso = true;
-        }
-        cutflow.dau1_fail.LeptonID = failLooseIdWithoutIso;
+        cutflow.dau1_fail.LeptonID = !checkElectronIdWithoutIsolationCut(Electron_vidNestedWPBitmap[iele]);
       }
     }  // loop over electrons
   }

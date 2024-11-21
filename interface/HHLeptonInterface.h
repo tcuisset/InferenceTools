@@ -82,8 +82,8 @@ struct FailReason {
   bool Pt; bool Eta;
   bool Vertex;
   bool LeptonID; bool LeptonIso;
-  bool TauIdVsMu;
-  bool TauIdVsE;
+  bool TauIdVsMu; // Failing VsMuon discrimination (DeepTauVSmu for HPS, muon cleaning for HPS)
+  bool TauIdVsE; // Failing VsElectron discrimination (DeepTauVSele for HPS, electron cleaning for HPS)
   bool TauIdVsJet;
   bool TauDM;
 
