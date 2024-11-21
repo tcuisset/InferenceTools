@@ -25,7 +25,7 @@ class HHDNNinterfaceNew {
     void computeIntermediateVariables();
 
     unsigned short year() const { return year_; }; // Year for DNN input (ie 0, 1, 2)
-    bool boosted() const { return isBoosted; }
+    bool boosted_bb() const { return isBoosted; }
     bool boostedTau() const { return isBoostedTau; }
     short channel() const { 
       // pairType | Our Def. | DNN
@@ -43,8 +43,8 @@ class HHDNNinterfaceNew {
     }
     bool is_vbf() const { return false; /* VBF is to be implemented */ }
 
-    float hh_kinfit_m() const { return KinFitConv ? KinFitMass : 0; }
-    float hh_kinfit_chi2() const { return KinFitChi2; }
+    float hh_kinfit_m() const { return KinFitConv ? KinFitMass : 0.; }
+    float hh_kinfit_chi2() const { return KinFitConv ? KinFitChi2 : 0.; }
 
     float sv_mass() const { return SVfitConv ? svfit.M() : std::nanf("1"); }
 
@@ -59,12 +59,13 @@ class HHDNNinterfaceNew {
     float dR_l1_l2() const { return delta_r(l1, l2); }
     float dphi_sv_met() const { return SVfitConv ? delta_phi(svfit, met) : std::nanf("1"); }
     
-    float h_bb_mass() const { return h_bb.M(); }
+    float h_bb_mass() const { return h_bb.M(); } /* resolved->(b1+b2).M() boosted->FatJet.M() */
 
-    float b_2_hhbtag() const { return HHbtag_b2; };
-    short b_1_cvsb() const { return get_cvsb_flag(CvsB_b1); };
-    short b_1_cvsl() const { return get_cvsl_flag(CvsL_b1); };
+    float b_2_hhbtag() const { return HHbtag_b2; }; /* 0 for boosted */
+    short b_1_cvsb() const { return isBoosted ? 0 : get_cvsb_flag(CvsB_b1); }; 
+    short b_1_cvsl() const { return isBoosted ? 0 : get_cvsl_flag(CvsL_b1); };
     short jet_1_quality() const {
+      if (isBoosted) return 0;
       short tag_1(0);
       for (float wp : bjet_wps ) {
           if (deepFlav1 >= wp) tag_1++;
@@ -72,6 +73,7 @@ class HHDNNinterfaceNew {
       return tag_1;
     }
     short jet_2_quality() const {
+      if (isBoosted) return 0;
       short tag_2(0);
       for (float wp : bjet_wps ) {
           if (deepFlav2 >= wp) tag_2++;
@@ -81,11 +83,11 @@ class HHDNNinterfaceNew {
 
     float diH_mass_sv() const { return SVfitConv ? (h_bb+svfit).M() : std::nanf("1"); };
     float dphi_hbb_sv() const { return SVfitConv ? delta_phi(h_bb, svfit) : std::nanf("1"); };
-    float h_bb_pT() const { return delta_r(b1, b2)*h_bb.Pt(); };
+    float h_bb_pT() const { return h_bb.Pt(); };
 
     float dR_l1_l2_x_sv_pT() const { return SVfitConv ? delta_r(l1, l2)*svfit.Pt() : std::nanf("1"); }
     float dR_l1_l2_boosted_htt_met() const { return delta_r_boosted(l1, l2, h_tt_met); };
-    float phi() const { return calc_phi(l1, l2, b1, b2, hh); };
+    float phi() const { return isBoosted ? 0. : calc_phi(l1, l2, b1, b2, hh); }; /* The angle between the decay plane of the taus and the decay plane of the jets, expressed in the rest-frame of the ZZ/ZH system.*/
     float costheta_l2_httmet() const { return calc_cos_delta(l2, h_tt_met); };
 
   private:

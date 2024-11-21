@@ -145,14 +145,15 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             # ROOT.gROOT.ProcessLine(".L {}/interface/lester_mt2_bisect.h".format(base))
 
         if not self.AnalysisType:
-            feature_file = "{}/{}/src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/features.txt".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            feature_file = "src/cms_runII_dnn_models/models/nonres_gluglu/2020-07-31-0/features.txt"
         else:
-            feature_file = "{}/{}/src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/features.txt".format(
-                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
-        feature_file = kwargs.pop("feature_file", feature_file)
+            feature_file = "src/cms_runII_dnn_models/models/arc_checks/zz_bbtt/2024-02-15/ZZbbtt-0/features.txt"
+        feature_file = "{}/{}/{}".format(os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"), kwargs.pop("feature_file", feature_file)) 
         with open(feature_file) as f:
             self.features = [i.split('\n')[0] for i in f.readlines()]
+        try:
+            self.features.remove("res_mass")
+        except ValueError: pass
 
         makeStr = lambda l: (", ".join([str(x) for x in l]))
         btag_wps = makeStr([0., kwargs["btag_wps"]["loose"], kwargs["btag_wps"]["medium"], kwargs["btag_wps"]["tight"]])
