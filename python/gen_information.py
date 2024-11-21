@@ -259,7 +259,56 @@ def GenVariablesRDF(**kwargs):
     """
     return lambda: GenVariablesRDFProducer(**kwargs)
 
+
 class BBTauTauFilterRDFProducer():
+    """ Filter bbtautau events (ZZ/ZH) using LHE information
+    !!!! Only works on NanoV12 or later (needs status=2 intermediate bosons in LHEPart collections, not available in NanoV9)
+    """
+    def __init__(self, ProcType, isSigBBTT, isBkgBBTT, removeZH=False, *args, **kwargs):
+        self.isSigBBTT = isSigBBTT
+        self.isBkgBBTT = isBkgBBTT
+        self.ProcType = ProcType
+        self.removeZH = removeZH
+
+    def run(self, df):
+        if self.isSigBBTT or self.isBkgBBTT:
+            df = df.Define("LHE_isBBTauTau", 
+                "ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==15) == 2 && ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==5 ) >= 2")
+            
+            df = df.Define("LHE_ZCount", "ROOT::VecOps::Sum(LHEPart_status == 2 && LHEPart_pdgId==23)")
+            df = df.Define("LHE_HCount", "ROOT::VecOps::Sum(LHEPart_status == 2 && LHEPart_pdgId==25)")
+
+            # define a new branch to check if it is or not a ZZ/ZH->bbtautau event
+            if self.ProcType == "Zbb_Ztautau":
+                print(" ### Running bbtautau filter for Zbb_Ztautau")
+                genfilter = "LHE_isBBTauTau && LHE_ZCount == 2"
+            elif self.ProcType == "Zbb_Htautau" or self.ProcType == "Ztautau_Hbb":
+                print(" ### Running bbtautau filter for Zbb_Htautau")
+                genfilter = "LHE_isBBTauTau && LHE_ZCount == 1 && LHE_HCount == 1"
+                assert not self.removeZH
+            else:
+                raise ValueError("BBTauTauFilterRDF not implemented for self.ProcType = ", self.ProcType)
+            
+            # filter the events with ZZ/ZH->bbtautau
+            if self.isSigBBTT:
+                # print(" ### DEBUG: isBBTT == 1")
+                df = df.Filter(genfilter, "BBTauTauFilterRDF")
+            # filter the events without ZZ/ZH->bbtautau
+            elif self.isBkgBBTT:
+                # print(" ### DEBUG: isBBTT == 0")
+                df = df.Filter("!(" + genfilter + ")", "BBTauTauFilterRDF")
+            
+            if self.removeZH:
+                print(" ### Removing ZH contribution")
+                df = df.Filter("LHE_HCount == 0", "BBTauTauFilterRDF_removeZH")
+                
+            return df, ["LHE_isBBTauTau", "LHE_ZCount", "LHE_HCount"]
+        
+        else:
+            return df, []
+
+class BBTauTauFilterRDFProducerOld():
+    """ Old bbtautau filter based on GenParticle collection """
     def __init__(self, ProcType, isSigBBTT, isBkgBBTT, *args, **kwargs):
         self.isSigBBTT = isSigBBTT
         self.isBkgBBTT = isBkgBBTT
@@ -480,12 +529,13 @@ class BBTauTauFilterDummyRDFProducer():
         return df, ["GenPairType"]
 
 def BBTauTauFilterRDF(*args, **kwargs):
+    """ removeZH : if True, remove Higgs contribution (meant to remove ZH from ZZTo2L2Q sample which is actually Z(Z/H) """
 
     ProcType = kwargs.pop("ProcType")
     isSigBBTT = kwargs.pop("isSigBBTT")
     isBkgBBTT = kwargs.pop("isBkgBBTT")
 
-    return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, *args, **kwargs)
+    return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, removeZH=kwargs.pop("removeZH", False), *args, **kwargs)
 
     if isSigBBTT or isBkgBBTT:
         return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, *args, **kwargs)
