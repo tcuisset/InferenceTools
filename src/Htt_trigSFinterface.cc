@@ -356,6 +356,36 @@ std::vector<double> Htt_trigSFinterface::get_scale_factors(int pairType, int isV
   return {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
 }
 
-// Destructor
-Htt_trigSFinterface::~Htt_trigSFinterface() {}
+MET_trigSF_interface::MET_trigSF_interface(std::string SF_file) {
+  std::unique_ptr<TFile> file( TFile::Open(SF_file.c_str()) );
+  if (!file || file->IsZombie()) {
+    throw std::runtime_error("Could not open MET trigger SF file " + SF_file);
+  }
+  trigSF_h.reset(file->Get<TH1F>("SF/MET_SF"));
+  if (!trigSF_h)
+    throw std::runtime_error("Failure reading MET trigger SF file " + SF_file);
+  trigSF_h->SetDirectory(nullptr);
+}
 
+
+MET_trigSF_interface::trigSF_result MET_trigSF_interface::getSF(float MET_pt) {
+  if (MET_pt < 80) {
+    throw std::runtime_error("Attempting to get MET trigger SF with MET_pt<80GeV");
+  }
+  if (MET_pt < 120) {
+    std::cerr << "WARNING : attempting to get MET trigger SF outside of trigger plateau" << std::endl;
+    MET_pt = 120;
+  }
+  if (MET_pt > 500)
+    MET_pt = 500-0.1; // upper edge is excluded in histograms
+
+  int binNumber = trigSF_h->GetXaxis()->FindFixBin(MET_pt);
+  if (binNumber <= 0 || binNumber > trigSF_h->GetNbinsX())
+    throw std::runtime_error("MET trigger SF read error");
+
+  MET_trigSF_interface::trigSF_result sf_res;
+  sf_res.SF = trigSF_h->GetBinContent(binNumber);
+  sf_res.SF_statup = trigSF_h->GetBinErrorUp(binNumber);
+  sf_res.SF_statdown = trigSF_h->GetBinErrorLow(binNumber);
+  return sf_res;
+}

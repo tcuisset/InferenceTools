@@ -18,6 +18,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 
 // ROOT libraries
@@ -48,7 +49,6 @@ class Htt_trigSFinterface {
       std::string muTauTrgSF_file, std::string muTauTrgSF_name, bool muTauTrgSF_bool,
       std::string tauTrgSF_ditau_file, std::string tauTrgSF_mutau_file,
       std::string tauTrgSF_etau_file, std::string tauTrgSF_vbf_file, std::string jetTrgSF_vbf_file);    
-    ~Htt_trigSFinterface ();
 
     std::vector<double> get_scale_factors(int pairType, int isVBFtrigger,
       int dau1_decayMode, float dau1_pt, float dau1_eta,
@@ -103,5 +103,23 @@ class Htt_trigSFinterface {
 
     }
 };
+
+
+class MET_trigSF_interface {
+public:
+  struct trigSF_result {
+    float SF;
+    float SF_statup;
+    float SF_statdown;
+  };
+
+  MET_trigSF_interface(std::string SF_file);
+
+  trigSF_result getSF(float MET_pt);
+
+private:
+  std::unique_ptr<TH1F> trigSF_h;
+};
+
 
 #endif // Htt_trigSFinterface

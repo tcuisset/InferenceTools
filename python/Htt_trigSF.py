@@ -674,14 +674,16 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                     tauTrgSF_ditau, tauTrgSF_mutau, tauTrgSF_etau, tauTrgSF_vbf, jetTrgSF_vbf))
 
 
+                MET_trig_sf_file = f"{os.getenv('CMT_CMSSW_BASE')}/{os.getenv('CMT_CMSSW_VERSION')}/src/Tools/Tools/data/met_trig_sf/{self.year}_MetTriggerSFs.root"
+                ROOT.gInterpreter.Declare(f"""
+                    auto MET_trigSF_interface_obj = MET_trigSF_interface("{MET_trig_sf_file}");
+                """ )
+
+
     def run(self, df):
         if not self.isMC:
             return df, []
-        branches = ['trigSF', 'trigSF_single', 'trigSF_cross',
-            'trigSF_muUp', 'trigSF_muDown', 'trigSF_eleUp', 'trigSF_eleDown',
-            'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
-            'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
-            'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
+        
         df = df.Define("htt_trigsf", (
             "isBoostedTau ? std::vector<double>({1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}) : " # TODO boostedTau trigger scale factors
             "Htt_trigSF.get_scale_factors(pairType, isVBFtrigger, "
@@ -690,10 +692,44 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             "-999, -999, -999, -999, "
             "-999, -999, -999, -999)"
             ))
-        for ib, branch in enumerate(branches):
-            df = df.Define(branch, "htt_trigsf[%s]" % (ib))
-        return df, branches
+        df = df.Define("MET_trigsf_res", f"isBoostedTau ? MET_trigSF_interface_obj.getSF(MET{self.met_smear_tag}_pt{self.met_syst})" " : MET_trigSF_interface::trigSF_result{1., 1., 1.}")
+
+        # nominal
+        df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf[0]")
+        # lepton trigger variations
+        branches_lepTriggers = ['trigSF', 'trigSF_single', 'trigSF_cross',
+            'trigSF_muUp', 'trigSF_muDown', 'trigSF_eleUp', 'trigSF_eleDown',
+            'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
+            'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
+            'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
+        for ib, branch in enumerate(branches_lepTriggers):
+            if ib == 0: continue # nominal is dealt with separately
+            if ib >= 1 and ib <= 2: # 'trigSF_single', 'trigSF_cross'
+                df = df.Define(branch, f"isBoostedTau ? -1. : htt_trigsf[{ib}]")
+            else: 
+                # syst variations of lepton triggers
+                # if boostedTau, just set to the nominal SF from MET trigger
+                df = df.Define(branch, f"isBoostedTau ? trigSF :  htt_trigsf[{ib}]")
+
+        # MET trigger variations
+        for met_trig_syst in ["statup", "statdown"]:
+            # if not boostedTau, set to nominal SF from lepton triggers
+            df = df.Define(f"trigSF_met_{met_trig_syst}", f"isBoostedTau ? MET_trigsf_res.SF_{met_trig_syst} : trigSF")
+
+        return df, branches_lepTriggers + ["trigSF_met_statup", "trigSF_met_statdown"]
 
 
 def Htt_trigSFRDF(**kwargs):
+    """ Computes trigger scale factors for lepton trigger and MET triggers
+    Depends on lepton systematics (electron S&S, tau energy scale) for lepton triggers.
+    Depends on MET variations for MET triggers (so basically every systematic)
+    Chooses MET or lepton trigger depending on isBoostedTau
+
+    Branches : 
+     - trigSF : nominal trigger SF (either lepton trigger or MET trigger depending on isBoostedTau)
+     - trigSF_single : SF of the single lepton trigger
+     - trigSF_cross : SF of the cross lepton trigger 
+     - trigSF_muUp/muDown/eleUp/eleDown/DM0Up/DM1Up/DM10Up/DM11Up/DM0Down/DM1Down/DM10Down/DM11Down : systematic variations of lepton triggers. Set to "trigSF" in case of MET trigger
+     - trigSF_met_statup/statdown : syst variations of MET trigger. Set to "trigSF" in case of lepton trigger
+    """
     return lambda: Htt_trigSFRDFProducer(**kwargs)
