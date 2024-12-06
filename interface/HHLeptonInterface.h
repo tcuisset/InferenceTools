@@ -82,8 +82,8 @@ struct FailReason {
   bool Pt; bool Eta;
   bool Vertex;
   bool LeptonID; bool LeptonIso;
-  bool TauIdVsMu; // Failing VsMuon discrimination (DeepTauVSmu for HPS, muon cleaning for HPS)
-  bool TauIdVsE; // Failing VsElectron discrimination (DeepTauVSele for HPS, electron cleaning for HPS)
+  bool TauIdVsMu; // Failing VsMuon discrimination (DeepTauVSmu for HPS, muon cleaning/idAntiMu for boostedTaus)
+  bool TauIdVsE; // Failing VsElectron discrimination (DeepTauVSele for HPS, electron cleaning for boostedTaus)
   bool TauIdVsJet;
   bool TauDM;
 
@@ -190,7 +190,7 @@ class HHLeptonInterface {
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       sRVec Electron_genPartIdx,
       fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
-      iRVec boostedTau_idDeepTauVSmu, iRVec boostedTau_idDeepTauVSe,
+      iRVec boostedTau_idAntiMu, // iRVec boostedTau_idDeepTauVSe,
       iRVec boostedTau_idDeepTauVSjet, fRVec boostedTau_rawDeepTauVSjet,
       iRVec boostedTau_decayMode, iRVec boostedTau_charge,
       sRVec boostedTau_genPartIdx,ROOT::VecOps::RVec<UChar_t> boostedTau_genPartFlav,
@@ -198,9 +198,6 @@ class HHLeptonInterface {
       std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
       iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
       std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso,
-      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
-      std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-      std::vector<trig_req> tautau_triggers,
       int GenPairType, int genDau1_genPart_idx, int genDau2_genPart_idx
     );
 

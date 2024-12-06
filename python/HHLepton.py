@@ -874,7 +874,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 f"{electronGenPartIdx_branch}, "
                 # TODO boostedTau systematic variations on pt & mass
                 f"boostedTau_pt, boostedTau_eta, boostedTau_phi, boostedTau_mass, "
-                f"boostedTau_idDeepTau{self.deepboostedtau_version}VSmu, boostedTau_idDeepTau{self.deepboostedtau_version}VSe, "
+                f"boostedTau_idAntiMu, "
                 f"boostedTau_idDeepTau{self.deepboostedtau_version}VSjet, boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet, "
                 "boostedTau_decayMode, boostedTau_charge, "
                 f"{boostedTau_genPartIdx_branch}, "
@@ -882,9 +882,6 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 "{ {boostedTau_LeadingMuonPt, boostedTau_SubLeadingMuonPt, boostedTau_SubSubLeadingMuonPt} }, { {boostedTau_LeadingMuonCorrIso, boostedTau_SubLeadingMuonCorrIso, boostedTau_SubSubLeadingMuonCorrIso} }, "
                 "boostedTau_Ecounter, { {boostedTau_LeadingElectron_electronIdx, boostedTau_SubLeadingElectron_electronIdx, boostedTau_SubSubLeadingElectron_electronIdx} }, "
                 "{ {boostedTau_LeadingElectronPt, boostedTau_SubLeadingElectronPt, boostedTau_SubSubLeadingElectronPt} }, { {boostedTau_LeadingElectronCorrIso, boostedTau_SubLeadingElectronCorrIso, boostedTau_SubSubLeadingElectronCorrIso} }, "
-                "TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi, "
-                "{}, {}, {}, "
-                #"mu_boostedTau_triggers, e_boostedTau_triggers, boostedTau_boostedTau_triggers, "
                 f"{genPairTypeEtc_branch}"
             ")"
             )

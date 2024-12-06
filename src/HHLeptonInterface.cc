@@ -53,7 +53,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       fRVec Electron_dxy, fRVec Electron_dz, iRVec Electron_charge,
       sRVec Electron_genPartIdx,
       fRVec boostedTau_pt, fRVec boostedTau_eta, fRVec boostedTau_phi, fRVec boostedTau_mass,
-      iRVec boostedTau_idDeepTauVSmu, iRVec boostedTau_idDeepTauVSe,
+      iRVec boostedTau_idAntiMu,
       iRVec boostedTau_idDeepTauVSjet, fRVec boostedTau_rawDeepTauVSjet,
       iRVec boostedTau_decayMode, iRVec boostedTau_charge,
       sRVec boostedTau_genPartIdx, ROOT::VecOps::RVec<UChar_t> boostedTau_genPartFlav,
@@ -61,9 +61,6 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       std::array<fRVec, 3> BT_muon_pt, std::array<fRVec, 3> BT_muon_correctedIso,
       iRVec boostedTau_electronCount, std::array<sRVec, 3> BT_electron_idx, 
       std::array<fRVec, 3> BT_electron_pt, std::array<fRVec, 3> BT_electron_correctedIso,
-      iRVec TrigObj_id, iRVec TrigObj_filterBits, fRVec TrigObj_pt, fRVec TrigObj_eta, fRVec TrigObj_phi,
-      std::vector<trig_req> mutau_triggers, std::vector<trig_req> etau_triggers,
-      std::vector<trig_req> tautau_triggers,
       int GenPairType, int genDau1_genPart_idx, int genDau2_genPart_idx
     )
 {
@@ -173,12 +170,6 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       muon_tlv.SetPtEtaPhiM(Muon_pt[imuon], Muon_eta[imuon], Muon_phi[imuon], Muon_mass[imuon]);
       auto tau_tlv = TLorentzVector();
       tau_tlv.SetPtEtaPhiM(boostedTau_pt[itau], boostedTau_eta[itau], boostedTau_phi[itau], boostedTau_mass[itau]);
-      // No trigger matching for MET trigger
-      // if (!pass_trigger(
-      //       muon_tlv.Pt(), muon_tlv.Eta(), muon_tlv.Phi(), 13,
-      //       tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
-      //       mutau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
-      //     continue;
 
       if (failReason.pass())
         tau_pairs.push_back(tau_pair({imuon, BT_muon_correctedIso[imuonFromBT][itau]/BT_muon_pt[imuonFromBT][itau], Muon_pt[imuon],
@@ -218,7 +209,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
     return {lepton_output({0, ind1, ind2, 0, 0, isOS,
       Muon_eta[ind1], Muon_phi[ind1], Muon_pfRelIso04_all[ind1], -1, -1, -1, -1,
       boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
-      boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+      -1, boostedTau_idAntiMu[ind2],
       boostedTau_idDeepTauVSjet[ind2]}), 
       cutflow.setWrongChannel(GenPairType != 0)};
   }
@@ -253,6 +244,12 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
 
   bool foundElectronInBoostedTauCollection = false;
   for (auto & itau: goodBoostedTaus) {
+    if (boostedTau_idAntiMu[itau] < 1) { // Failing loose antiMuon discriminant (only applied to etau & tautau)
+      if (doGenCutFlow && boostedTauGenMatch(itau, genDau2_genPart_idx)) {
+        cutflow.dau2_fail.TauIdVsMu = true;
+      }
+      continue;
+    }
     // boostedTau_electronCount can be up to 4 which is a bug
     for (int ielectronFromBT = 0; ielectronFromBT < std::min(boostedTau_electronCount[itau], 3); ielectronFromBT++) {
       FailReason failReason;
@@ -285,12 +282,6 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
           Electron_phi[iele], Electron_mass[iele]);
       auto tau_tlv = TLorentzVector();
       tau_tlv.SetPtEtaPhiM(boostedTau_pt[itau], boostedTau_eta[itau], boostedTau_phi[itau], boostedTau_mass[itau]);
-      // no trigger matching for MET trigger
-      // if (!pass_trigger(
-      //       electron_tlv.Pt(), electron_tlv.Eta(), electron_tlv.Phi(), 11,
-      //       tau_tlv.Pt(), tau_tlv.Eta(), tau_tlv.Phi(), 15,
-      //       mutau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
-      //     continue;
       if (failReason.pass())
         tau_pairs.push_back(tau_pair({iele, BT_electron_correctedIso[ielectronFromBT][itau]/BT_electron_pt[ielectronFromBT][itau], Electron_pt[iele],
             itau, boostedTau_rawDeepTauVSjet[itau], boostedTau_pt[itau], 0, 0}));
@@ -331,7 +322,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
     return {lepton_output({1, ind1, ind2, 0, 0, isOS,
       Electron_eta[ind1], Electron_phi[ind1], Electron_pfRelIso03_all[ind1], -1, -1, -1, -1,
       boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
-      boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+      -1, boostedTau_idAntiMu[ind2],
       boostedTau_idDeepTauVSjet[ind2]}), 
     cutflow.setWrongChannel(GenPairType != 1)
     };
@@ -369,17 +360,31 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
 
   if (goodBoostedTaus.size() >= 2) {
     for (auto & itau1 : goodBoostedTaus) {
+      if (boostedTau_idAntiMu[itau1] < 1) { // Failing loose antiMuon discriminant (only applied to etau & tautau)
+        if (doGenCutFlow && boostedTauGenMatch(itau1, genDau1_genPart_idx))
+          cutflow.dau1_fail.TauIdVsMu = true;
+        else if (doGenCutFlow && boostedTauGenMatch(itau1, genDau2_genPart_idx))
+          cutflow.dau2_fail.TauIdVsMu = true;
+        continue;
+      }
       auto tau1_tlv = TLorentzVector();
       tau1_tlv.SetPtEtaPhiM(boostedTau_pt[itau1], boostedTau_eta[itau1], boostedTau_phi[itau1], boostedTau_mass[itau1]);
       for (auto & itau2 : goodBoostedTaus) {
         if (itau1 == itau2)
           continue;
-        FailReason failReason;
+
+        if (boostedTau_idAntiMu[itau2] < 1) { // Failing loose antiMuon discriminant (only applied to etau & tautau)
+          if (doGenCutFlow && boostedTauGenMatch(itau2, genDau1_genPart_idx))
+            cutflow.dau1_fail.TauIdVsMu = true;
+          else if (doGenCutFlow && boostedTauGenMatch(itau2, genDau2_genPart_idx))
+            cutflow.dau2_fail.TauIdVsMu = true;
+          continue;
+        }
+
         auto tau2_tlv = TLorentzVector();
         tau2_tlv.SetPtEtaPhiM(boostedTau_pt[itau2], boostedTau_eta[itau2], boostedTau_phi[itau2], boostedTau_mass[itau2]);
         float deltaR = tau1_tlv.DeltaR(tau2_tlv);
         if (deltaR <= 0.8 && deltaR >= 0.05) {
-          // trigger matching (not used for MET trigger)
           tau_pairs.push_back(tau_pair({itau1, boostedTau_rawDeepTauVSjet[itau1], boostedTau_pt[itau1],
             itau2, boostedTau_rawDeepTauVSjet[itau2], boostedTau_pt[itau2], 0, 0}));
         } else if (doGenCutFlow && GenPairType == 2 && // failed deltaR : log it in case boostedTaus are both genmatched
@@ -417,10 +422,10 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
       return {lepton_output({2, ind1, ind2,
         0, 0, isOS,
         boostedTau_eta[ind1], boostedTau_phi[ind1], -1., boostedTau_decayMode[ind1],
-        boostedTau_idDeepTauVSe[ind1], boostedTau_idDeepTauVSmu[ind1],
+        -1, boostedTau_idAntiMu[ind1],
         boostedTau_idDeepTauVSjet[ind1],
         boostedTau_eta[ind2], boostedTau_phi[ind2], boostedTau_decayMode[ind2],
-        boostedTau_idDeepTauVSe[ind2], boostedTau_idDeepTauVSmu[ind2],
+        -1, boostedTau_idAntiMu[ind2],
         boostedTau_idDeepTauVSjet[ind2]}), 
         cutflow.setWrongChannel(GenPairType != 2)
         };
