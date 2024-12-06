@@ -20,9 +20,11 @@ class AK8GenRDFProducer(JetLepMetSyst):
                     os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
                 ROOT.gROOT.ProcessLine(".L {}/interface/GenInfoInterface.h".format(base))
             
-            ROOT.gInterpreter.Declare("""
-                auto AK8Gen = AK8GenInterface();
-            """)
+            if not os.getenv("_AK8GenRDFProducer"):
+                os.environ["_AK8GenRDFProducer"] = "_AK8GenRDFProducer"
+                ROOT.gInterpreter.Declare("""
+                    auto AK8Gen = AK8GenInterface();
+                """)
 
     def run(self, df):
         if not self.isMC:
