@@ -88,7 +88,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
             df = df.Define("idAndIsoAndFakeSF%s" % branch_name,
                 "get_dauIdIso_sf(pairType, isBoostedTau, dau1_index, dau2_index, Tau_pt{0}, "
                     "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "
-                    "elesf_RecoAbove20{1[2]}, elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
+                    "elesf_RecoAbove20{1[2]}, isBoostedTau ? elesf_Loose{1[3]} : elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
                     "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[4]}, "
                     "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[5]},"
                     "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[6]}, Tau_sfDeepTau2017v2p1VSmu_Tight{1[6]})".format(self.tau_syst, branch_template))
@@ -105,7 +105,7 @@ def dauIdIsoSFRDF(**kwargs):
     :ref:`Muon_muSFRDF`, :ref:`Tau_tauSFRDF`
     Input branches : 
      - musf_tight_id, musf_tight_reliso
-     - elesf_RecoAbove20, elesf_wp80iso
+     - elesf_RecoAbove20, elesf_wp80iso, elesf_Loose
      - Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium & Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium
      - Tau_sfDeepTau2017v2p1VSmu_Tight & Tau_sfDeepTau2017v2p1VSmu_VLoose : the DeepTau SFS for the etau/mutau and the tautau channels respectively (different VsMu working points -> different SFs)
 
