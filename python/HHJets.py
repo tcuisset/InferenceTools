@@ -280,15 +280,21 @@ class HHJetsRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
+        branches = ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
+            "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", 
+            "jetCategory", "isBoosted", "fatjet_JetIdx"]
+
         fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_particleNetLegacy_Xbb)+fRVec(FatJet_particleNetLegacy_QCD))"
         df = df.Define("HHJets", f"HHJets.GetHHJets(event, pairType, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
             f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
-            f"FatJet_msoftdrop, {fatjet_bb_tagging_branch}, "
+            f"FatJet_jetId, FatJet_msoftdrop, {fatjet_bb_tagging_branch}, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
-            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst})")
+            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst},"
+            "isBoostedTau ? JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail : JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail"
+            ")")
 
         df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
         df = df.Define("bjet1_JetIdx", "HHJets.bjet_idx1")
@@ -300,15 +306,23 @@ class HHJetsRDFProducer(JetLepMetSyst):
         df = df.Define("ctjet_indexes", "HHJets.ctjet_indexes")
         df = df.Define("fwjet_indexes", "HHJets.fwjet_indexes")
 
-        df = df.Define("isBoosted", "HHJets.isBoosted")
+        df = df.Define("jetCategory", "static_cast<int>(HHJets.jetCategory)")
+        df = df.Define("isBoosted", "jetCategory == 2")
         df = df.Define("fatjet_JetIdx", "HHJets.fatjet_idx")
 
-        if self.df_filter:
-            df = df.Filter("(bjet1_JetIdx >= 0) || (isBoosted)", "HHJetsRDF")
-        return df, ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
-            "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", 
-            "isBoosted", "fatjet_JetIdx"]
+        # subjets of fatjet
+        df = df.Define("fatjet_subJetIdx1", "fatjet_JetIdx >= 0 ? FatJet_subJetIdx1[fatjet_JetIdx] : -1")
+        df = df.Define("fatjet_subJetIdx2", "fatjet_JetIdx >= 0 ? FatJet_subJetIdx2[fatjet_JetIdx] : -1")
+        branches.extend(["fatjet_subJetIdx1", "fatjet_subJetIdx2"])
+        for subjet_idx in (1, 2):
+            for var in ["pt", "phi", "eta", "mass"]:
+                df = df.Define(f"fatjet_subJet{subjet_idx}_{var}", f"fatjet_subJetIdx{subjet_idx} >= 0 ? SubJet_{var}[fatjet_subJetIdx{subjet_idx}] : -99")
+                branches.append(f"fatjet_subJet{subjet_idx}_{var}")
 
+
+        if self.df_filter:
+            df = df.Filter("jetCategory >= 0 || jetCategory == -2", "HHJetsRDF")
+        return df, branches
 
 def HHJetsRDF(**kwargs):
     """
@@ -316,13 +330,14 @@ def HHJetsRDF(**kwargs):
     the indexes of the additional central and forward jets (if existing) and if the
     event has a boosted topology (ie it has an AK8 FatJet passing DeltaR, softdrop, pt requirements).
      - bjet_idx1 & bjet_idx2 will be filled in case there are at least 2 AK4 jets passing selections (no cut on btag)
-     - fatjet_idx will be filled in case there is an AK8 passing selection (even if event is resolved)
-     - isBoosted = 1 in case there is an AK8 passing FatJet_particleNet_XbbVsQCD threshold (used to be if there is an AK4 jet && event not in res1b|res2b (either <2 AK4 jets or >=2 AK4 but none pass Medium btag WP))
+     - fatjet_idx will be filled in case there is an AK8 passing selection, not including ParticleNet cut (even if event is resolved)
+     - fatjet_subJetIdx1/2 and fatjet_subJet1/2_pt/eta/phi/mass
+     - jetCategory will be set to : 0 if res2b, 1 if res1b, 2 if boosted-bb, -1/-2 if no jet category passed -2 is for the cases wher a FatJet failed PNet cut
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
 
-    :param filter: whether to filter out output events if they don't have 2 bjet candidates
+    :param filter: whether to filter out output events if they don't have 2 bjet candidates or a boosted AK8 candidate (not required to pass PNet cut)
     :type filter: bool
 
     :param model_version: version of the model to use. Can be 1 (pre-UL) or 2 (UL)

@@ -49,6 +49,19 @@ struct jet_pair_mass {
   float inv_mass;
 };
 
+enum class JetCategory {
+  Res_2b = 0,
+  Res_1b = 1,
+  Boosted_bb = 2,
+  None = -1,
+  Boosted_failedPNet = -2 // events which have a FatJet passing selections (pt, softdrop, etc) but failing ParticleNet cut. They are vetoed as we don't have SFs for jets failing PNet
+};
+
+enum class JetCategoryPriorityMode {
+  Res2b_Boosted_Res1b_noPNetFail, // Priority to resolved2b, then boosted, then res1b but don't consider events with a fatjet passing all selections except PNet for res1b (because we don't have SFs for jets failing PNet). Used for HPSTaus
+  Boosted_Res2b_Res1b_noPNetFail // Priority to boosted. Do not consider events with fatjet failing PNet
+};
+
 struct output {
   std::vector <float> hhbtag;
   int bjet_idx1;
@@ -57,8 +70,8 @@ struct output {
   int vbfjet_idx2;
   std::vector<int> ctjet_indexes;
   std::vector<int> fwjet_indexes;
-  int isBoosted;
-  int fatjet_idx;
+  JetCategory jetCategory;
+  int fatjet_idx; // will be filled even when the FatJet fails PNet (so when category == 2 or -2)
 };
 
 
@@ -84,10 +97,10 @@ class HHJetsInterface {
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
     fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
-    fRVec FatJet_msoftdrop, fRVec FatJet_particleNet_XbbVsQCD,
+    fRVec FatJet_msoftdrop, fRVec FatJet_jetId, fRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    float met_pt, float met_phi);
+    float met_pt, float met_phi, JetCategoryPriorityMode priorityMode);
 
   std::vector<float> GetScore(
     std::vector<float> HHbtag_jet_pt_, std::vector<float> HHbtag_jet_eta_, std::vector<float> HHbtag_rel_jet_M_pt_,

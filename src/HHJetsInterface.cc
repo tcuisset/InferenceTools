@@ -1,5 +1,7 @@
 #include "Tools/Tools/interface/HHJetsInterface.h"
 
+#include <stdexcept>
+
 // Constructor
 HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp, float fatjet_bbtag_wp):
   HHbtagger_(std::array<std::string, 2> { {model_0, model_1} }), btag_wp_(btag_wp), fatjet_bbtag_wp_(fatjet_bbtag_wp)
@@ -19,10 +21,11 @@ output HHJetsInterface::GetHHJets(
     fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
     iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
     fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
-    fRVec FatJet_msoftdrop, fRVec FatJet_particleNet_XbbVsQCD,
+    fRVec FatJet_msoftdrop, fRVec FatJet_jetId, fRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    float met_pt, float met_phi)
+    float met_pt, float met_phi, JetCategoryPriorityMode priorityMode
+    )
 {
   std::vector<float> all_HHbtag_scores;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
@@ -33,13 +36,13 @@ output HHJetsInterface::GetHHJets(
   int bjet2_idx = -1;
   int vbfjet1_idx = -1;
   int vbfjet2_idx = -1;
-  int isBoosted = 0;
+  JetCategory jetCategory = JetCategory::None;
   int fatjet_idx = -1;
   std::vector <int> ctjet_indexes, fwjet_indexes;
 
   if (pairType < 0) {
     return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-      ctjet_indexes, fwjet_indexes, isBoosted, fatjet_idx});
+      ctjet_indexes, fwjet_indexes, jetCategory, fatjet_idx});
   }
 
   auto dau1_tlv = TLorentzVector();
@@ -53,7 +56,9 @@ output HHJetsInterface::GetHHJets(
   std::vector <jet_idx_btag> jet_indexes;
   std::vector <int> all_jet_indexes;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
-    if ((Jet_puId[ijet] < 1 && Jet_pt[ijet] <= 50) || Jet_jetId[ijet] < 2)
+    // JetID : https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID    https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetIDUL
+    // PUId >=1 is loose
+    if ((Jet_puId[ijet] < 1 && Jet_pt[ijet] <= 50) || Jet_jetId[ijet] < 6) // JetId == 6 (2017/2018) or 7 (2016) means pass tight and tightLepVeto IDs (tight jetId is mandatory, lepVeto is recommended)
       continue;
     auto jet_tlv = TLorentzVector();
     jet_tlv.SetPtEtaPhiM(Jet_pt[ijet], Jet_eta[ijet], Jet_phi[ijet], Jet_mass[ijet]);
@@ -193,7 +198,7 @@ output HHJetsInterface::GetHHJets(
     //       (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
     //     continue;
     //   // setBoosted(1);
-    //   isBoosted = 1;
+    //   jetCategory = 1;
     // }
 
   } // jet_indexes.size() >= 2
@@ -206,6 +211,7 @@ output HHJetsInterface::GetHHJets(
     fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
       FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
     if (fatjet_tlv.Pt() < 250) continue; // Probably this could be reduced to 200 ???
+    if (FatJet_jetId[ifatjet] < 6) continue; // FatJet should use the same JetId as AK4 jets
     if (FatJet_eta[ifatjet] >= 2.4) continue;
     if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
     if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
@@ -219,15 +225,46 @@ output HHJetsInterface::GetHHJets(
   }
 
   // Logic for removing overlap between boosted & resolved
-  // Giving priority to boosted
-  isBoosted = fatjet_idx >= 0 && FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_;
-  // Giving priority to resolved
-  // if (!(bjet1_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_))) {
-  //    = 1;
-  // }
+  if (priorityMode == JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail) {
+    // Priority order res2b -> boosted -> res1b
+    if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-2b
+      jetCategory = JetCategory::Res_2b;
+    } else if (fatjet_idx >= 0) {
+      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+        jetCategory = JetCategory::Boosted_bb; // boosted-bb
+      else
+        jetCategory = JetCategory::Boosted_failedPNet;
+    } else if (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_) {
+      // resolved-1b 
+      jetCategory = JetCategory::Res_1b;
+    } else {
+      jetCategory = JetCategory::None;
+    }
+  }
+  else if (priorityMode == JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail) {
+    if (fatjet_idx >= 0) {
+      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+        jetCategory = JetCategory::Boosted_bb; // boosted-bb
+      else
+        jetCategory = JetCategory::Boosted_failedPNet;
+    }
+    else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-2b
+      jetCategory = JetCategory::Res_2b;
+    } else if (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_) {
+      // resolved-1b 
+      jetCategory = JetCategory::Res_1b;
+    } else {
+      jetCategory = JetCategory::None;
+    }
+  } else {
+    throw std::invalid_argument("HHJets : Wrong JetCategoryPriorityMode");
+  }
+
 
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-    ctjet_indexes, fwjet_indexes, isBoosted, fatjet_idx});
+    ctjet_indexes, fwjet_indexes, jetCategory, fatjet_idx});
 }
 
 
