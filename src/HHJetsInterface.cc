@@ -18,15 +18,39 @@ HHJetsInterface::~HHJetsInterface() {}
 
 output HHJetsInterface::GetHHJets(
     unsigned long long int event, int pairType,
-    fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
-    iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
-    fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
-    fRVec FatJet_msoftdrop, fRVec FatJet_jetId, fRVec FatJet_particleNet_XbbVsQCD,
+    rfRVec Jet_pt, rfRVec Jet_eta, rfRVec Jet_phi, rfRVec Jet_mass,
+    rcRVec Jet_puId, rcRVec Jet_jetId, rfRVec Jet_btagDeepFlavB,
+    rfRVec FatJet_pt, rfRVec FatJet_eta, rfRVec FatJet_phi, rfRVec FatJet_mass,
+    rfRVec FatJet_msoftdrop, rcRVec FatJet_jetId, rfRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    float met_pt, float met_phi, JetCategoryPriorityMode priorityMode
+    float met_pt, float met_phi, 
+    rfRVec GenPart_pt, rfRVec GenPart_eta, rfRVec GenPart_phi, rfRVec GenPart_mass,
+    int genXbb_GenPartIdx, int gen_b1_GenPartIdx, int gen_b2_GenPartIdx,
+    bool doGenCutFlow
     )
 {
+  auto deltaRGen = [&](TLorentzVector const& jet_tlv, int genPartIdx) {
+    TLorentzVector gen_tlv;
+    gen_tlv.SetPtEtaPhiM(GenPart_pt[genPartIdx], GenPart_eta[genPartIdx], GenPart_phi[genPartIdx], GenPart_mass[genPartIdx]);
+    return jet_tlv.DeltaR(gen_tlv);
+  };
+  auto resolvedJetGenMatched = [&](TLorentzVector const& jet_tlv) {
+    return deltaRGen(jet_tlv, gen_b1_GenPartIdx) < 0.4 || deltaRGen(jet_tlv, gen_b2_GenPartIdx) < 0.4;
+  };
+  auto resolvedJetGenMatched_idx = [&](int jet_idx) {
+    auto jet_tlv = TLorentzVector();
+    jet_tlv.SetPtEtaPhiM(Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], Jet_mass[jet_idx]);
+    return resolvedJetGenMatched(jet_tlv);
+  };
+  auto boostedJetGenMatched = [&](TLorentzVector const& jet_tlv) {
+    return deltaRGen(jet_tlv, genXbb_GenPartIdx) < 0.2; // Could even go down to 0.15
+  };
+  Jets_cutflow_output cutflow_output{}; // default-initialize so everything is filled with false (very important)
+  std::vector<JetsFailReason> resolvedFailReasons; // List of failReason for genmatched AK4 jets. Will be put in cutflow_output later
+  if (!(genXbb_GenPartIdx>=0 && gen_b1_GenPartIdx >= 0 && gen_b2_GenPartIdx >= 0)) doGenCutFlow = false;
+  cutflow_output.fatjet_failReason.Reco = true; // Willl get overwritten if we find a FatJet genmatched
+
   std::vector<float> all_HHbtag_scores;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
     all_HHbtag_scores.push_back(-999.);
@@ -36,13 +60,12 @@ output HHJetsInterface::GetHHJets(
   int bjet2_idx = -1;
   int vbfjet1_idx = -1;
   int vbfjet2_idx = -1;
-  JetCategory jetCategory = JetCategory::None;
   int fatjet_idx = -1;
   std::vector <int> ctjet_indexes, fwjet_indexes;
 
   if (pairType < 0) {
     return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-      ctjet_indexes, fwjet_indexes, jetCategory, fatjet_idx});
+      ctjet_indexes, fwjet_indexes, fatjet_idx, cutflow_output});
   }
 
   auto dau1_tlv = TLorentzVector();
@@ -56,18 +79,27 @@ output HHJetsInterface::GetHHJets(
   std::vector <jet_idx_btag> jet_indexes;
   std::vector <int> all_jet_indexes;
   for (size_t ijet = 0; ijet < Jet_pt.size(); ijet++) {
+    JetsFailReason failReason;
     // JetID : https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID    https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetIDUL
     // PUId >=1 is loose
-    if ((Jet_puId[ijet] < 1 && Jet_pt[ijet] <= 50) || Jet_jetId[ijet] < 6) // JetId == 6 (2017/2018) or 7 (2016) means pass tight and tightLepVeto IDs (tight jetId is mandatory, lepVeto is recommended)
-      continue;
+    if (Jet_puId[ijet] < 1 && Jet_pt[ijet] <= 50) failReason.JetPUID = true;
+    if (Jet_jetId[ijet] < 6) // JetId == 6 (2017/2018) or 7 (2016) means pass tight and tightLepVeto IDs (tight jetId is mandatory, lepVeto is recommended)
+      failReason.JetID = true;
     auto jet_tlv = TLorentzVector();
     jet_tlv.SetPtEtaPhiM(Jet_pt[ijet], Jet_eta[ijet], Jet_phi[ijet], Jet_mass[ijet]);
     if (jet_tlv.DeltaR(dau1_tlv) < 0.5 || jet_tlv.DeltaR(dau2_tlv) < 0.5)
-      continue;
-    if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < max_bjet_eta)
-      jet_indexes.push_back(jet_idx_btag({(int) ijet, Jet_btagDeepFlavB[ijet]}));
-    if (Jet_pt[ijet] > 20 && fabs(Jet_eta[ijet]) < 4.7)
+      failReason.DeltaRDau = true;
+    if (Jet_pt[ijet] <= 20) failReason.Pt = true;
+
+    if (failReason.pass() && fabs(Jet_eta[ijet]) < 4.7)
       all_jet_indexes.push_back(ijet);
+    
+    if (fabs(Jet_eta[ijet]) >= max_bjet_eta) failReason.Eta = true;
+    if (failReason.pass())
+      jet_indexes.push_back(jet_idx_btag({(int) ijet, Jet_btagDeepFlavB[ijet]}));
+    
+    if (doGenCutFlow && resolvedJetGenMatched(jet_tlv))
+      resolvedFailReasons.push_back(failReason);
   }
   if (jet_indexes.size() >= 2) {
     std::stable_sort(jet_indexes.begin(), jet_indexes.end(), jetSort);
@@ -124,6 +156,11 @@ output HHJetsInterface::GetHHJets(
       bjet1_idx = bjet2_idx;
       bjet2_idx = aux;
     }
+    if (doGenCutFlow) {
+      if (!resolvedJetGenMatched_idx(bjet1_idx) || !resolvedJetGenMatched_idx(bjet2_idx)) {
+        cutflow_output.wrongJet = true;
+      }
+    }
     /* // Disable VBF
     if (all_jet_indexes.size() >= 4) { // 2 bjets + 2 vbf jets
       std::vector <jet_pair_mass> vbfjet_indexes;
@@ -171,59 +208,51 @@ output HHJetsInterface::GetHHJets(
       else if (fabs(Jet_eta[ijet]) < 4.7 && Jet_pt[ijet] > 30)
         fwjet_indexes.push_back(ijet);
     }
-
-    // // is the event boosted?
-    // // we loop over the fat AK8 jets, apply a mass cut and verify that its subjets match
-    // // the jets we selected before.
-    // auto bjet1_tlv = TLorentzVector();
-    // auto bjet2_tlv = TLorentzVector();
-    // bjet1_tlv.SetPtEtaPhiM(Jet_pt[bjet1_idx], Jet_eta[bjet1_idx],
-    //   Jet_phi[bjet1_idx], Jet_mass[bjet1_idx]);
-    // bjet2_tlv.SetPtEtaPhiM(Jet_pt[bjet2_idx], Jet_eta[bjet2_idx],
-    //   Jet_phi[bjet2_idx], Jet_mass[bjet2_idx]);
-    // for (size_t ifatjet = 0; ifatjet < FatJet_msoftdrop.size(); ifatjet++) {
-    //   if (FatJet_msoftdrop[ifatjet] < 30)
-    //     continue;
-    //   if (FatJet_subJetIdx1[ifatjet] == -1 || FatJet_subJetIdx2[ifatjet] == -1)
-    //     continue;
-    //   auto subidx1 = FatJet_subJetIdx1[ifatjet];
-    //   auto subidx2 = FatJet_subJetIdx2[ifatjet];
-    //   auto subj1_tlv = TLorentzVector();
-    //   auto subj2_tlv = TLorentzVector();
-    //   subj1_tlv.SetPtEtaPhiM(SubJet_pt[subidx1], SubJet_eta[subidx1],
-    //     SubJet_phi[subidx1], SubJet_mass[subidx1]);
-    //   subj2_tlv.SetPtEtaPhiM(SubJet_pt[subidx2], SubJet_eta[subidx2],
-    //     SubJet_phi[subidx2], SubJet_mass[subidx2]);
-    //   if ((fabs(bjet1_tlv.DeltaR(subj1_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj2_tlv)) > 0.4) &&
-    //       (fabs(bjet1_tlv.DeltaR(subj2_tlv)) > 0.4 || fabs(bjet2_tlv.DeltaR(subj1_tlv)) > 0.4))
-    //     continue;
-    //   // setBoosted(1);
-    //   jetCategory = 1;
-    // }
-
   } // jet_indexes.size() >= 2
+
+  if (doGenCutFlow) { // Put the FailReason for the 2 jets. In case there are more than 2 gen-matched jets we choose the 2 most successful ones
+    std::stable_sort(resolvedFailReasons.begin(), resolvedFailReasons.end(), [](JetsFailReason const& a, JetsFailReason const& b){ return a.countFails() < b.countFails();});
+    if (resolvedFailReasons.size() >= 1)
+      cutflow_output.jet1_failReason = resolvedFailReasons[0];
+    if (resolvedFailReasons.size() >= 2)
+      cutflow_output.jet2_failReason = resolvedFailReasons[1];
+  }
   
   // -- Boosted :  Looking for AK8 jets for boosted
   // new definiton of boosted only requiring 1 AK8 jet (no subjets match)
   std::vector <jet_idx_btag> fatjet_indexes;
   for (size_t ifatjet = 0; ifatjet < FatJet_pt.size(); ifatjet++) {
+    JetsFailReason failReason;
+    if (FatJet_pt[ifatjet] < 250) failReason.Pt = true; // Probably this could be reduced to 200 ???
+    if (FatJet_jetId[ifatjet] < 6) failReason.JetID = true; // FatJet should use the same JetId as AK4 jets
+    if (FatJet_eta[ifatjet] >= 2.4) failReason.Eta = true;
     auto fatjet_tlv = TLorentzVector();
     fatjet_tlv.SetPtEtaPhiM(FatJet_pt[ifatjet], FatJet_eta[ifatjet],
       FatJet_phi[ifatjet], FatJet_mass[ifatjet]);
-    if (fatjet_tlv.Pt() < 250) continue; // Probably this could be reduced to 200 ???
-    if (FatJet_jetId[ifatjet] < 6) continue; // FatJet should use the same JetId as AK4 jets
-    if (FatJet_eta[ifatjet] >= 2.4) continue;
-    if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) continue;
-    if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) continue;
-    if (FatJet_msoftdrop.at(ifatjet) < 30) continue;
-    fatjet_indexes.push_back(jet_idx_btag({(int) ifatjet, FatJet_particleNet_XbbVsQCD.at(ifatjet)}));
+    if (fatjet_tlv.DeltaR(dau1_tlv) < 0.8) failReason.DeltaRDau = true;
+    if (fatjet_tlv.DeltaR(dau2_tlv) < 0.8) failReason.DeltaRDau = true;
+    if (FatJet_msoftdrop.at(ifatjet) < 30) failReason.SoftDrop = true;
+    // failReason.print(std::cout);
+    if (failReason.pass()) {
+      fatjet_indexes.push_back(jet_idx_btag({(int) ifatjet, FatJet_particleNet_XbbVsQCD.at(ifatjet)}));
+    }
+    if (doGenCutFlow && boostedJetGenMatched(fatjet_tlv))
+      cutflow_output.fatjet_failReason = failReason;
   }
   
   if (fatjet_indexes.size() != 0) {
     std::stable_sort(fatjet_indexes.begin(), fatjet_indexes.end(), jetSort);
     fatjet_idx = fatjet_indexes[0].idx;
+    if (doGenCutFlow) {
+      auto fatjet_tlv = TLorentzVector();
+      fatjet_tlv.SetPtEtaPhiM(FatJet_pt[fatjet_idx], FatJet_eta[fatjet_idx],
+        FatJet_phi[fatjet_idx], FatJet_mass[fatjet_idx]);
+      if (!boostedJetGenMatched(fatjet_tlv))
+        cutflow_output.wrongFatJet = true;
+    } 
   }
 
+  /*
   // Logic for removing overlap between boosted & resolved
   if (priorityMode == JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail) {
     // Priority order res2b -> boosted -> res1b
@@ -235,7 +264,7 @@ output HHJetsInterface::GetHHJets(
         jetCategory = JetCategory::Boosted_bb; // boosted-bb
       else
         jetCategory = JetCategory::Boosted_failedPNet;
-    } else if (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_) {
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
       // resolved-1b 
       jetCategory = JetCategory::Res_1b;
     } else {
@@ -252,7 +281,7 @@ output HHJetsInterface::GetHHJets(
     else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
       // resolved-2b
       jetCategory = JetCategory::Res_2b;
-    } else if (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_) {
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
       // resolved-1b 
       jetCategory = JetCategory::Res_1b;
     } else {
@@ -261,10 +290,10 @@ output HHJetsInterface::GetHHJets(
   } else {
     throw std::invalid_argument("HHJets : Wrong JetCategoryPriorityMode");
   }
-
+  */
 
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
-    ctjet_indexes, fwjet_indexes, jetCategory, fatjet_idx});
+    ctjet_indexes, fwjet_indexes, fatjet_idx, cutflow_output});
 }
 
 

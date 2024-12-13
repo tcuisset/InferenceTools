@@ -247,6 +247,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
 
         self.df_filter = df_filter
+        self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
 
         self.year = kwargs.pop("year")
         base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
@@ -282,18 +283,28 @@ class HHJetsRDFProducer(JetLepMetSyst):
     def run(self, df):
         branches = ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
             "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", 
-            "jetCategory", "isBoosted", "fatjet_JetIdx"]
+            "fatjet_JetIdx"]
 
+        fatjet_bb_tagging_branch_prefix = "FatJet_particleNetLegacy"
         fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_particleNetLegacy_Xbb)+fRVec(FatJet_particleNetLegacy_QCD))"
+        if self.doGenCutFlow:
+            gen_branches = (
+                "GenPart_pt, GenPart_eta, GenPart_phi, GenPart_mass, "
+                "genXbb_GenPartIdx, gen_b1_GenPartIdx, gen_b2_GenPartIdx, "
+                "true"
+            )
+        else:
+            gen_branches = "{}, {}, {}, {}, -1, -1, -1, false"
+        
         df = df.Define("HHJets", f"HHJets.GetHHJets(event, pairType, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
             f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
-            f"FatJet_jetId, FatJet_msoftdrop, {fatjet_bb_tagging_branch}, "
+            f"FatJet_msoftdrop, FatJet_jetId, {fatjet_bb_tagging_branch}, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
             f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst},"
-            "isBoostedTau ? JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail : JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail"
+            +gen_branches+
             ")")
 
         df = df.Define("Jet_HHbtag", "HHJets.hhbtag")
@@ -306,9 +317,10 @@ class HHJetsRDFProducer(JetLepMetSyst):
         df = df.Define("ctjet_indexes", "HHJets.ctjet_indexes")
         df = df.Define("fwjet_indexes", "HHJets.fwjet_indexes")
 
-        df = df.Define("jetCategory", "static_cast<int>(HHJets.jetCategory)")
-        df = df.Define("isBoosted", "jetCategory == 2")
+        #df = df.Define("jetCategory", "static_cast<int>(HHJets.jetCategory)")
+        #df = df.Define("isBoosted", "jetCategory == 2")
         df = df.Define("fatjet_JetIdx", "HHJets.fatjet_idx")
+        df = df.Define("fatjet_pnet", f"fatjet_JetIdx >= 0 ? {fatjet_bb_tagging_branch_prefix}_Xbb[fatjet_JetIdx]/({fatjet_bb_tagging_branch_prefix}_Xbb[fatjet_JetIdx]+{fatjet_bb_tagging_branch_prefix}_QCD[fatjet_JetIdx]) : -1.")
 
         # subjets of fatjet
         df = df.Define("fatjet_subJetIdx1", "fatjet_JetIdx >= 0 ? FatJet_subJetIdx1[fatjet_JetIdx] : -1")
@@ -319,9 +331,19 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 df = df.Define(f"fatjet_subJet{subjet_idx}_{var}", f"fatjet_subJetIdx{subjet_idx} >= 0 ? SubJet_{var}[fatjet_subJetIdx{subjet_idx}] : -99")
                 branches.append(f"fatjet_subJet{subjet_idx}_{var}")
 
+        if self.doGenCutFlow:
+            df = df.Define("cutflow_jets_wrongJet", "HHJets.cutflow_output.wrongJet")
+            df = df.Define("cutflow_jets_wrongFatJet", "HHJets.cutflow_output.wrongFatJet")
+            branches.extend(["cutflow_jets_wrongJet", "cutflow_jets_wrongFatJet"])
+            for jetType in ["jet1", "jet2", "fatjet"]:
+                for failReason in ["Reco", "Pt", "Eta", "JetID", "JetPUID", "SoftDrop", "DeltaRDau"]:
+                    df = df.Define(f"cutflow_{jetType}_{failReason}", f"HHJets.cutflow_output.{jetType}_failReason.{failReason}")
+                    branches.append(f"cutflow_{jetType}_{failReason}")
+                    
 
         if self.df_filter:
-            df = df.Filter("jetCategory >= 0 || jetCategory == -2", "HHJetsRDF")
+            df = df.Filter("(bjet1_JetIdx >= 0 && bjet2_JetIdx >= 0) || (fatjet_JetIdx >= 0)")
+            #df = df.Filter("jetCategory >= 0 || jetCategory == -2", "HHJetsRDF")
         return df, branches
 
 def HHJetsRDF(**kwargs):
@@ -364,3 +386,37 @@ def HHJetsRDF(**kwargs):
     df_filter = kwargs.pop("filter")
     model_version = kwargs.pop("model_version", "1")
     return lambda: HHJetsRDFProducer(df_filter=df_filter, model_version=model_version, **kwargs)
+
+
+
+class HHJetsVarRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.input_prefix = kwargs.pop("input_prefix") # Jet or FatJet
+        self.output_prefix = kwargs.pop("output_prefix") # bjet1 for ex
+        self.index = kwargs.pop("index") 
+        self.variables_withSyst = kwargs.pop("variables_withSyst", [])
+        self.variables_withoutSyst = kwargs.pop("variables_withoutSyst", [])
+
+    def run(self, df):
+        branches = []
+        for var in self.variables_withSyst:
+            df = df.Define(f"{self.output_prefix}_{var}{self.jet_syst}", f"{self.index} >= 0 ? {self.input_prefix}_{var}{self.jet_syst}.at({self.index}) : -99")
+            branches.append(f"{self.output_prefix}_{var}{self.jet_syst}")
+        
+        for var in self.variables_withoutSyst:
+            df = df.Define(f"{self.output_prefix}_{var}", f"{self.index} >= 0 ? {self.input_prefix}_{var}.at({self.index}) : -99")
+            branches.append(f"{self.output_prefix}_{var}")
+
+        return df, branches
+
+
+def HHJetsVarRDF(**kwargs):
+    """
+
+
+    """
+    return lambda: HHJetsVarRDFProducer(**kwargs)
+
+

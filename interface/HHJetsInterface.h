@@ -22,6 +22,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <ostream>
 
 // HHbtag libraries
 #include "HHTools/HHbtag/interface/HH_BTag.h"
@@ -34,9 +35,9 @@
 // CMSSW
 #include "DataFormats/Math/interface/deltaPhi.h"
 
-typedef ROOT::VecOps::RVec<float> fRVec;
-typedef ROOT::VecOps::RVec<bool> bRVec;
-typedef ROOT::VecOps::RVec<int> iRVec;
+// Using const& will lead to an error when using the wrong type, instead of silently converting, which can help catch mismatched branches
+typedef ROOT::VecOps::RVec<float> const& rfRVec;
+typedef ROOT::VecOps::RVec<UChar_t> const& rcRVec;
 
 struct jet_idx_btag {
   int idx;
@@ -62,6 +63,43 @@ enum class JetCategoryPriorityMode {
   Boosted_Res2b_Res1b_noPNetFail // Priority to boosted. Do not consider events with fatjet failing PNet
 };
 
+/** Record for a jet of which cuts failed */
+struct JetsFailReason {
+  JetsFailReason() : Reco(false), Pt(false), Eta(false), JetID(false), JetPUID(false), SoftDrop(false), DeltaRDau(false)
+  {}
+  bool pass() const { return !(Reco || Pt || Eta || JetID || JetPUID || SoftDrop || DeltaRDau ); }
+  int countFails() const { return Reco + Pt + Eta + JetID + JetPUID + SoftDrop + DeltaRDau; }
+  void print(std::ostream& out) const {
+    out << "JetsFailReason : ";
+    if (Reco) out << "Reco ";
+    if (Pt) out << "Pt ";
+    if (Eta) out << "Eta ";
+    if (JetID) out << "JetID ";
+    if (JetPUID) out << "JetPUID ";
+    if (SoftDrop) out << "SoftDrop ";
+    if (DeltaRDau) out << "DeltaRDau ";
+    out << std::endl;
+  }
+
+  bool Reco; // no gen-matched jet in collection
+
+  bool Pt; bool Eta;
+  bool JetID;
+  bool JetPUID;
+  bool SoftDrop;
+
+  bool DeltaRDau; // Too close to a tau
+};
+
+struct Jets_cutflow_output {
+    JetsFailReason jet1_failReason; // AK4 jets fail reason
+    JetsFailReason jet2_failReason;
+    JetsFailReason fatjet_failReason;
+
+    bool wrongJet; // wrong AK4 jet (not genmatched)
+    bool wrongFatJet; // wrong AK8 jet
+};
+
 struct output {
   std::vector <float> hhbtag;
   int bjet_idx1;
@@ -70,8 +108,8 @@ struct output {
   int vbfjet_idx2;
   std::vector<int> ctjet_indexes;
   std::vector<int> fwjet_indexes;
-  JetCategory jetCategory;
   int fatjet_idx; // will be filled even when the FatJet fails PNet (so when category == 2 or -2)
+  Jets_cutflow_output cutflow_output;
 };
 
 
@@ -94,13 +132,16 @@ class HHJetsInterface {
     ~HHJetsInterface ();
     
   output GetHHJets(unsigned long long int event, int pairType,
-    fRVec Jet_pt, fRVec Jet_eta, fRVec Jet_phi, fRVec Jet_mass,
-    iRVec Jet_puId, fRVec Jet_jetId, fRVec Jet_btagDeepFlavB,
-    fRVec FatJet_pt, fRVec FatJet_eta, fRVec FatJet_phi, fRVec FatJet_mass,
-    fRVec FatJet_msoftdrop, fRVec FatJet_jetId, fRVec FatJet_particleNet_XbbVsQCD,
+    rfRVec Jet_pt, rfRVec Jet_eta, rfRVec Jet_phi, rfRVec Jet_mass,
+    rcRVec Jet_puId, rcRVec Jet_jetId, rfRVec Jet_btagDeepFlavB,
+    rfRVec FatJet_pt, rfRVec FatJet_eta, rfRVec FatJet_phi, rfRVec FatJet_mass,
+    rfRVec FatJet_msoftdrop, rcRVec FatJet_jetId, rfRVec FatJet_particleNet_XbbVsQCD,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    float met_pt, float met_phi, JetCategoryPriorityMode priorityMode);
+    float met_pt, float met_phi, 
+    rfRVec GenPart_pt, rfRVec GenPart_eta, rfRVec GenPart_phi, rfRVec GenPart_mass,
+    int genXbb_GenPartIdx, int gen_b1_GenPartIdx, int gen_b2_GenPartIdx,
+    bool doGenCutFlow);
 
   std::vector<float> GetScore(
     std::vector<float> HHbtag_jet_pt_, std::vector<float> HHbtag_jet_eta_, std::vector<float> HHbtag_rel_jet_M_pt_,
