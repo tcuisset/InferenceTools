@@ -490,6 +490,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_VBF_DoubleLooseChargedIsoPFTau20_Trk1_eta2p1",
             "HLT_VBF_DoubleLooseChargedIsoPFTauHPS20_Trk1_eta2p1"]
         
+        # NB : the boostedTau triggers & MET_pt cuts are in a later module as MET corrections depend on TES & electron scale
+        # 1) find HPS & boostedTau and get pairType_HPS & pairType_boostedTaus (uctting on trigger, but not MET_pt for boostedTaus)
+        # 2) if HPS, select HPS. If not, check if boostedTau candidate and set "preliminary boosted tau mode", running HHLeptonVar in boostedTau mode
+        # 3) do MET corrections using information from HHLepton
+        # 4) cut on MET_pt if boostedTau
         # 2018 only
         assert self.year == 2018
         self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
@@ -790,16 +795,6 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     """)
 
     def run(self, df):
-        variables = ["pairType", "dau1_index", "dau2_index",
-            "isTauTauJetTrigger", "isVBFtrigger", "isOS",
-            "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode",
-            "dau1_idDeepTauVSe", "dau1_idDeepTauVSmu",
-            "dau1_idDeepTauVSjet",
-            "dau2_eta", "dau2_phi", "dau2_decayMode",
-            "dau2_idDeepTauVSe", "dau2_idDeepTauVSmu",
-            "dau2_idDeepTauVSjet"
-        ]                  
-
         all_branches = df.GetColumnNames()
         for ib, branch in enumerate(self.mutau_triggers):
             if branch not in all_branches:
@@ -945,10 +940,12 @@ class HHLeptonRDFProducer(JetLepMetSyst):
 
         if self.useBoostedTaus:
             # boostedTau category need MET trigger fired && offline MET cut to avoid MET turn on (offline cut from Wisconsin analysis)
-            boostedTau_trigger_req = f"({self.boostedTau_MET_triggers}) && MET_pt > 180"
+            # offline MET_pt cut is move in a later module to allow for MET propagation
+            boostedTau_trigger_req = f"({self.boostedTau_MET_triggers})"
             if self.tau_priority == "HPS":
                 df = df.Define("isBoostedTau", f"hh_lepton_results_HPSTaus.first.pairType < 0 && {boostedTau_trigger_req}")
             elif self.tau_priority == "boosted":
+                print("WARNING : tau priority boosted needs to be fixed wrt. MET_pt cut")
                 df = df.Define("isBoostedTau", f"hh_lepton_results_boostedTaus.first.pairType >= 0 && ({boostedTau_trigger_req})")
             else:
                 raise ValueError("tau_priority should be 'HPS' or 'boosted'")
@@ -959,38 +956,50 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             df = df.Define("isBoostedTau", "false")
         branches.append("isBoostedTau")
 
-        for var in variables:
+        for var in ["pairType", "dau1_index", "dau2_index",
+                "isTauTauJetTrigger", "isVBFtrigger", "isOS",
+                "dau1_eta", "dau1_phi", "dau1_iso", "dau1_decayMode",
+                "dau1_idDeepTauVSe", "dau1_idDeepTauVSmu",
+                "dau1_idDeepTauVSjet",
+                "dau2_eta", "dau2_phi", "dau2_decayMode",
+                "dau2_idDeepTauVSe", "dau2_idDeepTauVSmu",
+                "dau2_idDeepTauVSjet"
+            ]:
+            if var == "pairType": continue
             branchName = var
             if "DeepTau" in branchName:
                 branchName = var[:var.index("VS")] + self.deeptau_version + var[var.index("VS"):]
             df = df.Define(branchName, "hh_lepton_results.%s" % var)
             branches.append(branchName)
         
+        df = df.Define("pairType_preliminary", "hh_lepton_results.pairType") # pairType but without the MET_pt cut for boostedTaus
+        branches.append("pairType_preliminary")
+        
         # add raw DeepBoostedTau score
         if self.useBoostedTaus:
             df = df.Define("dau1_rawIdDeepTauVSjet", """
-                if (pairType == 2) { """
+                if (pairType_preliminary == 2) { """
                     f"return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau1_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau1_index];"
                 """
                 } else {
                     return -1.f; 
                 }"""      
             )
-            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType >=0) return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
+            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType_preliminary >=0) return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
         else:
             df = df.Define("dau1_rawIdDeepTauVSjet", f"""
-                if (pairType == 2) 
+                if (pairType_preliminary == 2) 
                     return Tau_rawDeepTau{self.deeptau_version}VSjet[dau1_index];
                 else 
                     return -1.f; 
                 """      
             )
-            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType >=0) return Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
+            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType_preliminary >=0) return Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
         branches.append("dau1_rawIdDeepTauVSjet")
         branches.append("dau2_rawIdDeepTauVSjet")
 
         if self.pairType_filter:
-            df = df.Filter("pairType >= 0", "HHLeptonRDF")
+            df = df.Filter("pairType_preliminary >= 0", "HHLeptonRDF")
 
         return df, branches
         # return df, []
@@ -1109,9 +1118,6 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
     def run(self, df):
         branches = [f"dau1_pt{self.lep_syst}", f"dau1_mass{self.lep_syst}", f"dau2_pt{self.lep_syst}", f"dau2_mass{self.lep_syst}"]
 
-        all_branches = df.GetColumnNames()
-        if branches[0] in all_branches:
-            return df, []
 
         if "boostedTau_pt" in df.GetColumnNames():
             boostedTau_branches = f"boostedTau_pt, boostedTau_mass" # TODO boostedTau systematics
@@ -1119,7 +1125,7 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
             # placeholder in case we are running on no-boosted-tau dataset
             boostedTau_branches = f"ROOT::RVec<float>(0), ROOT::RVec<float>(0)"
         df = df.Define(f"lepton_values{self.lep_syst}{self.tau_syst}", "get_lepton_values("
-            "pairType, isBoostedTau, dau1_index, dau2_index, "
+            "pairType_preliminary, isBoostedTau, dau1_index, dau2_index, "
             "Muon_pt{0}, Muon_mass{0}, Electron_pt{1}, Electron_mass{1}, "
             "Tau_pt{2}, Tau_mass{2}, {3})".format(self.muon_syst, self.electron_syst, self.tau_syst, boostedTau_branches)) 
 
@@ -1152,6 +1158,30 @@ def HHLeptonVarRDF(**kwargs):
 
     """
     return lambda: HHLeptonVarRDFProducer(**kwargs)
+
+
+class HHLeptonMETCutRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pairType_filter = kwargs.pop("pairType_filter")
+        
+
+    def run(self, df):
+        df = df.Define("pass_offline_met", f"MET{self.met_smear_tag}_pt{self.met_syst} > 180")
+        df = df.Define("pairType", "isBoostedTau ? (pass_offline_met ? pairType_boostedTaus : -1) : pairType_preliminary")
+        if self.pairType_filter:
+            df = df.Filter("pairType >= 0", "HHLeptonMETCutRDFProducer")
+        return df, ["pairType", "pass_offline_met"]
+
+
+def HHLeptonMETCutRDF(**kwargs):
+    """
+    Cut on MET_pt for the boostedTau category.
+    To be run after all MET corrections
+    Creates pairType branch
+    Parameters : pairType_filter
+    """
+    return lambda: HHLeptonMETCutRDFProducer(**kwargs)
 
 
 class HHDiTauJetRDFProducer(JetLepMetSyst):
