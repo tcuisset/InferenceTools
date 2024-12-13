@@ -385,7 +385,7 @@ MET_trigSF_interface::trigSF_result MET_trigSF_interface::getSF(float MET_pt) {
 
   MET_trigSF_interface::trigSF_result sf_res;
   sf_res.SF = trigSF_h->GetBinContent(binNumber);
-  sf_res.SF_statup = trigSF_h->GetBinErrorUp(binNumber);
-  sf_res.SF_statdown = trigSF_h->GetBinErrorLow(binNumber);
+  sf_res.SF_statup = sf_res.SF + trigSF_h->GetBinErrorUp(binNumber);
+  sf_res.SF_statdown = sf_res.SF - trigSF_h->GetBinErrorLow(binNumber);
   return sf_res;
 }

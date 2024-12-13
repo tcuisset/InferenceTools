@@ -677,6 +677,21 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
                 MET_trig_sf_file = f"{os.getenv('CMT_CMSSW_BASE')}/{os.getenv('CMT_CMSSW_VERSION')}/src/Tools/Tools/data/met_trig_sf/{self.year}_MetTriggerSFs.root"
                 ROOT.gInterpreter.Declare(f"""
                     auto MET_trigSF_interface_obj = MET_trigSF_interface("{MET_trig_sf_file}");
+                    """"""
+                    MET_trigSF_interface::trigSF_result computeMETTriggerSF(float MET_pt, bool isBoostedTau, int pairType) {
+                        if (isBoostedTau) {
+                            if (MET_pt < 180 && pairType >= 0) {
+                                throw std::runtime_error("Trying to get MET trigger SF for boostedTau with MET_pt<80GeV whilst pairType>=0&isBoostedTau");
+                                
+                            } else if (MET_pt >= 120) {
+                                return  MET_trigSF_interface_obj.getSF(MET_pt);
+                            }
+                            // The case (MET_pt<180 && pairType<0) is when there is no pairType filter and we have boostedTaus that pass MET trigger but not MET pt cut
+                            // in which case we can use SFs if MET_pt >120 (it will be outside of trigger plateau though)
+                        } 
+                        return MET_trigSF_interface::trigSF_result{1., 1., 1.};
+                        
+                    }
                 """ )
 
 
@@ -692,7 +707,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             "-999, -999, -999, -999, "
             "-999, -999, -999, -999)"
             ))
-        df = df.Define("MET_trigsf_res", f"isBoostedTau ? MET_trigSF_interface_obj.getSF(MET{self.met_smear_tag}_pt{self.met_syst})" " : MET_trigSF_interface::trigSF_result{1., 1., 1.}")
+        df = df.Define("MET_trigsf_res", f"computeMETTriggerSF(MET{self.met_smear_tag}_pt{self.met_syst}, isBoostedTau, pairType)")
 
         # nominal
         df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf[0]")
