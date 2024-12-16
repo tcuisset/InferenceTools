@@ -4,6 +4,7 @@ import os
 from analysis_tools.utils import import_root
 
 from Base.Modules.baseModules import JetLepMetSyst
+from Corrections.TAU.tauCorrections import listAllTauVSJetSystematics_pt, listAllTauVSJetSystematics_dm
 
 ROOT = import_root()
 
@@ -11,10 +12,15 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
         super(dauIdIsoSFRDFProducer, self).__init__(*args, **kwargs)
         self.isMC = kwargs.pop("isMC")
+        self.runPeriod = kwargs.pop("runPeriod")
+        self.computeSystematics = kwargs.pop("computeSystematics", True)
 
         if self.isMC:
-            default_systs = ["muon_id", "muon_iso", "ele_reco", "ele_iso", "tau_vsjet", "tau_vse", "tau_vsmu"]
-            systnames = ["central"] + default_systs
+            
+            default_systs = ["muon_id", "muon_iso", "ele_reco", "ele_iso", "tau_vsjet_pt", "tau_vsjet_dm", "tau_vse", "tau_vsmu"]
+            systnames = ["central"] 
+            if self.computeSystematics:
+                systnames += default_systs
             base_template = ["" for i in range(len(default_systs))]
             self.branch_names = []
             """ Suffixes of branch names to go with branch_templates """
@@ -29,6 +35,10 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                 try:
                     ind = default_systs.index(name)
                     dirs = kwargs.pop(name + "_syst_directions", ["_up", "_down"])
+                    if name == "tau_vsjet_pt" and dirs == "all":
+                        dirs = ["_"+x for x in listAllTauVSJetSystematics_pt(self.year, self.runPeriod, addCombined=False) if x is not "nom"]
+                    elif name == "tau_vsjet_dm" and dirs == "all":
+                        dirs = ["_"+x for x in listAllTauVSJetSystematics_dm(self.year, self.runPeriod, addCombined=False) if x is not "nom"]
                     for d in dirs:
                         tmp = copy(base_template)
                         self.branch_names.append("_%s%s" % (name, d))
@@ -84,14 +94,14 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
             return df, []
         branches = []
         for branch_name, branch_template in zip(self.branch_names, self.branch_templates):
-            assert(len(branch_template) == 7)
+            assert(len(branch_template) == 8)
             df = df.Define("idAndIsoAndFakeSF%s" % branch_name,
                 "get_dauIdIso_sf(pairType, isBoostedTau, dau1_index, dau2_index, Tau_pt{0}, "
                     "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "
                     "elesf_RecoAbove20{1[2]}, isBoostedTau ? elesf_Loose{1[3]} : elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
-                    "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[4]}, "
-                    "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[5]},"
-                    "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[6]}, Tau_sfDeepTau2017v2p1VSmu_Tight{1[6]})".format(self.tau_syst, branch_template))
+                    "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[5]}, "
+                    "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[6]},"
+                    "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[7]}, Tau_sfDeepTau2017v2p1VSmu_Tight{1[7]})".format(self.tau_syst, branch_template))
             branches.append("idAndIsoAndFakeSF%s" % branch_name)
 
         return df, branches
