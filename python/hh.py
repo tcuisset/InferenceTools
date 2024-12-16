@@ -231,7 +231,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                 f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
                 f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
                 f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, {jet_resolution},"
-                f"MET{self.met_smear_tag}_pt{self.muon_syst}, MET{self.met_smear_tag}_phi{self.muon_syst}, MET_covXX, MET_covXY, MET_covYY, "
+                f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY, "
                 f"{target1}, {target2})"
             ).Define("%sKinFit_mass%s" % (pp, self.systs), "hhkinfit_result%s[0]" % self.systs
             ).Define("%sKinFit_chi2%s" % (pp, self.systs), "hhkinfit_result%s[1]" % self.systs)

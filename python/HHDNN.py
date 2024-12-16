@@ -134,6 +134,7 @@ def HH(**kwargs):
 class HHDNNInputRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
+        self.jet_category = kwargs.pop("jet_category")
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNInterface"):
@@ -276,9 +277,14 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
-
+        if self.jet_category == "boosted":
+            isBoostedJet = "true"
+        elif self.jet_category == "resolved":
+            isBoostedJet = "false"
+        else:
+            raise ValueError()
         df = df.Define("dnn_input%s" % self.systs, f"""get_dnn_inputs_{self.variable_dnnInput}(
-            {self.variable_dnnInput}, pairType, isBoosted, isBoostedTau, event, 
+            {self.variable_dnnInput}, pairType, {isBoostedJet}, isBoostedTau, event, 
             bjet1_JetIdx, bjet2_JetIdx,
             fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, 
             dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, 
@@ -522,18 +528,22 @@ class HHDNNRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
-        df = df.Define("dnn_output%s%s" % (self.resonant_suffix, self.systs), "get_dnn_outputs{10}("
-            "pairType, isBoosted, event, "
-            "dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "
-            "Muon_pt{0}, Muon_eta, Muon_phi, Muon_mass{0},"
-            "Electron_pt{1}, Electron_eta, Electron_phi, Electron_mass{1}, "
-            "Tau_pt{2}, Tau_eta, Tau_phi, Tau_mass{2}, "
-            "Jet_pt{3}, Jet_eta, Jet_phi, Jet_mass{3}, "
-            "{7}tt_svfit_pt{4}, {7}tt_svfit_eta{4}, {7}tt_svfit_phi{4}, {7}tt_svfit_mass{4}, "
-            "{8}KinFit_mass{4}, {8}KinFit_chi2{4}, MET{5}_pt{6}, MET{5}_phi{6}, "
-            "Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag, {9})".format(
-                self.muon_syst, self.electron_syst, self.tau_syst, self.jet_syst, self.systs,
-                self.met_smear_tag, self.met_syst, p_sv, pp, self.DNN_res_mass, self.resonant_suffix)
+        if self.jet_category == "boosted":
+            isBoostedJet = "true"
+        elif self.jet_category == "resolved":
+            isBoostedJet = "false"
+        else:
+            raise ValueError()
+        df = df.Define("dnn_output%s%s" % (self.resonant_suffix, self.systs), f"get_dnn_outputs{self.resonant_suffix}("
+            f"pairType, {isBoostedJet}, event, "
+            f"dau1_index, dau2_index, bjet1_JetIdx, bjet2_JetIdx,VBFjet1_JetIdx, VBFjet2_JetIdx, "
+            f"Muon_pt{self.muon_syst}, Muon_eta, Muon_phi, Muon_mass{self.muon_syst},"
+            f"Electron_pt{self.electron_syst}, Electron_eta, Electron_phi, Electron_mass{self.electron_syst}, "
+            f"Tau_pt{self.tau_syst}, Tau_eta, Tau_phi, Tau_mass{self.tau_syst}, "
+            f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
+            f"{p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs}, "
+            f"{pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, "
+            f"Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB, Jet_HHbtag, {self.DNN_res_mass})"
             ).Define(branches[0], "dnn_output%s%s[0]" % (self.resonant_suffix, self.systs))
         return df, branches
 
