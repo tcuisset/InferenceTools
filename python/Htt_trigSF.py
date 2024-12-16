@@ -527,6 +527,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
         self.year = kwargs.pop("year")
         self.isUL = kwargs.pop("isUL")
         self.ispreVFP = kwargs.pop("ispreVFP")
+        self.computeSystematics = kwargs.pop("computeSystematics", True)
         
 
         # Thresholds to determine which trigger fired (cross or single lepton) 
@@ -711,6 +712,10 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
 
         # nominal
         df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf[0]")
+
+        if not self.computeSystematics:
+            return df, ["trigSF"]
+        
         # lepton trigger variations
         branches_lepTriggers = ['trigSF', 'trigSF_single', 'trigSF_cross',
             'trigSF_muUp', 'trigSF_muDown', 'trigSF_eleUp', 'trigSF_eleDown',
