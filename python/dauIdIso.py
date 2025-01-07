@@ -36,9 +36,9 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
                     ind = default_systs.index(name)
                     dirs = kwargs.pop(name + "_syst_directions", ["_up", "_down"])
                     if name == "tau_vsjet_pt" and dirs == "all":
-                        dirs = ["_"+x for x in listAllTauVSJetSystematics_pt(self.year, self.runPeriod, addCombined=False) if x is not "nom"]
+                        dirs = ["_"+x for x in listAllTauVSJetSystematics_pt(self.year, self.runPeriod, addCombined=False) if x != "nom"]
                     elif name == "tau_vsjet_dm" and dirs == "all":
-                        dirs = ["_"+x for x in listAllTauVSJetSystematics_dm(self.year, self.runPeriod, addCombined=False) if x is not "nom"]
+                        dirs = ["_"+x for x in listAllTauVSJetSystematics_dm(self.year, self.runPeriod, addCombined=False) if x != "nom"]
                     for d in dirs:
                         tmp = copy(base_template)
                         self.branch_names.append("_%s%s" % (name, d))
