@@ -369,19 +369,19 @@ MET_trigSF_interface::MET_trigSF_interface(std::string SF_file) {
 
 
 MET_trigSF_interface::trigSF_result MET_trigSF_interface::getSF(float MET_pt) {
-  if (MET_pt < 80) {
+  if (MET_pt < 120) {
     throw std::runtime_error("Attempting to get MET trigger SF with MET_pt<80GeV");
   }
-  if (MET_pt < 120) {
-    std::cerr << "WARNING : attempting to get MET trigger SF outside of trigger plateau" << std::endl;
-    MET_pt = 120;
-  }
-  if (MET_pt > 500)
+  // if (MET_pt < 120) {
+  //   std::cerr << "WARNING : attempting to get MET trigger SF outside of trigger plateau" << std::endl;
+  //   MET_pt = 120;
+  // }
+  if (MET_pt >= 500)
     MET_pt = 500-0.1; // upper edge is excluded in histograms
 
   int binNumber = trigSF_h->GetXaxis()->FindFixBin(MET_pt);
   if (binNumber <= 0 || binNumber > trigSF_h->GetNbinsX())
-    throw std::runtime_error("MET trigger SF read error");
+    throw std::runtime_error(std::string("MET trigger SF read error. Tried to read MET_pt ") + std::to_string(MET_pt) + " which is outside bounds [120, 500]");
 
   MET_trigSF_interface::trigSF_result sf_res;
   sf_res.SF = trigSF_h->GetBinContent(binNumber);

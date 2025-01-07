@@ -431,6 +431,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.isMC = isMC
         self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
         self.year = year
+        self.ispreVFP = kwargs.pop("ispreVFP")
         self.runEra = runEra
         self.isRun3 = kwargs.pop("isRun3", False)
         self.pairType_filter = pairType_filter
@@ -495,9 +496,18 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         # 2) if HPS, select HPS. If not, check if boostedTau candidate and set "preliminary boosted tau mode", running HHLeptonVar in boostedTau mode
         # 3) do MET corrections using information from HHLepton
         # 4) cut on MET_pt if boostedTau
-        # 2018 only
-        assert self.year == 2018
-        self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
+        if self.year == 2018:
+            self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight"
+            #self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
+        elif self.year == 2017:
+            self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight"
+            #self.boostedTau_MET_triggers = "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight || HLT_PFMET120_PFMHT120_IDTight"
+        elif self.year == 2016 and self.ispreVFP:
+            self.boostedTau_MET_triggers = "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight||HLT_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight"
+            #self.boostedTau_MET_triggers = "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight||HLT_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_PFMET110_PFMHT110_IDTight||HLT_PFMET120_PFMHT120_IDTight||HLT_PFMET170_HBHECleaned"
+        elif self.year == 2016 and not self.ispreVFP:
+            self.boostedTau_MET_triggers = "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight||HLT_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight"
+            #self.boostedTau_MET_triggers = "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight||HLT_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight||HLT_PFMET110_PFMHT110_IDTight||HLT_PFMET120_PFMHT120_IDTight||HLT_PFMET170_HBHECleaned||HLT_PFMET170_HBHE_BeamHaloCleaned"
 
         if not os.getenv("_HHLepton"):
             os.environ["_HHLepton"] = "_HHLepton"
