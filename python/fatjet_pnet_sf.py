@@ -24,7 +24,7 @@ class FatJetParticleNetSFProducer(JetLepMetSyst):
                 ROOT.gROOT.ProcessLine(".L {}/interface/PNetSFInterface.h".format(base))
 
                 ROOT.gInterpreter.Declare(f"""
-                    auto PNetAK8SF = PNetSFInterface("{self.year}");
+                    auto PNetAK8SF = PNetSFInterface("{self.year}{kwargs.pop('runPeriod', '')}");
                 """)
 
     def run(self, df):
