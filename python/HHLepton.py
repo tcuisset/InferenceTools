@@ -1174,11 +1174,15 @@ class HHLeptonMETCutRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pairType_filter = kwargs.pop("pairType_filter")
+        self.useBoostedTaus = kwargs.pop("useBoostedTaus")
         
 
     def run(self, df):
         df = df.Define("pass_offline_met", f"MET{self.met_smear_tag}_pt{self.met_syst} > 180")
-        df = df.Define("pairType", "isBoostedTau ? (pass_offline_met ? pairType_boostedTaus : -1) : pairType_preliminary")
+        if self.useBoostedTaus:
+            df = df.Define("pairType", "isBoostedTau ? (pass_offline_met ? pairType_boostedTaus : -1) : pairType_preliminary")
+        else:
+            df = df.Define("pairType", "pairType_preliminary")
         if self.pairType_filter:
             df = df.Filter("pairType >= 0", "HHLeptonMETCutRDFProducer")
         return df, ["pairType", "pass_offline_met"]
