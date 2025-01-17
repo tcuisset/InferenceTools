@@ -51,10 +51,10 @@ def DYstitching(**kwargs):
 
 class DYstitchingRDFProducer():
     """ Read Drell-Yan stitching weights from correctionlib """
-    def __init__(self, year, isDY, *args, **kwargs):
+    def __init__(self, year, runPeriod, isDY, **kwargs):
         self.isDY = isDY
 
-        json_input = os.environ['CMSSW_BASE'] + f"/src/Tools/Tools/data/dystitching/{year}.json"
+        json_input = os.environ['CMSSW_BASE'] + f"/src/Tools/Tools/data/dystitching/{year}{runPeriod if runPeriod else ''}.json"
 
         if self.isDY:
             os.environ["_DYstitchingRDFProducer"] = "_DYstitchingRDFProducer"
@@ -82,8 +82,9 @@ class DYstitchingRDFProducer():
 def DYstitchingRDF(*args, **kwargs):
     isDY = kwargs.pop("isDY", False)
     year = kwargs.pop("year")
+    runPeriod = kwargs.pop("runPeriod")
 
-    return lambda: DYstitchingRDFProducer(year=year, isDY=isDY, *args, **kwargs)
+    return lambda: DYstitchingRDFProducer(year=year, runPeriod=runPeriod, isDY=isDY, *args, **kwargs)
 
 class DYstitchingEasyRDFProducer():
     def __init__(self, isDY, *args, **kwargs):
