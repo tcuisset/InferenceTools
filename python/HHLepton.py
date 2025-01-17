@@ -823,6 +823,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 self.vbf_triggers[ib] = "false"
 
         runEras = ["dum", "A", "B", "C", "D", "E", "F", "G", "H"]
+        if self.runEra == "B1": self.runEra = "B" # for 2016 there is era B1, just consider it as era B
         runEra = None
         for _irun, _runEra in enumerate(runEras):
             if self.runEra == _runEra:
