@@ -241,6 +241,9 @@ def HHJets(**kwargs):
     return lambda: HHJetsProducer(**kwargs)
 
 
+fatjet_bb_tagging_branch_prefix = "FatJet_particleNetLegacy"
+fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_particleNetLegacy_Xbb)+fRVec(FatJet_particleNetLegacy_QCD))".replace("fRVec", "ROOT::RVec<float>")
+
 class HHJetsRDFProducer(JetLepMetSyst):
     def __init__(self, df_filter, model_version, *args, **kwargs):
         isUL = "true" if kwargs.pop("isUL") else "false"
@@ -285,8 +288,6 @@ class HHJetsRDFProducer(JetLepMetSyst):
             "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", 
             "fatjet_JetIdx"]
 
-        fatjet_bb_tagging_branch_prefix = "FatJet_particleNetLegacy"
-        fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_particleNetLegacy_Xbb)+fRVec(FatJet_particleNetLegacy_QCD))"
         if self.doGenCutFlow:
             gen_branches = (
                 "GenPart_pt, GenPart_eta, GenPart_phi, GenPart_mass, "
@@ -414,9 +415,96 @@ class HHJetsVarRDFProducer(JetLepMetSyst):
 
 def HHJetsVarRDF(**kwargs):
     """
-
-
+    Computes bjet1/2_pt etc variables
     """
     return lambda: HHJetsVarRDFProducer(**kwargs)
+
+
+
+class JetCategoryRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not os.getenv("_HHJets"):
+            os.environ["_HHJets"] = "_HHJets"
+
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+
+            base = "{}/{}/src/Tools/Tools".format(
+                os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+            ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
+
+        if not os.getenv("_HHJetsCategory"):
+            os.environ["_HHJetsCategory"] = "_HHJetsCategory"
+            ROOT.gInterpreter.Declare(f"""
+                auto HHJetsCategory = HHJetsCategoryInterface({kwargs["btag_wp"]}, {kwargs["fatjet_bbtag_wp"]});
+            """)
+
+    def run(self, df):
+        df = df.Define("jetCategory", 
+            f"(short) HHJetsCategory.GetJetCategory(isBoostedTau ? JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail : JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, Jet_btagDeepFlavB, {fatjet_bb_tagging_branch})")
+
+        return df, ["jetCategory"]
+
+def JetCategoryRDF(**kwargs):
+    """
+    Computes the jet category (branch jetCategory)
+        Res_2b = 0,
+        Res_1b = 1,
+        Boosted_bb = 2,
+        None = -1,
+        Boosted_failedPNet = -2 // events which have a FatJet passing selections (pt, softdrop, etc) but failing ParticleNet cut. They are vetoed as we don't have SFs for jets failing PNet
+    """
+    return lambda: JetCategoryRDFProducer(**kwargs)
+
+
+class JetCategoryFilterRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.jet_category = kwargs["jet_category"]
+
+    def run(self, df):
+        if self.jet_category == "resolved_2b": cat_number = 0
+        elif self.jet_category == "resolved_1b": cat_number = 1
+        elif self.jet_category == "boosted_bb": cat_number = 2
+        #elif self.jet_category is None: return df, []
+        else:
+            raise ValueError("Wrong jetCategory : " + self.jet_category)
+        df = df.Filter(f"jetCategory == {cat_number}", "JetCategoryFilterRDF")
+        return df, []
+
+def JetCategoryFilterRDF(**kwargs):
+    """
+    Filter jetCategory based on the parameter jet_categort given as argument
+    """
+    return lambda: JetCategoryFilterRDFProducer(**kwargs)
+
+
+
+
+class JetCategoryCheckRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.jet_category = kwargs["jet_category"]
+
+    def run(self, df):
+        if self.jet_category == "resolved_2b": cat_number = 0
+        elif self.jet_category == "resolved_1b": cat_number = 1
+        elif self.jet_category == "boosted_bb": cat_number = 2
+        elif self.jet_category is None: return df, []
+        else:
+            raise ValueError("Wrong jetCategory : " + self.jet_category)
+        df = df.Filter(f"""
+            if (jetCategory != {cat_number}) throw std::runtime_error(std::string("Wrong category assignment : ") + jetCategory + " vs  {self.jet_category}");
+            return true;
+            """)
+        return df, []
+def JetCategoryCheckRDF(**kwargs):
+    """ NOT USED
+    Check that the categories from config Category matches the one from JetCategoryRDFProducer (crashes otherwise). Does not do anything
+    Needs to be run after JetCategoryRDFProducer has been run and a filter on category has been applied
+    """
+    return lambda: JetCategoryCheckRDFProducer(**kwargs)
+
 
 

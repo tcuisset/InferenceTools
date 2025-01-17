@@ -50,19 +50,6 @@ struct jet_pair_mass {
   float inv_mass;
 };
 
-enum class JetCategory {
-  Res_2b = 0,
-  Res_1b = 1,
-  Boosted_bb = 2,
-  None = -1,
-  Boosted_failedPNet = -2 // events which have a FatJet passing selections (pt, softdrop, etc) but failing ParticleNet cut. They are vetoed as we don't have SFs for jets failing PNet
-};
-
-enum class JetCategoryPriorityMode {
-  Res2b_Boosted_Res1b_noPNetFail, // Priority to resolved2b, then boosted, then res1b but don't consider events with a fatjet passing all selections except PNet for res1b (because we don't have SFs for jets failing PNet). Used for HPSTaus
-  Boosted_Res2b_Res1b_noPNetFail // Priority to boosted. Do not consider events with fatjet failing PNet
-};
-
 /** Record for a jet of which cuts failed */
 struct JetsFailReason {
   JetsFailReason() : Reco(false), Pt(false), Eta(false), JetID(false), JetPUID(false), SoftDrop(false), DeltaRDau(false)
@@ -129,7 +116,6 @@ class HHJetsInterface {
 
   public:
     HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp, float fatjet_bbtag_wp);
-    ~HHJetsInterface ();
     
   output GetHHJets(unsigned long long int event, int pairType,
     rfRVec Jet_pt, rfRVec Jet_eta, rfRVec Jet_phi, rfRVec Jet_mass,
@@ -148,11 +134,37 @@ class HHJetsInterface {
     std::vector<float> HHbtag_rel_jet_E_pt_, std::vector<float> HHbtag_jet_htt_deta_, std::vector<float> HHbtag_jet_deepFlavour_,
     std::vector<float> HHbtag_jet_htt_dphi_, int HHbtag_year_, int HHbtag_channel_, float HHbtag_tauH_pt_, float HHbtag_tauH_eta_,
     float HHbtag_htt_met_dphi_, float HHbtag_rel_met_pt_htt_pt_, float HHbtag_htt_scalar_pt_, unsigned long long int HHbtag_evt_);
+  
+
 
   private:
     hh_btag::HH_BTag HHbtagger_;
     int year_;
     float max_bjet_eta = 2.4;
+    float btag_wp_; // Working point for b-tagging score, used when giving priority to resolved category
+    float fatjet_bbtag_wp_; // Working point for FatJet bb-tagging score, used when giving priority to boosted
+};
+
+enum class JetCategory {
+  Res_2b = 0,
+  Res_1b = 1,
+  Boosted_bb = 2,
+  None = -1,
+  Boosted_failedPNet = -2 // events which have a FatJet passing selections (pt, softdrop, etc) but failing ParticleNet cut. They are vetoed as we don't have SFs for jets failing PNet
+};
+
+enum class JetCategoryPriorityMode {
+  Res2b_Boosted_Res1b_noPNetFail, // Priority to resolved2b, then boosted, then res1b but don't consider events with a fatjet passing all selections except PNet for res1b (because we don't have SFs for jets failing PNet). Used for HPSTaus
+  Boosted_Res2b_Res1b_noPNetFail // Priority to boosted. Do not consider events with fatjet failing PNet
+};
+
+
+class HHJetsCategoryInterface {
+public:
+    HHJetsCategoryInterface (float btag_wp, float fatjet_bbtag_wp);
+    JetCategory GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, rfRVec Jet_btagDeepFlavB, rfRVec FatJet_particleNet_XbbVsQCD);
+
+private:
     float btag_wp_; // Working point for b-tagging score, used when giving priority to resolved category
     float fatjet_bbtag_wp_; // Working point for FatJet bb-tagging score, used when giving priority to boosted
 };

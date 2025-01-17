@@ -191,6 +191,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
                     double resolution1, resolution2;
                     if (isMC) {
+                        assert (jet_resolution.size() == jet_mass.size());
                         resolution1 = bjet1_tlv.E() * jet_resolution.at(bjet1_index);
                         resolution2 = bjet2_tlv.E() * jet_resolution.at(bjet2_index);
                     } else {
@@ -241,14 +242,13 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 class HHVarRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
-        self.jet_category = kwargs.pop("jet_category")
         super(HHVarRDFProducer, self).__init__(*args, **kwargs)
-        if not os.getenv("_HHVAR_%s_%s" % (self.jet_category, self.systs)):
-            os.environ["_HHVAR_%s_%s" % (self.jet_category, self.systs)] = "hhvar"
+        if not os.getenv("_HHVAR" ):
+            os.environ["_HHVAR"] = "hhvar"
             s = """
                 #include <TLorentzVector.h>
                 using Vfloat = const ROOT::RVec<float>&;
-                ROOT::RVec<double> get_hh_features_%s%s(int bjet1_index, int bjet2_index, int fatjet_index,
+                ROOT::RVec<double> get_hh_features(short jetCategory, int bjet1_index, int bjet2_index, int fatjet_index,
                         int vbfjet1_index, int vbfjet2_index,
                         float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
                         float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
@@ -267,10 +267,8 @@ class HHVarRDFProducer(JetLepMetSyst):
                     
                     
                     auto hbb_tlv = TLorentzVector();
-            """ % (self.jet_category, self.systs)
-            if self.jet_category == "resolved":
-                s += """
-                    if (bjet1_index >= 0 && bjet2_index >= 0) {
+                    if (jetCategory == (short)JetCategory::Res_2b || jetCategory == (short)JetCategory::Res_1b) {
+                        if (!(bjet1_index >= 0 && bjet2_index >= 0)) throw std::runtime_error("Wrong category in HHVarRDF");
                         auto bjet1_tlv = TLorentzVector();
                         auto bjet2_tlv = TLorentzVector();
                         bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
@@ -278,21 +276,23 @@ class HHVarRDFProducer(JetLepMetSyst):
                         bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
                             jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
                         hbb_tlv = bjet1_tlv + bjet2_tlv;
-                    } 
-                """
-            # we don't raise an error here as sometimes we run without hhjets filter. Though in these cases there will be random stuff in hhvar output
-            # else throw std::logic_error("HHVarRDFProducer: asking for resolved jet category but no b-jets available");
-            # else throw std::logic_error("HHVarRDFProducer: asking for boosted jet category but no fatjet available");
-            elif self.jet_category == "boosted":
-                s += """
-                    if (fatjet_index >= 0) {
+                    }
+                    else if (jetCategory == (short)JetCategory::Boosted_bb || jetCategory == (short)JetCategory::Boosted_failedPNet) {
+                        if (fatjet_index < 0) throw std::runtime_error("Wrong category in HHVarRDF");
                         hbb_tlv.SetPtEtaPhiM(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
                             fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
                     } 
-                """
-            else:
-                raise ValueError("HHVarRDFProducer: jet_category must be either resolved or boosted")
-            s += """
+                    else {
+                        std::cout << "HHVarRDF : No category !" << std::endl; // we don't raise an error here as sometimes we run without hhjets filter. Though in these cases there will be random stuff in hhvar output
+                        return {
+                            -1., -1., -1., -1.,
+                            -1., -1., -1., -1.,
+                            -1., -1., -1., -1.,
+                            -1., -1., -1., -1.,
+                            -1., -1., -1., -1.,
+                            -1., -1., -1.
+                        };
+                    }
                     auto hh_tlv = htt_tlv + hbb_tlv;
 
                     auto met_tlv = TLorentzVector();
@@ -361,8 +361,8 @@ class HHVarRDFProducer(JetLepMetSyst):
         if features[0] in all_branches:
             return df, []
 
-        df = df.Define(f"hhfeatures_{self.jet_category}{self.systs}", (f"get_hh_features_{self.jet_category}{self.systs}("
-            f"bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
+        df = df.Define(f"hhfeatures_{self.systs}", (f"get_hh_features("
+            f"jetCategory, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
@@ -372,7 +372,7 @@ class HHVarRDFProducer(JetLepMetSyst):
         ))
 
         for ifeat, feature in enumerate(features):
-            df = df.Define(feature, f"hhfeatures_{self.jet_category}{self.systs}[{ifeat}]")
+            df = df.Define(feature, f"hhfeatures_{self.systs}[{ifeat}]")
         return df, features
 
 
@@ -395,9 +395,9 @@ def HHVarRDF(*args, **kwargs):
     """ Computes variables relating to H/Z and to HH/ZZ/ZH (pt, eta, mass, phi) 
     For bb, for non-boosted sums the 2 AK4 jets 4-vectors. For boosted uses the AK8 jet directly
     Parameters:
-      - jet_category : boosted or resolved : to choose whether to use bjet1_idx&bjet2_idx and AK4 jets, or fatjet_idx and AK8 jet
       - AnalysisType : decide ZZ/ZH/HH. Will change output branch names
     Inputs:
+     - jetCategory : whether res1b/2b or boosted 
      - bjet1_idx&bjet2_idx (resolved only)
      - fatjet_idx (boosted only)
      - pairType (not used)

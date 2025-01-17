@@ -11,10 +11,6 @@ HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int 
 }
 
 
-// Destructor
-HHJetsInterface::~HHJetsInterface() {}
-
-
 
 output HHJetsInterface::GetHHJets(
     unsigned long long int event, int pairType,
@@ -252,45 +248,7 @@ output HHJetsInterface::GetHHJets(
     } 
   }
 
-  /*
-  // Logic for removing overlap between boosted & resolved
-  if (priorityMode == JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail) {
-    // Priority order res2b -> boosted -> res1b
-    if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
-      // resolved-2b
-      jetCategory = JetCategory::Res_2b;
-    } else if (fatjet_idx >= 0) {
-      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
-        jetCategory = JetCategory::Boosted_bb; // boosted-bb
-      else
-        jetCategory = JetCategory::Boosted_failedPNet;
-    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
-      // resolved-1b 
-      jetCategory = JetCategory::Res_1b;
-    } else {
-      jetCategory = JetCategory::None;
-    }
-  }
-  else if (priorityMode == JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail) {
-    if (fatjet_idx >= 0) {
-      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
-        jetCategory = JetCategory::Boosted_bb; // boosted-bb
-      else
-        jetCategory = JetCategory::Boosted_failedPNet;
-    }
-    else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
-      // resolved-2b
-      jetCategory = JetCategory::Res_2b;
-    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
-      // resolved-1b 
-      jetCategory = JetCategory::Res_1b;
-    } else {
-      jetCategory = JetCategory::None;
-    }
-  } else {
-    throw std::invalid_argument("HHJets : Wrong JetCategoryPriorityMode");
-  }
-  */
+
 
   return output({all_HHbtag_scores, bjet1_idx, bjet2_idx, vbfjet1_idx, vbfjet2_idx,
     ctjet_indexes, fwjet_indexes, fatjet_idx, cutflow_output});
@@ -318,4 +276,50 @@ std::vector<float> HHJetsInterface::GetScore(
   }
 
   return jets_and_HHbtag;
+}
+
+HHJetsCategoryInterface::HHJetsCategoryInterface (float btag_wp, float fatjet_bbtag_wp):
+   btag_wp_(btag_wp), fatjet_bbtag_wp_(fatjet_bbtag_wp)
+{
+}
+
+JetCategory HHJetsCategoryInterface::GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, rfRVec Jet_btagDeepFlavB, rfRVec FatJet_particleNet_XbbVsQCD)
+{
+  // Logic for removing overlap between boosted & resolved
+  if (priorityMode == JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail) {
+    // Priority order res2b -> boosted -> res1b (for HPSTaus category)
+    if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-2b
+      return JetCategory::Res_2b;
+    } else if (fatjet_idx >= 0) {
+      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+        return JetCategory::Boosted_bb;
+      else
+        return JetCategory::Boosted_failedPNet;
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-1b 
+      return JetCategory::Res_1b;
+    } else {
+      return JetCategory::None;
+    }
+  }
+  else if (priorityMode == JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail) {
+    if (fatjet_idx >= 0) {
+      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+        return JetCategory::Boosted_bb; // boosted-bb
+      else
+        return JetCategory::Boosted_failedPNet;
+    }
+    else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-2b
+      return JetCategory::Res_2b;
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+      // resolved-1b 
+      return JetCategory::Res_1b;
+    } else {
+      return JetCategory::None;
+    }
+  } else {
+    throw std::invalid_argument("HHJets : Wrong JetCategoryPriorityMode");
+  }
 }

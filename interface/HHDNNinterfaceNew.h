@@ -8,6 +8,7 @@
 #include <Math/VectorUtil.h>
 #include <Math/LorentzVector.h>
 #include <Math/PxPyPzM4D.h>
+#include <ROOT/RVec.hxx>
 
 
 class HHDNNinterfaceNew {
@@ -148,5 +149,18 @@ class HHDNNinterfaceNew {
     std::vector<float> cvsl_wps;
     std::vector<float> cvsb_wps;
 };
+
+void get_dnn_inputs(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int isBoostedTau, ULong64_t event,
+    int bjet1_index, int bjet2_index,
+    int fatjet_index, int vbfjet1_index, int vbfjet2_index,
+    float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
+    float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
+    ROOT::RVec<float> const& jet_pt, ROOT::RVec<float> const& jet_eta, ROOT::RVec<float> const& jet_phi, ROOT::RVec<float> const& jet_mass,
+    ROOT::RVec<float> const& fatjet_pt, ROOT::RVec<float> const& fatjet_eta, ROOT::RVec<float> const& fatjet_phi, ROOT::RVec<float> const& fatjet_mass, ROOT::RVec<float> const& fatjet_msoftdrop,
+    float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
+    float HHKinFit_mass, float HHKinFit_chi2, float met_pt, float met_phi,
+    ROOT::RVec<float> const& Jet_btagDeepFlavB, ROOT::RVec<float> const& Jet_btagDeepFlavCvL, ROOT::RVec<float> const& Jet_btagDeepFlavCvB,
+    ROOT::RVec<float> const& Jet_HHbtag
+);
 
 #endif // HHDNNinterface_h
