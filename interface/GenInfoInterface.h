@@ -46,6 +46,9 @@ gen_jets_output get_jet_gen_info(
     iRVec GenPart_status, iRVec GenPart_genPartIdxMother,
     fRVec GenPart_pt, fRVec GenPart_eta, fRVec GenPart_phi, fRVec GenPart_mass);
 
+
+bool findGenZDecayToBB(iRVec GenPart_pdgId, iRVec GenPart_genPartIdxMother); // Check if we have a Z->bb decay from GenParticle collection. Returns true if such a decay exists
+
 /** Info about a X->tautau candidate */
 struct Xtautau_gen {
     int GenPartIdx; // index into GenParticle collection of the Z/H decaying to tautau

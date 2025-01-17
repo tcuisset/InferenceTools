@@ -265,6 +265,9 @@ def GenVariablesRDF(**kwargs):
 class BBTauTauFilterRDFProducer():
     """ Filter bbtautau events (ZZ/ZH) using LHE information
     !!!! Only works on NanoV12 or later (needs status=2 intermediate bosons in LHEPart collections, not available in NanoV9)
+    It also depends on the way the sample is generated. There are 2 cases:
+     - The Z/H is decayed by the matrix element (or by madspin), in which case the Z/H is LHEPart_status==2 and the decay products are LHEPart_status==1 (case of ZZTo2L2Q sample, madspin decay)
+     - The H is decayed by Pythia, in which case the H is LHEPart_status==1 (on shell outgoing), and its decay products are not there. Case of ZH samples for the H only
     """
     def __init__(self, ProcType, isSigBBTT, isBkgBBTT, removeZH=False, *args, **kwargs):
         self.isSigBBTT = isSigBBTT
@@ -272,21 +275,49 @@ class BBTauTauFilterRDFProducer():
         self.ProcType = ProcType
         self.removeZH = removeZH
 
+        if self.isSigBBTT or self.isBkgBBTT:
+            if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gSystem.Load("libToolsTools.so")
+
+            if not os.getenv("_GenInfoInterface"):
+                os.environ["_GenInfoInterface"] = "_GenInfoInterface"
+                base = "{}/{}/src/Tools/Tools".format(
+                    os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
+                ROOT.gROOT.ProcessLine(".L {}/interface/GenInfoInterface.h".format(base))
+
     def run(self, df):
         if self.isSigBBTT or self.isBkgBBTT:
-            df = df.Define("LHE_isBBTauTau", 
-                "ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==15) == 2 && ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==5 ) >= 2")
-            
             df = df.Define("LHE_ZCount", "ROOT::VecOps::Sum(LHEPart_status == 2 && LHEPart_pdgId==23)")
-            df = df.Define("LHE_HCount", "ROOT::VecOps::Sum(LHEPart_status == 2 && LHEPart_pdgId==25)")
+            df = df.Define("LHE_HCount", "ROOT::VecOps::Sum(LHEPart_status >= 1 && LHEPart_pdgId==25)") # in case Higgs is decayed with Pythia, status==1. in case Matrix-element Higgs resonance, status==2
+            df = df.Define("LHE_bCount", "ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==5 )")
+            df = df.Define("LHE_tauCount", "ROOT::VecOps::Sum(LHEPart_status == 1 && ROOT::VecOps::abs(LHEPart_pdgId)==15 )")
+            df = df.Define("LHE_emuCount", "ROOT::VecOps::Sum(LHEPart_status == 1 && (11 <= ROOT::VecOps::abs(LHEPart_pdgId) && ROOT::VecOps::abs(LHEPart_pdgId)<=14) )") # (also counts neutrinos)
 
             # define a new branch to check if it is or not a ZZ/ZH->bbtautau event
             if self.ProcType == "Zbb_Ztautau":
                 print(" ### Running bbtautau filter for Zbb_Ztautau")
-                genfilter = "LHE_isBBTauTau && LHE_ZCount == 2"
-            elif self.ProcType == "Zbb_Htautau" or self.ProcType == "Ztautau_Hbb":
-                print(" ### Running bbtautau filter for Zbb_Htautau")
-                genfilter = "LHE_isBBTauTau && LHE_ZCount == 1 && LHE_HCount == 1"
+                # select : 
+                # - 2 Z (we want ZZ on shell, reject continuum Z/gamma)
+                # - at least 2 b (we can have more in case of ZZ+jet)
+                # - exactly 2 taus
+                # - no electron/muon (reject ZZ+jet with Z->ee,Z->tautau,jet=bb)
+                genfilter = "LHE_ZCount == 2 && LHE_bCount >= 2 && LHE_tauCount == 2 && LHE_emuCount == 0"
+            elif self.ProcType == "Zbb_Htautau" :
+                print(" ### Running bb filter for Zbb_Htautau")
+                # we cannot use LHE_isBBTauTau since that does not work for Pythia decays of the Higgs
+                # because our dataset is Z-> anything & H->tautau (forced Pythia decay), we just have to filter for bb at LHE level.
+                # but we cannot differentiate Z->bb,H->tautau,jet=uu from Z->uu,H->tautau,jet=bb just from LHE, need GenPart info
+                # LHE_ZCount will always be 1 (with status 2), LHE_HCount will always be 1 (with status 1)
+                # select
+                # - at least 2 b (thus we can have either Z->bb,H->tautau or Z->anything,H->tautau,jet=bb)
+                # - 2 b coming from a Z in GenParticle collection (reject Z->anything)
+                genfilter = "LHE_bCount >= 2 && findGenZDecayToBB(GenPart_pdgId, GenPart_genPartIdxMother)"
+                assert not self.removeZH
+            elif self.ProcType == "Ztautau_Hbb":
+                print(" ### Running tautau filter for Ztautau_Hbb")
+                # same but dataset is Z->ll & H->bb
+                # so find 2 LHE taus
+                genfilter = "LHE_tauCount >= 2"
                 assert not self.removeZH
             else:
                 raise ValueError("BBTauTauFilterRDF not implemented for self.ProcType = ", self.ProcType)
@@ -304,7 +335,7 @@ class BBTauTauFilterRDFProducer():
                 print(" ### Removing ZH contribution")
                 df = df.Filter("LHE_HCount == 0", "BBTauTauFilterRDF_removeZH")
                 
-            return df, ["LHE_isBBTauTau", "LHE_ZCount", "LHE_HCount"]
+            return df, ["LHE_ZCount", "LHE_HCount", "LHE_bCount", "LHE_tauCount", "LHE_emuCount"]
         
         else:
             return df, []

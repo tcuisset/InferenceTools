@@ -4,6 +4,7 @@
 #include <TLorentzVector.h>
 #include <cassert>
 #include <string>
+#include <sstream>
 
 // Constructor
 AK8GenInterface::AK8GenInterface() {}
@@ -142,6 +143,36 @@ gen_jets_output get_jet_gen_info(
     return out;
 }
 
+// // Check if we have a Z->bb decay from GenParticle collection. Returns true if such a decay exists
+bool findGenZDecayToBB (iRVec GenPart_pdgId, iRVec GenPart_genPartIdxMother) {
+    int n_b_fromZ = 0;
+
+    for (long unsigned int i_gen = 0; i_gen < GenPart_pdgId.size(); i_gen ++) {
+        if (GenPart_genPartIdxMother.at(i_gen) == -1) continue; // it is the incoming parton
+        if ((std::abs(GenPart_pdgId.at(i_gen)) == 5) && (GenPart_pdgId.at(GenPart_genPartIdxMother.at(i_gen)) == 23)) {
+            n_b_fromZ += 1;
+        }
+    }
+    if (n_b_fromZ > 2 ) // || n_b_fromZ == 1 (1 can probably happen due to GenParticle selection ??)
+        throw std::runtime_error(std::string("Wrong Z decays : ") + std::to_string(n_b_fromZ) + " Z->b decays");
+    return n_b_fromZ == 2;
+    // if (n_b_fromZ >= 2) {
+    //     if (n_tau_fromH != 0)
+    //         throw std::runtime_error(std::string("Wrong Higgs decays : ") + std::to_string(n_b_fromH) + " H->b decays & " + std::to_string(n_tau_fromH) + " H->tau decays");
+    //     else
+    //         return 5;
+    // }
+    // else if (n_tau_fromH >= 2) {
+    //     if (n_b_fromH != 0)
+    //         throw std::runtime_error(std::string("Wrong Higgs decays : ") + std::to_string(n_b_fromH) + " H->b decays & " + std::to_string(n_tau_fromH) + " H->tau decays");
+    //     else
+    //         return 15;
+    // }
+    // else if (n_b_fromH == 0 && n_tau_fromH == 0)
+    //     return 0;
+    // else
+    //     throw std::runtime_error(std::string("Wrong Higgs decays : ") + std::to_string(n_b_fromH) + " H->b decays & " + std::to_string(n_tau_fromH) + " H->tau decays");
+}
 
 // Find all the X->tautau (where X=Z or H) at gen level
 gen_Xtautau_output gen_Xtautau_info(iRVec GenPart_statusFlags, iRVec GenPart_pdgId,
@@ -158,7 +189,7 @@ gen_Xtautau_output gen_Xtautau_info(iRVec GenPart_statusFlags, iRVec GenPart_pdg
         // We want the last copy (ie after FSR) as that is the one used for GenVisTau_mother
         if (!(isHardProcess || isFromHardProcess) || !isLastCopy) continue;
 
-        if (fabs(pdg) == 15 /*tau*/) {
+        if (std::abs(pdg) == 15 /*tau*/) {
             // Check whether this tau comes from H or Z
             // We might need to go up the chain in case of FSR (we can have H -> tau -> tau + gamma, and we want the last tau)
             int mthIdx = GenPart_genPartIdxMother[i_gen];
@@ -244,8 +275,17 @@ gen_daus_output gen_daus_info(gen_Xtautau_output const& Xtautau_out,
     if (std::count_if(Xtautau_out.begin(), Xtautau_out.end(), [](Xtautau_gen const& Xtautau) { return Xtautau.daughtersIdxs.size() > 2;}) != 0)
         throw std::logic_error("More than 2 taus decayed from a Z/H");
     
-    if (std::count_if(Xtautau_out.begin(), Xtautau_out.end(), [](Xtautau_gen const& Xtautau) { return Xtautau.daughtersIdxs.size() == 2;}) > 1)
-        throw std::logic_error("More than 2 Z/H candidates decaying to tautau found");
+    if (std::count_if(Xtautau_out.begin(), Xtautau_out.end(), [](Xtautau_gen const& Xtautau) { return Xtautau.daughtersIdxs.size() == 2;}) > 1) {
+        std::ostringstream os;
+        os << "More than 2 Z/H candidates decaying to tautau found. " << std::endl;
+        for (Xtautau_gen const& Xtautau : Xtautau_out) {
+            os << "X(pdg=" << Xtautau.pdgId << ",idx=" << Xtautau.GenPartIdx << ")->taus(";
+            for (int tau_idx : Xtautau.daughtersIdxs) os << tau_idx << ",";
+            os << "), ";
+        }
+        throw std::logic_error(os.str());
+    }
+        
 
     auto Xtautau_it = std::find_if(Xtautau_out.begin(), Xtautau_out.end(), [](Xtautau_gen const& Xtautau) { return Xtautau.daughtersIdxs.size() == 2;});
     if (Xtautau_it == Xtautau_out.end()) {
@@ -310,7 +350,7 @@ gen_daus_output gen_daus_info(gen_Xtautau_output const& Xtautau_out,
             // Happens when deltaR(tau, tau)<1e-4 at gen level, because the matching is done based on gen-level deltaR !
             // https://github.com/cms-sw/cmssw/blob/7dc755530ad751991ea10bacdc0dbaecff716186/PhysicsTools/HepMCCandAlgos/plugins/GenVisTauProducer.cc#L78
             // We try to recover these cases by reassigning the GenVisTau to the dau2
-            std::cout << "WARNING : tau decaying leptonically having a GenVisTau matched to them. Should be very rare, when deltaR<1e-4 between the two taus at gen level." << std::endl;
+            std::cerr << "WARNING : tau decaying leptonically having a GenVisTau matched to them. Should be very rare, when deltaR<1e-4 between the two taus at gen level." << std::endl;
             if (std::abs(taus_daughter_pdg[0]) == 13 && taus_daughter_GenPartIdx[1] == -1 && taus_genVisTauIdx[0] >= 0 && taus_genVisTauIdx[1] == -1) {
                 out.genPairType = 0; // mutau
             } else if (std::abs(taus_daughter_pdg[1]) == 13 && taus_daughter_GenPartIdx[0] == -1  && taus_genVisTauIdx[1] >= 0 && taus_genVisTauIdx[0] == -1) {
@@ -322,9 +362,13 @@ gen_daus_output gen_daus_info(gen_Xtautau_output const& Xtautau_out,
                 out.genPairType = 1; // etau
                 swap = true;
             }
-            else
-                throw std::runtime_error(std::string("Wrong tau decay modes : ") + "Xtautau GenPartIdx=" + std::to_string(Xtautau.GenPartIdx) +  " daughter PDGs = " + std::to_string(taus_daughter_pdg[0]) + "," + std::to_string(taus_daughter_pdg[1])
-                + " ; genVisTaus idxs = " + std::to_string(taus_genVisTauIdx[0]) + "," + std::to_string(taus_genVisTauIdx[1]));
+            else {
+                //throw std::runtime_error(
+                std::cerr << std::string("Wrong tau decay modes : ") + "Xtautau GenPartIdx=" + std::to_string(Xtautau.GenPartIdx) +  " daughter PDGs = " + std::to_string(taus_daughter_pdg[0]) + "," + std::to_string(taus_daughter_pdg[1])
+                    + " ; genVisTaus idxs = " + std::to_string(taus_genVisTauIdx[0]) + "," + std::to_string(taus_genVisTauIdx[1])
+                    << std::endl;
+                out.genPairType = 3; // unknown decay mode. This should not happen but in very rare cases it does, reasons unknown
+            }
             if (swap) {
                 out.genDau1_GenPartIdx = taus_daughter_GenPartIdx[1];
                 out.genDau2_GenPartIdx = taus_daughter_GenPartIdx[0];
