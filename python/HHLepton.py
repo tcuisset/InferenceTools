@@ -545,6 +545,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
+                            // https://twiki.cern.ch/twiki/bin/view/CMS/EgHLTRunIISummary#2016
                             // Bit 1 (->2^1=2) is 1e (WPTight).
                             // eta is 2.1 (pre-pixel upgrade for 2016)
                             trigger_reqs.push_back(trig_req({triggers[0], 26, 2.1, 0, 0, 25, 0, {{2}, {}}})); // HLT_Ele25_eta2p1_WPTight_Gsf (from EG twiki : unprescaled but L1 turn on limited, still can be used)
@@ -555,10 +556,12 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                                 Vbool triggers, bool isMC, bool isRun3, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
                             if (!isMC) {
-                                if ((runEra >= 2) && (runEra <= 7)) { // B to G inclusive (tau twiki says F but is wrong)
+                                // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg was enabled until run 280385 ie last run of 2016G
+                                // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg enabled from run  281613 (first run of 2016H) to 284044
+                                if ((runEra >= 2 /*B*/) && (runEra <= 7 /* G */)) { // B to G inclusive (tau twiki says F but is wrong)
                                     trigger_reqs.push_back(trig_req({triggers[0], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
                                 }
-                                else if (runEra == 8) { // H
+                                else if (runEra == 8 /*H*/) { // H
                                     trigger_reqs.push_back(trig_req({triggers[1], 40, 2.1, 40, 2.1, 0, 0, {{2, 256}, {2, 256}}})); // HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
                                 }               
                             }
@@ -603,7 +606,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // Our SFs are for Ele32 & use the special emulation of HLT_Ele32_WPTight_Gsf for data runs where this does not exist (see twiki)
                             // bits : hltEle32L1DoubleEGWPTightGsfTrackIsoFilter -> bit 1 in Nano -> filter 2 =(2^1)
                             // hltEGL1SingleEGOrFilter -> bit 10  in Nano -> filter 1024
-                            trigger_reqs.push_back(trig_req({triggers[1], 33, 2.5, 20, 2.3, 32, 0, {{2, 1024}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG with bits for HLT_Ele32_WPTight_Gsf emulation
+                            trigger_reqs.push_back(trig_req({triggers[1], 33, 2.5, 0, 0, 32, 0, {{2, 1024}, {}}})); // HLT_Ele32_WPTight_Gsf_L1DoubleEG with bits for HLT_Ele32_WPTight_Gsf emulation
                             // trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf 
                             // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, 35, 0, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             // Filter bits are difference nanoV9 vs v12
@@ -698,7 +701,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_mutau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 20, 2.3, 24, 0, {{2, 8}, {}}})); // HLT_IsoMu24 (not prescaled for 2018)
+                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.4, 0, 0, 24, 0, {{2, 8}, {}}})); // HLT_IsoMu24 (not prescaled for 2018)
                             // trigger_reqs.push_back(trig_req({triggers[5], 29, 2.4, 20, 2.3, 27, 0, {{2, 8}, {}}})); // HLT_IsoMu27 -> not to be used for 2018
                             // https://twiki.cern.ch/twiki/bin/view/CMS/TauTrigger
                             // The TWiki suggests using HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1 rather than HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1 but our SFs are presumably for the latter (trigger used for gamma gamma ->tautau)
@@ -731,7 +734,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
-                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.5, 20, 2.3, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
+                            trigger_reqs.push_back(trig_req({triggers[2], 33, 2.5, 0, 0, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
                             // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             // gg->tautau analysis does OR with HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_TightID_CrossL1 but extremly few events pass this and not our trigger (<0.01% in ttbar)
                             if (!isMC && run < 317509) {
@@ -996,7 +999,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                     return -1.f; 
                 }"""      
             )
-            df = df.Define("dau2_rawIdDeepTauVSjet", f"if (pairType_preliminary >=0) return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index]; else return -1.f;")
+            df = df.Define("dau2_rawIdDeepTauVSjet", "if (pairType_preliminary >=0) {  " f" return isBoostedTau ? boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet[dau2_index] : Tau_rawDeepTau{self.deeptau_version}VSjet[dau2_index];" "} else { return -1.f; }")
         else:
             df = df.Define("dau1_rawIdDeepTauVSjet", f"""
                 if (pairType_preliminary == 2) 

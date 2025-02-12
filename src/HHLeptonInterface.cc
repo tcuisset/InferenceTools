@@ -479,7 +479,7 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
   std::vector<int> goodmuons;
   for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
     FailReason failReason;
-if (fabs(Muon_pt[imuon]) <= 20) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
+    if (fabs(Muon_pt[imuon]) <= 20) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
     if (fabs(Muon_eta[imuon]) >= 2.4) failReason.Eta = true;
     if (Muon_pfRelIso04_all[imuon] > 0.15) failReason.LeptonIso = true;
     if (fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2) failReason.Vertex = true;
@@ -504,7 +504,7 @@ if (fabs(Muon_pt[imuon]) <= 20) failReason.Pt = true; // Not strictly needed as 
         tau_failReason.TauDM = true;
       // common tau pt req for both single and cross triggers
       if (Tau_pt[itau] <= 20.) tau_failReason.Pt = true;
-if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
+      if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
 
       if (tau_failReason.pass())
         goodtaus.push_back(itau);
@@ -580,7 +580,7 @@ if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
   std::vector<int> goodelectrons;
   for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
     FailReason failReason;
-if (fabs(Electron_pt[iele]) <= 25) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
+    if (fabs(Electron_pt[iele]) <= 25) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
     if (!Electron_mvaFall17V2Iso_WP80[iele]) failReason.LeptonID = true;
     if (fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2) failReason.Vertex = true;
     if (fabs(Electron_eta[iele]) >= 2.5
@@ -606,7 +606,7 @@ if (fabs(Electron_pt[iele]) <= 25) failReason.Pt = true; // Not strictly needed 
         tau_failReason.TauDM = true;
       // common tau pt req for both single and cross triggers
       if (Tau_pt[itau] <= 20.) tau_failReason.Pt = true;
-if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
+      if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
 
       if (tau_failReason.pass())
         goodtaus.push_back(itau);
@@ -726,18 +726,18 @@ if (Tau_eta[itau] >= 2.3) tau_failReason.Eta = true;
 
         int pass_tautaujet = 0;
         int pass_vbf = 0;
-                  if (pass_trigger(
-              tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
-              tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
-              tautau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi)) {
+        if (pass_trigger(
+            tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
+            tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
+            tautau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi)) {
           tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTauVSjet[itau1], Tau_pt[itau1],
               itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_tautaujet, pass_vbf}));
         }
-          else {
-            if (isPairGenMatched) 
-              cutflow.triggerFail = true;
-          }
-              }
+        else {
+          if (isPairGenMatched) 
+            cutflow.triggerFail = true;
+        }
+      }
     }
     if (tau_pairs.size() > 0) {
       std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSort);
