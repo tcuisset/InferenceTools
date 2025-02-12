@@ -826,7 +826,7 @@ bool HHLeptonInterface::pass_trigger(
     if (!trigger.pass)
       continue;
     if (off_pt1 < trigger.pt1_offline || off_pt2 < trigger.pt2_offline
-        || abs(off_eta1) > trigger.eta1_offline || abs(off_eta2) > trigger.eta2_offline)
+        || (trigger.eta1_offline>0 && abs(off_eta1) > trigger.eta1_offline) || (trigger.eta2_offline>0 && abs(off_eta2) > trigger.eta2_offline)) // ensuring that setting 0 to eta_offline does not apply selection
       continue;
     if (trigger.bits[0].size() > 0) {
       if (!match_trigger_object(off_eta1, off_phi1, obj_id1, trigger.pt1_online,
