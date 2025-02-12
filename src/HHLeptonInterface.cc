@@ -721,28 +721,18 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
 
         int pass_tautaujet = 0;
         int pass_vbf = 0;
-        if (!pass_trigger(
-            tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
-            tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
-            tautau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi)) {
-          if (pass_trigger(
+                  if (pass_trigger(
               tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
               tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
-              tautaujet_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
-            pass_tautaujet = 1;
-          else if (pass_trigger(
-              tau1_tlv.Pt(), tau1_tlv.Eta(), tau1_tlv.Phi(), 15,
-              tau2_tlv.Pt(), tau2_tlv.Eta(), tau2_tlv.Phi(), 15,
-              vbf_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi))
-            pass_vbf = 1;
+              tautau_triggers, TrigObj_id, TrigObj_filterBits, TrigObj_pt, TrigObj_eta, TrigObj_phi)) {
+          tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTauVSjet[itau1], Tau_pt[itau1],
+              itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_tautaujet, pass_vbf}));
+        }
           else {
             if (isPairGenMatched) 
               cutflow.triggerFail = true;
           }
-        }
-        tau_pairs.push_back(tau_pair({itau1, Tau_rawDeepTauVSjet[itau1], Tau_pt[itau1],
-          itau2, Tau_rawDeepTauVSjet[itau2], Tau_pt[itau2], pass_tautaujet, pass_vbf}));
-      }
+              }
     }
     if (tau_pairs.size() > 0) {
       std::stable_sort(tau_pairs.begin(), tau_pairs.end(), pairSort);
