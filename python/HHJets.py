@@ -402,13 +402,18 @@ class HHJetsVarRDFProducer(JetLepMetSyst):
 
     def run(self, df):
         branches = []
+        existing_branches = set(df.GetColumnNames())
         for var in self.variables_withSyst:
-            df = df.Define(f"{self.output_prefix}_{var}{self.jet_syst}", f"{self.index} >= 0 ? {self.input_prefix}_{var}{self.jet_syst}.at({self.index}) : -99")
-            branches.append(f"{self.output_prefix}_{var}{self.jet_syst}")
+            branch_name = f"{self.output_prefix}_{var}{self.jet_syst}"
+            if branch_name not in existing_branches:
+                df = df.Define(branch_name, f"{self.index} >= 0 ? {self.input_prefix}_{var}{self.jet_syst}.at({self.index}) : -99")
+                branches.append(branch_name)
         
         for var in self.variables_withoutSyst:
-            df = df.Define(f"{self.output_prefix}_{var}", f"{self.index} >= 0 ? {self.input_prefix}_{var}.at({self.index}) : -99")
-            branches.append(f"{self.output_prefix}_{var}")
+            branch_name = f"{self.output_prefix}_{var}"
+            if branch_name not in existing_branches:
+                df = df.Define(f"{self.output_prefix}_{var}", f"{self.index} >= 0 ? {self.input_prefix}_{var}.at({self.index}) : -99")
+                branches.append(f"{self.output_prefix}_{var}")
 
         return df, branches
 
@@ -469,7 +474,9 @@ class JetCategoryFilterRDFProducer(JetLepMetSyst):
         elif self.jet_category == "boosted_bb": cat_number = 2
         #elif self.jet_category is None: return df, []
         else:
-            raise ValueError("Wrong jetCategory : " + self.jet_category)
+            print("######## WARNING : no jetCategory filter")
+            return df, []
+            #raise ValueError("Wrong jetCategory : " + str(self.jet_category))
         df = df.Filter(f"jetCategory == {cat_number}", "JetCategoryFilterRDF")
         return df, []
 
