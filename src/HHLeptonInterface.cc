@@ -81,7 +81,7 @@ std::pair<lepton_output, cutflow_output> HHLeptonInterface::get_boosted_dau_inde
   for (size_t itau = 0; itau < boostedTau_pt.size(); itau ++) {
     FailReason failReason;
     if (boostedTau_pt[itau] < 40) failReason.Pt = true; // Pt threshold arbitrary (Wisconsin uses >20, central Nano uses >40)
-    if (boostedTau_eta[itau] >= 2.5) failReason.Eta = true;
+    if (boostedTau_eta[itau] >= 2.3) failReason.Eta = true;
     //if (boostedTau_idDeepTauVSmu[itau] < BT_VsMu_threshold_) failReason.TauIdVsMu = true;
     //if (boostedTau_idDeepTauVSe[itau] < BT_VsE_threshold_) failReason.TauIdVsE = true;
     if (boostedTau_rawDeepTauVSjet[itau] < BT_VsJet_threshold_) failReason.TauIdVsJet = true;
