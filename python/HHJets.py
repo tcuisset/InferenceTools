@@ -355,7 +355,6 @@ def HHJetsRDF(**kwargs):
      - bjet_idx1 & bjet_idx2 will be filled in case there are at least 2 AK4 jets passing selections (no cut on btag)
      - fatjet_idx will be filled in case there is an AK8 passing selection, not including ParticleNet cut (even if event is resolved)
      - fatjet_subJetIdx1/2 and fatjet_subJet1/2_pt/eta/phi/mass
-     - jetCategory will be set to : 0 if res2b, 1 if res1b, 2 if boosted-bb, -1/-2 if no jet category passed -2 is for the cases wher a FatJet failed PNet cut
 
     Lepton and jet systematics (used for pt and mass variables) can be modified using the parameters
     from :ref:`BaseModules_JetLepMetSyst`.
@@ -423,6 +422,26 @@ def HHJetsVarRDF(**kwargs):
     Computes bjet1/2_pt etc variables
     """
     return lambda: HHJetsVarRDFProducer(**kwargs)
+
+class PreprocessJetFilterRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.enable = kwargs.pop("enable", True)
+
+    def run(self, df):
+        if self.enable:
+            df = df.Filter("(bjet1_JetIdx >= 0 && bjet2_JetIdx >= 0) || (fatjet_JetIdx >= 0) || isBoostedTau", "PreprocessJetFilterRDF")
+        return df, []
+
+def PreprocessJetFilterRDF(**kwargs):
+    """
+    Filter at Preprocess (after HHJets) to reduce ntuple size
+    Filters either of : 
+     - 2 AK4 jets (no b-tagging requirement)
+     - 1 AK8 jet (mSD>30)
+     - isBoostedTau (so no filter on jets in boostedTau category)
+    """
+    return lambda: PreprocessJetFilterRDFProducer(**kwargs)
 
 
 
