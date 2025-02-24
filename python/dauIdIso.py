@@ -139,4 +139,71 @@ def dauIdIsoSFRDF(**kwargs):
 
     """
     return lambda: dauIdIsoSFRDFProducer(**kwargs)
+
+
+class boostedTauSFRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.isMC = kwargs.pop("isMC")
+        self.runPeriod = kwargs.pop("runPeriod")
+
+    def run(self, df):
+        if not self.isMC:
+            return df, []
+        branches = []
+
+        SF = 0.9
+        SF_up = 0.9 + 0.2
+        SF_down = 0.9 - 0.2
+
+        df = df.Define("boostedTau_SF", f"isBoostedTau ? (pairType == 2 ? {SF*SF} : {SF}) : 1.")
+        branches.append("boostedTau_SF")
+
+        if self.systematic_is_central: # only compute variations for the nominal file (no need to do it for JEC variations for ex)
+            df = df.Define("boostedTau_SF_up", f"isBoostedTau ? (pairType == 2 ? {SF_up*SF_up} : {SF_up}) : 1.")
+            df = df.Define("boostedTau_SF_down", f"isBoostedTau ? (pairType == 2 ? {SF_down*SF_down} : {SF_down}) : 1.")
+            branches.extend(["boostedTau_SF_up", "boostedTau_SF_down"])
+
+        return df, branches
+
+def boostedTauSFRDF(**kwargs):
+    """
+    Computes boostedTau scale factors
+    Output branches : boostedTau_SF, boostedTau_SF_up, boostedTau_SF_down
+
+    """
+    return lambda: boostedTauSFRDFProducer(**kwargs)
+
+class boostedTauEnergyScaleRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.isMC = kwargs.pop("isMC")
+        self.runPeriod = kwargs.pop("runPeriod")
+
+    def run(self, df):
+        if not self.isMC:
+            return df, []
+        # applying unly uncert, no nominal. Not differentiaing on tau genmatch 
+        boostedTau_tes_factor_up, boostedTau_tes_factor_down = 1.03, 0.97
+        df = df.Alias("boostedTau_pt_corr", f"boostedTau_pt") # 
+        df = df.Alias("boostedTau_mass_corr", f"boostedTau_mass")
+        branches = ["boostedTau_pt_corr", "boostedTau_mass_corr"]
+        if self.systematic_is_central:
+            df = df.Define("boostedTau_pt_corr_up", f"boostedTau_pt * {boostedTau_tes_factor_up}")
+            df = df.Define("boostedTau_pt_corr_down", f"boostedTau_pt * {boostedTau_tes_factor_down}")
+
+            df = df.Define("boostedTau_mass_corr_up", f"boostedTau_mass * {boostedTau_tes_factor_up}")
+            df = df.Define("boostedTau_mass_corr_down", f"boostedTau_mass * {boostedTau_tes_factor_down}")
+
+            return df, branches + ["boostedTau_pt_corr_up", "boostedTau_pt_corr_down", "boostedTau_mass_corr_up", "boostedTau_mass_corr_down"]
+        else:
+            return df, branches
+
+def boostedTauEnergyScaleRDF(**kwargs):
+    """
+    Computes boostedTau energy scale variations
+    Output branches : ["boostedTau_pt_corr", "boostedTau_mass_corr"] + ["boostedTau_pt_corr_up", "boostedTau_pt_corr_down", "boostedTau_mass_corr_up", "boostedTau_mass_corr_down"]
+
+    """
+    return lambda: boostedTauEnergyScaleRDFProducer(**kwargs)
        

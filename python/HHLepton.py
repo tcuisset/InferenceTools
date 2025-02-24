@@ -477,7 +477,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             "HLT_Ele32_WPTight_Gsf", "HLT_Ele35_WPTight_Gsf",
             "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1",
             "HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1"]
-        #self.e_boostedTau_triggers = ["HLT_Ele115_CaloIdVT_GsfTrkIdT", "HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165"] # TODO see if we should include HLT_Photon200
+        #self.e_boostedTau_triggers = ["HLT_Ele115_CaloIdVT_GsfTrkIdT", "HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165"] # see if we should include HLT_Photon200
         self.tautau_triggers = ["HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg",
             "HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg",
             "HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg",
@@ -881,8 +881,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                 f"{Electron_mvaIso_WP80}, {Electron_mvaNoIso_WP90}, {Electron_mvaIso_WP90}, Electron_vidNestedWPBitmap, Electron_pfRelIso03_all, "
                 f"Electron_dxy, Electron_dz, Electron_charge, "
                 f"{electronGenPartIdx_branch}, "
-                # TODO boostedTau systematic variations on pt & mass
-                f"boostedTau_pt, boostedTau_eta, boostedTau_phi, boostedTau_mass, "
+                f"boostedTau_pt{self.tau_syst}, boostedTau_eta, boostedTau_phi, boostedTau_mass{self.tau_syst}, "
                 f"boostedTau_idAntiMu, "
                 f"boostedTau_idDeepTau{self.deepboostedtau_version}VSjet, boostedTau_rawDeepTau{self.deepboostedtau_version}VSjet, "
                 "boostedTau_decayMode, boostedTau_charge, "
@@ -1134,7 +1133,7 @@ class HHLeptonVarRDFProducer(JetLepMetSyst):
 
 
         if "boostedTau_pt" in df.GetColumnNames():
-            boostedTau_branches = f"boostedTau_pt, boostedTau_mass" # TODO boostedTau systematics
+            boostedTau_branches = f"boostedTau_pt{self.tau_syst}, boostedTau_mass{self.tau_syst}"
         else:
             # placeholder in case we are running on no-boosted-tau dataset
             boostedTau_branches = f"ROOT::RVec<float>(0), ROOT::RVec<float>(0)"
