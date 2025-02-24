@@ -11,7 +11,8 @@ std::array<float, 3> computePDFWeights(ROOT::VecOps::RVec<float> LHEPdfWeight) {
         throw std::runtime_error(std::string("Invalid LHEPdfWeight with size ") + std::to_string(LHEPdfWeight.size()));
     float nominal = LHEPdfWeight[0];
     if (std::abs(nominal-1)>0.3)
-        throw std::runtime_error(std::string("Nominal LHEPdfWeight far from 1, value ") + std::to_string(nominal));
+        std::cout << "WARNING : Nominal LHEPdfWeight far from 1, value " << nominal << "\n";
+        //throw std::runtime_error(std::string("Nominal LHEPdfWeight far from 1, value ") + std::to_string(nominal));
     // From https://arxiv.org/pdf/1510.03865v2 
     // suitable for MC sets like PDF4LHC15_mc
     auto sorted_values = ROOT::VecOps::Sort(ROOT::VecOps::Take(LHEPdfWeight/nominal, -(LHEPdfWeight.size()-1))); // Remove value 0 (nominal) then sort the weights
@@ -44,10 +45,9 @@ std::array<float, 3> computeScaleUncertainties(ROOT::VecOps::RVec<float> LHEScal
         throw std::runtime_error(std::string("Wrong nb of LHEScaleWeight, value ") + std::to_string(LHEScaleWeight.size()));
 
     if (std::abs(murf_nominal-1)>0.5)
-        throw std::runtime_error(std::string("Nominal mu renorm far from 1, value ") + std::to_string(murf_nominal));
+        std::cout << "WARNING : Nominal mu renorm far from 1, value " << murf_nominal << "\n";
+        //throw std::runtime_error(std::string("Nominal mu renorm far from 1, value ") + std::to_string(murf_nominal));
     
-
-     
     auto murf_weights = ROOT::VecOps::Take(LHEScaleWeight, indices_to_take)/murf_nominal; 
-    return {{murf_nominal, ROOT::VecOps::Max(murf_weights), ROOT::VecOps::Min(murf_weights)}};
+    return {{1., ROOT::VecOps::Max(murf_weights), ROOT::VecOps::Min(murf_weights)}};
 }
