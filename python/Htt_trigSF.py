@@ -717,7 +717,7 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
         # nominal
         df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf[0]")
 
-        if not self.computeSystematics:
+        if not self.computeSystematics or not self.systematic_is_central:
             return df, ["trigSF"]
         
         # lepton trigger variations

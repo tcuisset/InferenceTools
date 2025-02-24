@@ -19,7 +19,7 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
             
             default_systs = ["muon_id", "muon_iso", "ele_reco", "ele_iso", "tau_vsjet_pt", "tau_vsjet_dm", "tau_vse", "tau_vsmu"]
             systnames = ["central"] 
-            if self.computeSystematics:
+            if self.computeSystematics and self.systematic_is_central:
                 systnames += default_systs
             base_template = ["" for i in range(len(default_systs))]
             self.branch_names = []
