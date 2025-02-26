@@ -705,42 +705,38 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             return df, []
         
         df = df.Define("htt_trigsf", (
-            "isBoostedTau ? std::vector<double>({1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}) : " # TODO boostedTau trigger scale factors
+            "isBoostedTau ? Htt_trigSFresult() : "
             "Htt_trigSF.get_scale_factors(pairType, isVBFtrigger, "
             f"dau1_decayMode, dau1_pt{self.lep_syst}, dau1_eta, "
-            f"dau2_decayMode, dau2_pt{self.lep_syst}, dau2_eta, "
-            "-999, -999, -999, -999, "
-            "-999, -999, -999, -999)"
+            f"dau2_decayMode, dau2_pt{self.lep_syst}, dau2_eta)"
             ))
         df = df.Define("MET_trigsf_res", f"computeMETTriggerSF(MET{self.met_smear_tag}_pt{self.met_syst}, isBoostedTau, pairType)")
 
         # nominal
-        df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf[0]")
+        df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf.trigSF")
+
+        df = df.Define("passSingle", "htt_trigsf.passSingle")
+        df = df.Define("passCross", "htt_trigsf.passCross")
 
         if not self.computeSystematics or not self.systematic_is_central:
-            return df, ["trigSF"]
+            return df, ["trigSF", "passSingle", "passCross"]
         
         # lepton trigger variations
-        branches_lepTriggers = ['trigSF', 'trigSF_single', 'trigSF_cross',
-            'trigSF_muUp', 'trigSF_muDown', 'trigSF_eleUp', 'trigSF_eleDown',
-            'trigSF_DM0Up', 'trigSF_DM1Up', 'trigSF_DM10Up', 'trigSF_DM11Up', 
-            'trigSF_DM0Down', 'trigSF_DM1Down', 'trigSF_DM10Down', 'trigSF_DM11Down',
-            'trigSF_vbfjetUp', 'trigSF_vbfjetDown']
-        for ib, branch in enumerate(branches_lepTriggers):
-            if ib == 0: continue # nominal is dealt with separately
-            if ib >= 1 and ib <= 2: # 'trigSF_single', 'trigSF_cross'
-                df = df.Define(branch, f"isBoostedTau ? -1. : htt_trigsf[{ib}]")
-            else: 
-                # syst variations of lepton triggers
-                # if boostedTau, just set to the nominal SF from MET trigger
-                df = df.Define(branch, f"isBoostedTau ? trigSF :  htt_trigsf[{ib}]")
+        branches_lepTriggers = [
+            'muUp', 'muDown', 'eleUp', 'eleDown',
+            'DM0Up', 'DM1Up', 'DM10Up', 'DM11Up', 
+            'DM0Down', 'DM1Down', 'DM10Down', 'DM11Down']
+        for syst_branch in branches_lepTriggers:
+            # syst variations of lepton triggers
+            # if boostedTau, just set to the nominal SF from MET trigger
+            df = df.Define(f"trigSF_{syst_branch}", f"isBoostedTau ? trigSF :  htt_trigsf.{syst_branch}")
 
         # MET trigger variations
         for met_trig_syst in ["statup", "statdown"]:
             # if not boostedTau, set to nominal SF from lepton triggers
             df = df.Define(f"trigSF_met_{met_trig_syst}", f"isBoostedTau ? MET_trigsf_res.SF_{met_trig_syst} : trigSF")
 
-        return df, branches_lepTriggers + ["trigSF_met_statup", "trigSF_met_statdown"]
+        return df, ["trigSF", "passSingle", "passCross"] + [f"trigSF_{b}" for b in branches_lepTriggers] + ["trigSF_met_statup", "trigSF_met_statdown"]
 
 
 def Htt_trigSFRDF(**kwargs):

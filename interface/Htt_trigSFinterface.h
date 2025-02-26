@@ -36,6 +36,53 @@ typedef ROOT::VecOps::RVec<float> fRVec;
 typedef ROOT::VecOps::RVec<bool> bRVec;
 typedef ROOT::VecOps::RVec<int> iRVec;
 
+struct Htt_trigSFresult {
+  Htt_trigSFresult() : passSingle(false), passCross(false), trigSF(1.), muUp(0.), muDown(0.), eleUp(0.), eleDown(0.), DM0Up(0.), DM0Down(0.), DM1Up(0.), DM1Down(0.), DM10Up(0.), DM10Down(0.), DM11Up(0.), DM11Down(0.) {}
+  bool passSingle, passCross; // these only check if we are in a phase space where we look for single or cross trigger. It does not imply that the respective trigger has fired (if in overlap area, outside overlap area it does imply it)
+
+  float trigSF; // nominal
+
+  // uncertainties
+  float muUp, muDown;
+  float eleUp, eleDown;
+  float DM0Up, DM0Down;
+  float DM1Up, DM1Down;
+  float DM10Up, DM10Down;
+  float DM11Up, DM11Down;
+
+  void setDMError(int dm, double error) {
+    if (dm == 0) {
+      DM0Up = trigSF + error;
+      DM0Down = trigSF - error;
+    } else if (dm == 1){
+      DM1Up = trigSF + error;
+      DM1Down = trigSF - error;
+    } else if (dm == 10){
+      DM10Up = trigSF + error;
+      DM10Down = trigSF - error;
+    } else if (dm == 11) {
+      DM11Up = trigSF + error;
+      DM11Down = trigSF - error;
+    } else assert(false);
+  }
+
+  void setSystVariationsToNominal() {
+    if (muUp==0.) muUp = trigSF;
+    if (muDown==0.) muDown = trigSF;
+    if (eleUp==0.) eleUp = trigSF;
+    if (eleDown==0.) eleDown = trigSF;
+    if (DM0Up==0.) DM0Up = trigSF;
+    if (DM0Down==0.) DM0Down = trigSF;
+    if (DM1Up==0.) DM1Up = trigSF;
+    if (DM1Down==0.) DM1Down = trigSF;
+    if (DM10Up==0.) DM10Up = trigSF;
+    if (DM10Down==0.) DM10Down = trigSF;
+    if (DM11Up==0.) DM11Up = trigSF;
+    if (DM11Down==0.) DM11Down = trigSF;
+ 
+  }
+};
+
 
 // Htt_trigSFInterface class
 class Htt_trigSFinterface {
@@ -50,13 +97,11 @@ class Htt_trigSFinterface {
       std::string tauTrgSF_ditau_file, std::string tauTrgSF_mutau_file,
       std::string tauTrgSF_etau_file, std::string tauTrgSF_vbf_file, std::string jetTrgSF_vbf_file);    
 
-    std::vector<double> get_scale_factors(int pairType, int isVBFtrigger,
+    Htt_trigSFresult get_scale_factors(int pairType, int isVBFtrigger,
       int dau1_decayMode, float dau1_pt, float dau1_eta,
-      int dau2_decayMode, float dau2_pt, float dau2_eta,
-      float vbfjet1_pt, float vbfjet1_eta, float vbfjet1_phi, float vbfjet1_mass,
-      float vbfjet2_pt, float vbfjet2_eta, float vbfjet2_phi, float vbfjet2_mass);
+      int dau2_decayMode, float dau2_pt, float dau2_eta);
   
-    private:
+    //private:
     int year_;
     float mutau_pt_th1_;
     float mutau_pt_th2_;
