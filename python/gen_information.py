@@ -269,11 +269,12 @@ class BBTauTauFilterRDFProducer():
      - The Z/H is decayed by the matrix element (or by madspin), in which case the Z/H is LHEPart_status==2 and the decay products are LHEPart_status==1 (case of ZZTo2L2Q sample, madspin decay)
      - The H is decayed by Pythia, in which case the H is LHEPart_status==1 (on shell outgoing), and its decay products are not there. Case of ZH samples for the H only
     """
-    def __init__(self, ProcType, isSigBBTT, isBkgBBTT, removeZH=False, *args, **kwargs):
+    def __init__(self, ProcType, isSigBBTT, isBkgBBTT, enable_filter, removeZH, *args, **kwargs):
         self.isSigBBTT = isSigBBTT
         self.isBkgBBTT = isBkgBBTT
         self.ProcType = ProcType
         self.removeZH = removeZH
+        self.enable_filter = enable_filter
 
         if self.isSigBBTT or self.isBkgBBTT:
             if "/libToolsTools.so" not in ROOT.gSystem.GetLibraries():
@@ -322,18 +323,19 @@ class BBTauTauFilterRDFProducer():
             else:
                 raise ValueError("BBTauTauFilterRDF not implemented for self.ProcType = ", self.ProcType)
             
-            # filter the events with ZZ/ZH->bbtautau
-            if self.isSigBBTT:
-                # print(" ### DEBUG: isBBTT == 1")
-                df = df.Filter(genfilter, "BBTauTauFilterRDF")
-            # filter the events without ZZ/ZH->bbtautau
-            elif self.isBkgBBTT:
-                # print(" ### DEBUG: isBBTT == 0")
-                df = df.Filter("!(" + genfilter + ")", "BBTauTauFilterRDF")
-            
-            if self.removeZH:
-                print(" ### Removing ZH contribution")
-                df = df.Filter("LHE_HCount == 0", "BBTauTauFilterRDF_removeZH")
+            if self.enable_filter:
+                # filter the events with ZZ/ZH->bbtautau
+                if self.isSigBBTT:
+                    # print(" ### DEBUG: isBBTT == 1")
+                    df = df.Filter(genfilter, "BBTauTauFilterRDF")
+                # filter the events without ZZ/ZH->bbtautau
+                elif self.isBkgBBTT:
+                    # print(" ### DEBUG: isBBTT == 0")
+                    df = df.Filter("!(" + genfilter + ")", "BBTauTauFilterRDF")
+                
+                if self.removeZH:
+                    print(" ### Removing ZH contribution")
+                    df = df.Filter("LHE_HCount == 0", "BBTauTauFilterRDF_removeZH")
                 
             return df, ["LHE_ZCount", "LHE_HCount", "LHE_bCount", "LHE_tauCount", "LHE_emuCount"]
         
@@ -562,13 +564,23 @@ class BBTauTauFilterDummyRDFProducer():
         return df, ["GenPairType"]
 
 def BBTauTauFilterRDF(*args, **kwargs):
-    """ removeZH : if True, remove Higgs contribution (meant to remove ZH from ZZTo2L2Q sample which is actually Z(Z/H) """
+    """ 
+    removeZH : if True, remove Higgs contribution (meant to remove ZH from ZZTo2L2Q sample which is actually Z(Z/H)
+
+    genfilter_denominator_weights : if True, apply genfilter also when isDenominatorWeight=True
+    isDenominatorWeight : set to True if running on denominator (ie PreCounter, or PreprocessRDF weights histogram computation)
+    """
 
     ProcType = kwargs.pop("ProcType")
     isSigBBTT = kwargs.pop("isSigBBTT")
     isBkgBBTT = kwargs.pop("isBkgBBTT")
 
-    return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, removeZH=kwargs.pop("removeZH", False), *args, **kwargs)
+    # if kwargs.pop("isDenominatorWeight"):
+    #     enable_filter = kwargs.pop("genfilter_denominator_weights")
+    # else:
+    #     enable_filter = True
+
+    return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, removeZH=kwargs.pop("removeZH"), enable_filter=kwargs.pop("enable_filter"), *args, **kwargs)
 
     if isSigBBTT or isBkgBBTT:
         return lambda: BBTauTauFilterRDFProducer(ProcType=ProcType, isSigBBTT=isSigBBTT, isBkgBBTT=isBkgBBTT, *args, **kwargs)
