@@ -143,6 +143,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.isMC = kwargs.pop("isMC")
         self.AnalysisType = AnalysisType
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         super(HHKinFitRDFProducer, self).__init__(isMC=self.isMC, *args, **kwargs)
 
         if not os.getenv("_KINFIT"):
@@ -227,12 +228,13 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
         df = df.Define(f"hhkinfit_result{self.systs}",
             f"compute_hhkinfit({isMC}, pairType, bjet1_JetIdx, bjet2_JetIdx, "
                 f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
                 f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
                 f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, {jet_resolution},"
-                f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY, "
+                f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY, "
                 f"{target1}, {target2})"
             ).Define("%sKinFit_mass%s" % (pp, self.systs), "hhkinfit_result%s[0]" % self.systs
             ).Define("%sKinFit_chi2%s" % (pp, self.systs), "hhkinfit_result%s[1]" % self.systs)
@@ -242,6 +244,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 class HHVarRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         super(HHVarRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_HHVAR" ):
             os.environ["_HHVAR"] = "hhvar"
@@ -361,13 +364,14 @@ class HHVarRDFProducer(JetLepMetSyst):
         if features[0] in all_branches:
             return df, []
 
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
         df = df.Define(f"hhfeatures_{self.systs}", (f"get_hh_features("
             f"jetCategory, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
-            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, "
+            f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, "
             f"{p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs})"
         ))
 

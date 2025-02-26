@@ -1175,13 +1175,15 @@ def HHLeptonVarRDF(**kwargs):
 
 class HHLeptonMETCutRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         self.pairType_filter = kwargs.pop("pairType_filter")
         self.useBoostedTaus = kwargs.pop("useBoostedTaus")
+        super().__init__(*args, **kwargs)
         
 
     def run(self, df):
-        df = df.Define("pass_offline_met", f"MET{self.met_smear_tag}_pt{self.met_syst} > 180")
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
+        df = df.Define("pass_offline_met", f"MET{met_smear_tag}_pt{self.met_syst} > 180")
         if self.useBoostedTaus:
             df = df.Define("pairType", "isBoostedTau ? (pass_offline_met ? pairType_boostedTaus : -1) : pairType_preliminary")
         else:

@@ -70,6 +70,7 @@ class SVFitRDFProducer(JetLepMetSyst):
             self.svfitFctName = "FitAndGetResultWithInputs_FastMTT"
         else:
             raise ValueError()
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         super(SVFitRDFProducer, self).__init__(*args, **kwargs)
         if not os.getenv("_SVFIT"):
             os.environ["_SVFIT"] = "svfit"
@@ -103,11 +104,12 @@ class SVFitRDFProducer(JetLepMetSyst):
         if branches[0] in all_branches:
             return df, []
 
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
         df = df.Define("svfit_result%s" % self.systs,
             f"svfit.{self.svfitFctName}(0, pairType, dau1_decayMode, dau2_decayMode, "
                 f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
                 f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
-                f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY)").Define(
+                f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY)").Define(
             "%stt_svfit_pt%s" % (p, self.systs), "svfit_result%s[0]" % self.systs).Define(
             "%stt_svfit_eta%s" % (p, self.systs), "svfit_result%s[1]" % self.systs).Define(
             "%stt_svfit_phi%s" % (p, self.systs), "svfit_result%s[2]" % self.systs).Define(

@@ -247,12 +247,13 @@ fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_pa
 class HHJetsRDFProducer(JetLepMetSyst):
     def __init__(self, df_filter, model_version, *args, **kwargs):
         isUL = "true" if kwargs.pop("isUL") else "false"
+        self.year = kwargs.pop("year")
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
+        self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
 
         self.df_filter = df_filter
-        self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
 
-        self.year = kwargs.pop("year")
         base_hhbtag = "{}/{}/src/HHTools/HHbtag".format(
             os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
         models = [base_hhbtag + f"/models/HHbtag_v{model_version}_par_{i}" for i in range(2)]
@@ -297,6 +298,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
         else:
             gen_branches = "{}, {}, {}, {}, -1, -1, -1, false"
         
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
         df = df.Define("HHJets", f"HHJets.GetHHJets(event, pairType, "
             f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
             "Jet_puId, Jet_jetId, Jet_btagDeepFlavB, "
@@ -304,7 +306,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
             f"FatJet_msoftdrop, FatJet_jetId, {fatjet_bb_tagging_branch}, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst},"
-            f"MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst},"
+            f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst},"
             +gen_branches+
             ")")
 

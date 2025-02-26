@@ -522,13 +522,13 @@ def Htt_trigSF(**kwargs):
 
 class Htt_trigSFRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
-        super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
         self.isMC = kwargs["isMC"]
         self.year = kwargs.pop("year")
         self.isUL = kwargs.pop("isUL")
         self.ispreVFP = kwargs.pop("ispreVFP")
         self.computeSystematics = kwargs.pop("computeSystematics", True)
-        
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
+        super(Htt_trigSFRDFProducer, self).__init__(*args, **kwargs)
 
         # Thresholds to determine which trigger fired (cross or single lepton) 
         if self.year == 2016:
@@ -710,7 +710,8 @@ class Htt_trigSFRDFProducer(JetLepMetSyst):
             f"dau1_decayMode, dau1_pt{self.lep_syst}, dau1_eta, "
             f"dau2_decayMode, dau2_pt{self.lep_syst}, dau2_eta)"
             ))
-        df = df.Define("MET_trigsf_res", f"computeMETTriggerSF(MET{self.met_smear_tag}_pt{self.met_syst}, isBoostedTau, pairType)")
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
+        df = df.Define("MET_trigsf_res", f"computeMETTriggerSF(MET{met_smear_tag}_pt{self.met_syst}, isBoostedTau, pairType)")
 
         # nominal
         df = df.Define("trigSF", "isBoostedTau ? MET_trigsf_res.SF : htt_trigsf.trigSF")

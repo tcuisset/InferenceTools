@@ -134,6 +134,7 @@ def HH(**kwargs):
 class HHDNNInputRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
+        self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNInterface"):
@@ -183,6 +184,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             elif self.AnalysisType == "Zbb_Htautau":    p_b = "Z"; p_t = "H"; pp = "ZH"; p_sv = "X"
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
+        met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
         df = df.Define("filterForDNNInputs", "(jetCategory >=0) && pairType>=0")
         # "fake" filter that relies on side effects. Will not filter anything but will run get_dnn_inputs
         # not very elegant but works
@@ -197,7 +199,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst},
             FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, FatJet_msoftdrop,
             {p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs}, 
-            {pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{self.met_smear_tag}_pt{self.met_syst}, MET{self.met_smear_tag}_phi{self.met_syst}, 
+            {pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, 
             Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB,
             Jet_HHbtag);
             return true;""")
