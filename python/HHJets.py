@@ -445,6 +445,25 @@ def PreprocessJetFilterRDF(**kwargs):
     """
     return lambda: PreprocessJetFilterRDFProducer(**kwargs)
 
+class ExtraJetInformationRDFProducer(JetLepMetSyst):
+    def __init__(self, *args, **kwargs):
+        self.btag_wp = kwargs.pop("btag_wp")
+        super().__init__(*args, **kwargs)
+
+    def run(self, df):
+        df = df.Define("jet_btag_count_total", f"Jet_pt[Jet_btagDeepFlavB>={self.btag_wp}].size()")
+        return df, ["jet_btag_count_total"]
+
+def ExtraJetInformationRDF(**kwargs):
+    """
+    Produce flattened information about extra jets in the event.
+    Output branches : 
+     - jet_btag_count_total
+     - jet_btag_
+    """
+    return lambda: ExtraJetInformationRDFProducer(**kwargs)
+
+
 
 
 class JetCategoryRDFProducer(JetLepMetSyst):
