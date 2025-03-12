@@ -135,6 +135,7 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
     def __init__(self, AnalysisType, *args, **kwargs):
         self.AnalysisType = AnalysisType
         self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
+        self.add_systs_to_output_branches = kwargs.pop("add_systs_to_output_branches", False) # set to True to not add self.systs as branch suffix (for DNN training with systematics)
         super(HHDNNInputRDFProducer, self).__init__(*args, **kwargs)
 
         if not os.getenv("_HHbbttDNNInterface"):
@@ -209,7 +210,10 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
 
         branches = []
         for feature in self.features:
-            branch = f"{feature}{self.systs}"
+            if self.add_systs_to_output_branches:
+                branch = f"{feature}{self.systs}"
+            else:
+                branch = feature
             df = df.Define(branch, f"filterForDNNInputs ? {self.variable_dnnInput}.{feature}() : -1")
             branches.append(branch)
         return df, branches
