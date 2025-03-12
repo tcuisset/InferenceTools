@@ -999,6 +999,9 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         
         df = df.Define("pairType_preliminary", "hh_lepton_results.pairType") # pairType but without the MET_pt cut for boostedTaus
         branches.append("pairType_preliminary")
+
+        if self.pairType_filter:
+            df = df.Filter("pairType_preliminary >= 0", "HHLeptonRDF")
         
         # add raw DeepBoostedTau score
         if self.useBoostedTaus:
@@ -1023,8 +1026,21 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         branches.append("dau1_rawIdDeepTauVSjet")
         branches.append("dau2_rawIdDeepTauVSjet")
 
-        if self.pairType_filter:
-            df = df.Filter("pairType_preliminary >= 0", "HHLeptonRDF")
+        # add genmatching info
+        if self.isMC:
+            df = df.Define("dau1_genPartFlav", """
+                if (pairType_preliminary == 0) return Muon_genPartFlav[dau1_index];
+                else if (pairType_preliminary == 1) return Electron_genPartFlav[dau1_index];
+                else if (pairType_preliminary == 2 && !isBoostedTau) return Tau_genPartFlav[dau1_index];
+                else if (pairType_preliminary == 2 && isBoostedTau) return boostedTau_genPartFlav[dau1_index];
+                else return (UChar_t) 0;
+            """)
+            df = df.Define("dau2_genPartFlav",  """
+                if (dau2_index >= 0 && !isBoostedTau) return Tau_genPartFlav[dau2_index];
+                else if (dau2_index >= 0 && isBoostedTau) return boostedTau_genPartFlav[dau2_index];
+                else return (UChar_t) 0;
+            """)
+            branches.extend(["dau1_genPartFlav", "dau2_genPartFlav"])
 
         return df, branches
         # return df, []
