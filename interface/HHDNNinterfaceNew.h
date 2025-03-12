@@ -155,12 +155,14 @@ void get_dnn_inputs(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int 
     int fatjet_index, int vbfjet1_index, int vbfjet2_index,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    ROOT::RVec<float> const& jet_pt, ROOT::RVec<float> const& jet_eta, ROOT::RVec<float> const& jet_phi, ROOT::RVec<float> const& jet_mass,
-    ROOT::RVec<float> const& fatjet_pt, ROOT::RVec<float> const& fatjet_eta, ROOT::RVec<float> const& fatjet_phi, ROOT::RVec<float> const& fatjet_mass, ROOT::RVec<float> const& fatjet_msoftdrop,
+    float bjet1_pt, float bjet1_eta, float bjet1_phi, float bjet1_mass,
+    float bjet2_pt, float bjet2_eta, float bjet2_phi, float bjet2_mass,
+    float fatjet_pt, float fatjet_eta, float fatjet_phi, float fatjet_mass, float fatjet_msoftdrop,
     float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
     float HHKinFit_mass, float HHKinFit_chi2, float met_pt, float met_phi,
-    ROOT::RVec<float> const& Jet_btagDeepFlavB, ROOT::RVec<float> const& Jet_btagDeepFlavCvL, ROOT::RVec<float> const& Jet_btagDeepFlavCvB,
-    ROOT::RVec<float> const& Jet_HHbtag
+    float bjet1_btagDeepFlavB, float bjet1_btagDeepFlavCvL, float bjet1_btagDeepFlavCvB,
+    float bjet2_btagDeepFlavB, float bjet2_btagDeepFlavCvL, float bjet2_btagDeepFlavCvB,
+    float bjet1_HHbtag, float bjet2_HHbtag
 );
 
 #endif // HHDNNinterface_h

@@ -162,7 +162,7 @@ enum class JetCategoryPriorityMode {
 class HHJetsCategoryInterface {
 public:
     HHJetsCategoryInterface (float btag_wp, float fatjet_bbtag_wp);
-    JetCategory GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, rfRVec Jet_btagDeepFlavB, rfRVec FatJet_particleNet_XbbVsQCD);
+    JetCategory GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, float bjet1_btagDeepFlavB, float bjet2_btagDeepFlavB, float fatjet_particleNet_XbbVsQCD);
 
 private:
     float btag_wp_; // Working point for b-tagging score, used when giving priority to resolved category

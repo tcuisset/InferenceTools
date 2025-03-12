@@ -165,7 +165,8 @@ class HHKinFitRDFProducer(JetLepMetSyst):
                         bool isMC, int pairType, int bjet1_index, int bjet2_index,
                         float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
                         float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
+                        float bjet1_pt, float bjet1_eta, float bjet1_phi, float bjet1_mass,
+                        float bjet2_pt, float bjet2_eta, float bjet2_phi, float bjet2_mass,
                         Vfloat jet_resolution, float met_pt, float met_phi,
                         float met_covXX, float met_covXY, float met_covYY, int target1, int target2) {
                     if (bjet1_index < 0 || bjet2_index < 0)
@@ -178,10 +179,8 @@ class HHKinFitRDFProducer(JetLepMetSyst):
 
                     dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
                     dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
-                    bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                        jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                    bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                        jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
+                    bjet1_tlv.SetPtEtaPhiM(bjet1_pt, bjet1_eta, bjet1_phi, bjet1_mass);
+                    bjet2_tlv.SetPtEtaPhiM(bjet2_pt, bjet2_eta, bjet2_phi, bjet2_mass);
 
                     auto met_tv = TVector2(met_pt * TMath::Cos(met_phi), met_pt * TMath::Sin(met_phi));
                     auto cov = TMatrixD(2, 2);
@@ -211,7 +210,7 @@ class HHKinFitRDFProducer(JetLepMetSyst):
         isMC = ("true" if self.isMC else "false")
         jet_resolution = "jet_pt_resolution"
         if not self.isMC:
-            jet_resolution = "Jet_eta"  # placeholder
+            jet_resolution = "{}"  # placeholder
 
         # DEBUG
         if not self.AnalysisType:
@@ -233,7 +232,9 @@ class HHKinFitRDFProducer(JetLepMetSyst):
             f"compute_hhkinfit({isMC}, pairType, bjet1_JetIdx, bjet2_JetIdx, "
                 f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
                 f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
-                f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, {jet_resolution},"
+                f"bjet1_pt{self.jet_syst}, bjet1_eta, bjet1_phi, bjet1_mass{self.jet_syst}, "
+                f"bjet2_pt{self.jet_syst}, bjet2_eta, bjet2_phi, bjet2_mass{self.jet_syst}, "
+                f"{jet_resolution},"
                 f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, MET_covXX, MET_covXY, MET_covYY, "
                 f"{target1}, {target2})"
             ).Define("%sKinFit_mass%s" % (pp, self.systs), "hhkinfit_result%s[0]" % self.systs
@@ -255,8 +256,9 @@ class HHVarRDFProducer(JetLepMetSyst):
                         int vbfjet1_index, int vbfjet2_index,
                         float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
                         float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-                        Vfloat jet_pt, Vfloat jet_eta, Vfloat jet_phi, Vfloat jet_mass,
-                        Vfloat fatjet_pt, Vfloat fatjet_eta, Vfloat fatjet_phi, Vfloat fatjet_mass,
+                        float bjet1_pt, float bjet1_eta, float bjet1_phi, float bjet1_mass,
+                        float bjet2_pt, float bjet2_eta, float bjet2_phi, float bjet2_mass,
+                        float fatjet_pt, float fatjet_eta, float fatjet_phi, float fatjet_mass,
                         float met_pt, float met_phi,
                         double Htt_svfit_pt, double Htt_svfit_eta,
                         double Htt_svfit_phi, double Htt_svfit_mass) {
@@ -267,41 +269,40 @@ class HHVarRDFProducer(JetLepMetSyst):
                     dau1_tlv.SetPtEtaPhiM(dau1_pt, dau1_eta, dau1_phi, dau1_mass);
                     dau2_tlv.SetPtEtaPhiM(dau2_pt, dau2_eta, dau2_phi, dau2_mass);
                     auto htt_tlv = dau1_tlv + dau2_tlv;
-                    
-                    
-                    auto hbb_tlv = TLorentzVector();
-                    if (jetCategory == (short)JetCategory::Res_2b || jetCategory == (short)JetCategory::Res_1b) {
-                        if (!(bjet1_index >= 0 && bjet2_index >= 0)) throw std::runtime_error("Wrong category in HHVarRDF");
-                        auto bjet1_tlv = TLorentzVector();
-                        auto bjet2_tlv = TLorentzVector();
-                        bjet1_tlv.SetPtEtaPhiM(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-                            jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-                        bjet2_tlv.SetPtEtaPhiM(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-                            jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
-                        hbb_tlv = bjet1_tlv + bjet2_tlv;
-                    }
-                    else if (jetCategory == (short)JetCategory::Boosted_bb || jetCategory == (short)JetCategory::Boosted_failedPNet) {
-                        if (fatjet_index < 0) throw std::runtime_error("Wrong category in HHVarRDF");
-                        hbb_tlv.SetPtEtaPhiM(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
-                            fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
-                    } 
-                    else {
-                        std::cout << "HHVarRDF : No category !" << std::endl; // we don't raise an error here as sometimes we run without hhjets filter. Though in these cases there will be random stuff in hhvar output
-                        return {
-                            -1., -1., -1., -1.,
-                            -1., -1., -1., -1.,
-                            -1., -1., -1., -1.,
-                            -1., -1., -1., -1.,
-                            -1., -1., -1., -1.,
-                            -1., -1., -1.
-                        };
-                    }
-                    auto hh_tlv = htt_tlv + hbb_tlv;
 
                     auto met_tlv = TLorentzVector();
                     met_tlv.SetPxPyPzE(met_pt * cos(met_phi), met_pt * sin(met_phi), 0, met_pt);
 
                     auto htt_met_tlv = htt_tlv + met_tlv;
+
+                    double vbfjj_mass = -999., vbfjj_deltaEta = -999., vbfjj_deltaPhi = -999.;
+                    
+                    auto hbb_tlv = TLorentzVector();
+                    // Use the two b-jets in resolved categories, or when there is no fatjet passing selections but there are 2 AK4 jets
+                    if (jetCategory == (short)JetCategory::Res_2b || jetCategory == (short)JetCategory::Res_1b || (!(jetCategory == (short)JetCategory::Boosted_bb || jetCategory == (short)JetCategory::Boosted_failedPNet) && bjet1_index>= 0 && bjet2_index>=0)) {
+                        if (!(bjet1_index >= 0 && bjet2_index >= 0)) throw std::runtime_error("Wrong category in HHVarRDF");
+                        auto bjet1_tlv = TLorentzVector();
+                        auto bjet2_tlv = TLorentzVector();
+                        bjet1_tlv.SetPtEtaPhiM(bjet1_pt, bjet1_eta, bjet1_phi, bjet1_mass);
+                        bjet2_tlv.SetPtEtaPhiM(bjet2_pt, bjet2_eta, bjet2_phi, bjet2_mass);
+                        hbb_tlv = bjet1_tlv + bjet2_tlv;
+                    }
+                    else if (jetCategory == (short)JetCategory::Boosted_bb || jetCategory == (short)JetCategory::Boosted_failedPNet || fatjet_index>=0) { // in case there is a fatjet, try anyway to run on it
+                        if (fatjet_index < 0) throw std::runtime_error("Wrong category in HHVarRDF");
+                        hbb_tlv.SetPtEtaPhiM(fatjet_pt, fatjet_eta, fatjet_phi, fatjet_mass);
+                    } 
+                    else {
+                        //std::cout << "HHVarRDF : No category !" << std::endl; // we don't raise an error here as sometimes we run without hhjets filter. Though in these cases there will be random stuff in hhvar output
+                        return {
+                            -1., -1., -1., -1., // Hbb variables
+                            htt_tlv.Pt(), htt_tlv.Eta(), htt_tlv.Phi(), htt_tlv.M(),
+                            htt_met_tlv.Pt(), htt_met_tlv.Eta(), htt_met_tlv.Phi(), htt_met_tlv.M(),
+                            -1., -1., -1., -1., // hh variables
+                            -1., -1., -1., -1., // hh variables
+                            vbfjj_mass, vbfjj_deltaEta, vbfjj_deltaPhi
+                        };
+                    }
+                    auto hh_tlv = htt_tlv + hbb_tlv;                    
 
                     double hh_svfit_pt = -999., hh_svfit_eta = -999.;
                     double hh_svfit_phi = -999., hh_svfit_mass = -999.;
@@ -315,19 +316,7 @@ class HHVarRDFProducer(JetLepMetSyst):
                         hh_svfit_phi = hh_svfit_tlv.Phi();
                         hh_svfit_mass = hh_svfit_tlv.M();
                     }
-                    double vbfjj_mass = -999., vbfjj_deltaEta = -999., vbfjj_deltaPhi = -999.;
-                    if (vbfjet1_index >= 0) {
-                        auto vbfjet1_tlv = TLorentzVector();
-                        auto vbfjet2_tlv = TLorentzVector();
-                        vbfjet1_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet1_index), jet_eta.at(vbfjet1_index),
-                            jet_phi.at(vbfjet1_index), jet_mass.at(vbfjet1_index));
-                        vbfjet2_tlv.SetPtEtaPhiM(jet_pt.at(vbfjet2_index), jet_eta.at(vbfjet2_index),
-                            jet_phi.at(vbfjet2_index), jet_mass.at(vbfjet2_index));
-                        auto vbfjj_tlv = vbfjet1_tlv + vbfjet2_tlv;
-                        vbfjj_mass = vbfjj_tlv.M();
-                        vbfjj_deltaEta = vbfjet1_tlv.Eta() - vbfjet2_tlv.Eta();
-                        vbfjj_deltaPhi = vbfjet1_tlv.Phi() - vbfjet2_tlv.Phi();
-                    }
+                    
                     return {
                         hbb_tlv.Pt(), hbb_tlv.Eta(), hbb_tlv.Phi(), hbb_tlv.M(),
                         htt_tlv.Pt(), htt_tlv.Eta(), htt_tlv.Phi(), htt_tlv.M(),
@@ -369,8 +358,9 @@ class HHVarRDFProducer(JetLepMetSyst):
             f"jetCategory, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, "
             f"dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, "
             f"dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, "
-            f"Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst}, "
-            f"FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, "
+            f"bjet1_pt{self.jet_syst}, bjet1_eta, bjet1_phi, bjet1_mass{self.jet_syst}, "
+            f"bjet2_pt{self.jet_syst}, bjet2_eta, bjet2_phi, bjet2_mass{self.jet_syst}, "
+            f"fatjet_pt{self.jet_syst}, fatjet_eta, fatjet_phi, fatjet_mass{self.jet_syst}, "
             f"MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, "
             f"{p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs})"
         ))

@@ -283,20 +283,20 @@ HHJetsCategoryInterface::HHJetsCategoryInterface (float btag_wp, float fatjet_bb
 {
 }
 
-JetCategory HHJetsCategoryInterface::GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, rfRVec Jet_btagDeepFlavB, rfRVec FatJet_particleNet_XbbVsQCD)
+JetCategory HHJetsCategoryInterface::GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, float bjet1_btagDeepFlavB, float bjet2_btagDeepFlavB, float fatjet_particleNet_XbbVsQCD)
 {
   // Logic for removing overlap between boosted & resolved
   if (priorityMode == JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail) {
     // Priority order res2b -> boosted -> res1b (for HPSTaus category)
-    if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+    if (bjet1_idx >= 0 && bjet2_idx >= 0 && (bjet1_btagDeepFlavB >= btag_wp_ && bjet2_btagDeepFlavB >= btag_wp_)) {
       // resolved-2b
       return JetCategory::Res_2b;
     } else if (fatjet_idx >= 0) {
-      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+      if (fatjet_particleNet_XbbVsQCD >= fatjet_bbtag_wp_) 
         return JetCategory::Boosted_bb;
       else
         return JetCategory::Boosted_failedPNet;
-    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (bjet1_btagDeepFlavB >= btag_wp_ || bjet2_btagDeepFlavB >= btag_wp_)) {
       // resolved-1b 
       return JetCategory::Res_1b;
     } else {
@@ -305,15 +305,15 @@ JetCategory HHJetsCategoryInterface::GetJetCategory(JetCategoryPriorityMode prio
   }
   else if (priorityMode == JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail) {
     if (fatjet_idx >= 0) {
-      if (FatJet_particleNet_XbbVsQCD.at(fatjet_idx) >= fatjet_bbtag_wp_) 
+      if (fatjet_particleNet_XbbVsQCD >= fatjet_bbtag_wp_) 
         return JetCategory::Boosted_bb; // boosted-bb
       else
         return JetCategory::Boosted_failedPNet;
     }
-    else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ && Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+    else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (bjet1_btagDeepFlavB >= btag_wp_ && bjet2_btagDeepFlavB >= btag_wp_)) {
       // resolved-2b
       return JetCategory::Res_2b;
-    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (Jet_btagDeepFlavB[bjet1_idx] >= btag_wp_ || Jet_btagDeepFlavB[bjet2_idx] >= btag_wp_)) {
+    } else if (bjet1_idx >= 0 && bjet2_idx >= 0 && (bjet1_btagDeepFlavB >= btag_wp_ || bjet2_btagDeepFlavB >= btag_wp_)) {
       // resolved-1b 
       return JetCategory::Res_1b;
     } else {

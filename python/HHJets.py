@@ -486,8 +486,15 @@ class JetCategoryRDFProducer(JetLepMetSyst):
             """)
 
     def run(self, df):
-        df = df.Define("jetCategory", 
-            f"(short) HHJetsCategory.GetJetCategory(isBoostedTau ? JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail : JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail, bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx, Jet_btagDeepFlavB, {fatjet_bb_tagging_branch})")
+        if "fatjet_pnet" in df.GetColumnNames(): fatjet_pnet_branch = "fatjet_pnet"
+        else: fatjet_pnet_branch = f"fatjet_JetIdx >= 0 ? {fatjet_bb_tagging_branch_prefix}_Xbb[fatjet_JetIdx]/({fatjet_bb_tagging_branch_prefix}_Xbb[fatjet_JetIdx]+{fatjet_bb_tagging_branch_prefix}_QCD[fatjet_JetIdx]) : -1."
+        df = df.Define("jetCategory", # JetCategory GetJetCategory(JetCategoryPriorityMode priorityMode, int bjet1_idx, int bjet2_idx, int fatjet_idx, float bjet1_btagDeepFlavB, float bjet2_btagDeepFlavB, float fatjet_particleNet_XbbVsQCD);
+            f"""(short) HHJetsCategory.GetJetCategory(
+                isBoostedTau ? JetCategoryPriorityMode::Boosted_Res2b_Res1b_noPNetFail : JetCategoryPriorityMode::Res2b_Boosted_Res1b_noPNetFail,
+                bjet1_JetIdx, bjet2_JetIdx, fatjet_JetIdx,
+                bjet1_btagDeepFlavB, bjet2_btagDeepFlavB, {fatjet_pnet_branch}
+                )
+            """)
 
         return df, ["jetCategory"]
 

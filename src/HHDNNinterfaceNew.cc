@@ -72,12 +72,14 @@ void get_dnn_inputs(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int 
     int fatjet_index, int vbfjet1_index, int vbfjet2_index,
     float dau1_pt, float dau1_eta, float dau1_phi, float dau1_mass,
     float dau2_pt, float dau2_eta, float dau2_phi, float dau2_mass,
-    ROOT::RVec<float> const& jet_pt, ROOT::RVec<float> const& jet_eta, ROOT::RVec<float> const& jet_phi, ROOT::RVec<float> const& jet_mass,
-    ROOT::RVec<float> const& fatjet_pt, ROOT::RVec<float> const& fatjet_eta, ROOT::RVec<float> const& fatjet_phi, ROOT::RVec<float> const& fatjet_mass, ROOT::RVec<float> const& fatjet_msoftdrop,
+    float bjet1_pt, float bjet1_eta, float bjet1_phi, float bjet1_mass,
+    float bjet2_pt, float bjet2_eta, float bjet2_phi, float bjet2_mass,
+    float fatjet_pt, float fatjet_eta, float fatjet_phi, float fatjet_mass, float fatjet_msoftdrop,
     float htt_sv_pt, float htt_sv_eta, float htt_sv_phi, float htt_sv_mass,
     float HHKinFit_mass, float HHKinFit_chi2, float met_pt, float met_phi,
-    ROOT::RVec<float> const& Jet_btagDeepFlavB, ROOT::RVec<float> const& Jet_btagDeepFlavCvL, ROOT::RVec<float> const& Jet_btagDeepFlavCvB,
-    ROOT::RVec<float> const& Jet_HHbtag
+    float bjet1_btagDeepFlavB, float bjet1_btagDeepFlavCvL, float bjet1_btagDeepFlavCvB,
+    float bjet2_btagDeepFlavB, float bjet2_btagDeepFlavCvL, float bjet2_btagDeepFlavCvB,
+    float bjet1_HHbtag, float bjet2_HHbtag
 )
 {          
     using LVector = ROOT::Math::PtEtaPhiMVector;
@@ -102,20 +104,17 @@ void get_dnn_inputs(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int 
     dnnInt.KinFitChi2 = HHKinFit_chi2;
     if (!isBoosted) {
         assert (bjet1_index>=0 && bjet2_index >= 0);
-        dnnInt.b1 = LVector(jet_pt.at(bjet1_index), jet_eta.at(bjet1_index),
-            jet_phi.at(bjet1_index), jet_mass.at(bjet1_index));
-        dnnInt.b2 = LVector(jet_pt.at(bjet2_index), jet_eta.at(bjet2_index),
-            jet_phi.at(bjet2_index), jet_mass.at(bjet2_index));
-        
-        dnnInt.deepFlav1 = Jet_btagDeepFlavB.at(bjet1_index);
-        dnnInt.deepFlav2 = Jet_btagDeepFlavB.at(bjet2_index);
-        dnnInt.CvsL_b1 = Jet_btagDeepFlavCvL.at(bjet1_index);
-        dnnInt.CvsL_b2 = Jet_btagDeepFlavCvL.at(bjet2_index);
-        dnnInt.CvsB_b1 = Jet_btagDeepFlavCvB.at(bjet1_index);
-        dnnInt.CvsB_b2 = Jet_btagDeepFlavCvB.at(bjet2_index);
-        assert (Jet_HHbtag.size() == jet_eta.size());
-        dnnInt.HHbtag_b1 = Jet_HHbtag.at(bjet1_index);
-        dnnInt.HHbtag_b2 = Jet_HHbtag.at(bjet2_index);
+        dnnInt.b1 = LVector(bjet1_pt, bjet1_eta, bjet1_phi, bjet1_mass);
+        dnnInt.b2 = LVector(bjet2_pt, bjet2_eta, bjet2_phi, bjet2_mass);
+        dnnInt.deepFlav1 = bjet1_btagDeepFlavB;
+        dnnInt.deepFlav2 = bjet2_btagDeepFlavB;
+        dnnInt.CvsL_b1 = bjet1_btagDeepFlavCvL;
+        dnnInt.CvsL_b2 = bjet2_btagDeepFlavCvL;
+        dnnInt.CvsB_b1 = bjet1_btagDeepFlavCvB;
+        dnnInt.CvsB_b2 = bjet2_btagDeepFlavCvB;
+        //assert (Jet_HHbtag.size() == jet_eta.size());
+        dnnInt.HHbtag_b1 = bjet1_HHbtag;
+        dnnInt.HHbtag_b2 = bjet1_HHbtag;
 
         dnnInt.KinFitConv = HHKinFit_chi2 >= 0;
                         
@@ -125,9 +124,8 @@ void get_dnn_inputs(HHDNNinterfaceNew& dnnInt, int pairType, int isBoosted, int 
     }
     else {
         assert (fatjet_index>=0);
-        dnnInt.fatjet = LVector(fatjet_pt.at(fatjet_index), fatjet_eta.at(fatjet_index),
-            fatjet_phi.at(fatjet_index), fatjet_mass.at(fatjet_index));
-        dnnInt.fatjet_softDropMass = fatjet_msoftdrop.at(fatjet_index);
+        dnnInt.fatjet = LVector(fatjet_pt, fatjet_eta, fatjet_phi, fatjet_mass);
+        dnnInt.fatjet_softDropMass = fatjet_msoftdrop;
                         
         dnnInt.b1 = LVector(0., 0., 0., 0.);
         dnnInt.b2 = LVector(0., 0., 0., 0.);

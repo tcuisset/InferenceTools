@@ -185,23 +185,26 @@ class HHDNNInputRDFProducer(JetLepMetSyst):
             elif self.AnalysisType == "Ztautau_Hbb":    p_b = "H"; p_t = "Z"; pp = "ZH"; p_sv = "X"
 
         met_smear_tag = self.met_smear_tag if self.isMC else self.met_smear_tag_data
-        df = df.Define("filterForDNNInputs", "(jetCategory >=0) && pairType>=0")
+        df = df.Define("filterForDNNInputs", "(jetCategory !=-1) && pairType>=0")
         # "fake" filter that relies on side effects. Will not filter anything but will run get_dnn_inputs
         # not very elegant but works
         df = df.Filter(f"""
             if (filterForDNNInputs) 
             get_dnn_inputs(
-            {self.variable_dnnInput}, pairType, jetCategory==2, isBoostedTau, event, 
+            {self.variable_dnnInput}, pairType, jetCategory==2||jetCategory==-2, isBoostedTau, event, 
             bjet1_JetIdx, bjet2_JetIdx,
             fatjet_JetIdx, VBFjet1_JetIdx, VBFjet2_JetIdx, 
             dau1_pt{self.lep_syst}, dau1_eta, dau1_phi, dau1_mass{self.lep_syst}, 
             dau2_pt{self.lep_syst}, dau2_eta, dau2_phi, dau2_mass{self.lep_syst}, 
-            Jet_pt{self.jet_syst}, Jet_eta, Jet_phi, Jet_mass{self.jet_syst},
-            FatJet_pt{self.jet_syst}, FatJet_eta, FatJet_phi, FatJet_mass{self.jet_syst}, FatJet_msoftdrop,
+            bjet1_pt{self.jet_syst}, bjet1_eta, bjet1_phi, bjet1_mass{self.jet_syst},
+            bjet2_pt{self.jet_syst}, bjet2_eta, bjet2_phi, bjet2_mass{self.jet_syst},
+            fatjet_pt{self.jet_syst}, fatjet_eta, fatjet_phi, fatjet_mass{self.jet_syst}, fatjet_msoftdrop,
             {p_sv}tt_svfit_pt{self.systs}, {p_sv}tt_svfit_eta{self.systs}, {p_sv}tt_svfit_phi{self.systs}, {p_sv}tt_svfit_mass{self.systs}, 
             {pp}KinFit_mass{self.systs}, {pp}KinFit_chi2{self.systs}, MET{met_smear_tag}_pt{self.met_syst}, MET{met_smear_tag}_phi{self.met_syst}, 
-            Jet_btagDeepFlavB, Jet_btagDeepFlavCvL, Jet_btagDeepFlavCvB,
-            Jet_HHbtag);
+            bjet1_btagDeepFlavB, bjet1_btagDeepFlavCvL, bjet1_btagDeepFlavCvB,
+            bjet2_btagDeepFlavB, bjet2_btagDeepFlavCvL, bjet2_btagDeepFlavCvB,
+            bjet1_HHbtag, bjet2_HHbtag
+            );
             return true;""")
 
         branches = []
