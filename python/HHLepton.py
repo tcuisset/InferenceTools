@@ -610,7 +610,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // trigger_reqs.push_back(trig_req({triggers[2], 33, 2.3, 20, 2.3, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf 
                             // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.3, 20, 2.3, 35, 0, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             // Filter bits are difference nanoV9 vs v12
-                            // Tau leg : bit 0 (->1) : LooseChargedIso, bit 8 (->256) ditau
+                            // Electron leg : bit 6 (->64) : 1e-1tau hlt*OverlapFilterIsoEle*PFTau*
+                            // Tau leg : bit 0 (->1) : *LooseChargedIso*, bit 8 (->256) e-tau (hlt*OverlapFilterIsoEle*WPTightGsf*PFTau*) 
                             trigger_reqs.push_back(trig_req({triggers[4], 26, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
                             return trigger_reqs;
                         }
@@ -696,6 +697,8 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         }
                     """)
                 else:
+                    # 2018 MC HLT menu : HLT:2018v32, CMSSW_10_2_16_UL
+                    # data menu run 316472 (era A, pre-HPS) : 	/cdaq/physics/Run2018/2e34/v2.1.2/HLT/V1
                     ROOT.gInterpreter.Declare("""
                         using Vbool = const ROOT::RVec<Bool_t>&;
                         std::vector<trig_req> get_mutau_triggers(
@@ -734,14 +737,23 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                         std::vector<trig_req> get_etau_triggers(
                                 Vbool triggers, bool isMC, int run, int runEra) {
                             std::vector<trig_req> trigger_reqs;
+                            // Electron filterBits in NanoV12:
+                            // 1 (2**1=2) hltEle*WPTight*TrackIsoFilter* 
+                            // 2 (=4) hltEle*WPLoose*TrackIsoFilter
+                            // 3 (=8) *OverlapFilter*IsoEle*PFTau*
+                            // 6 (=64) hlt*OverlapFilterIsoEle*PFTau* (tau pog recommended)
+                            // Bits 3 & 6 seem identical (checked on 2018 data era B & MC)
+                            // Tau leg : 
+                            // 0 (=1)  *LooseChargedIso* (not mentionned on TAU twiki)
+                            // 8 (=256) hlt*OverlapFilterIsoEle*WPTightGsf*PFTau*
                             trigger_reqs.push_back(trig_req({triggers[2], 33, 2.5, 0, 0, 32, 0, {{2}, {}}})); // HLT_Ele32_WPTight_Gsf
                             // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             // gg->tautau analysis does OR with HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_TightID_CrossL1 but extremly few events pass this and not our trigger (<0.01% in ttbar)
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{8}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
                             }
                             return trigger_reqs;
                         }
