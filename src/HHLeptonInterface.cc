@@ -479,7 +479,7 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
   std::vector<int> goodmuons;
   for (size_t imuon = 0; imuon < Muon_pt.size(); imuon ++) {
     FailReason failReason;
-    if (fabs(Muon_pt[imuon]) <= 20) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
+    if (Muon_pt[imuon] <= 20) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
     if (fabs(Muon_eta[imuon]) >= 2.4) failReason.Eta = true;
     if (Muon_pfRelIso04_all[imuon] > 0.15) failReason.LeptonIso = true;
     if (fabs(Muon_dxy[imuon]) > 0.045 || fabs(Muon_dz[imuon]) > 0.2) failReason.Vertex = true;
@@ -580,7 +580,7 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
   std::vector<int> goodelectrons;
   for (size_t iele = 0; iele < Electron_pt.size(); iele ++) {
     FailReason failReason;
-    if (fabs(Electron_pt[iele]) <= 25) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
+    if (Electron_pt[iele] <= 25) failReason.Pt = true; // Not strictly needed as trigger threshold will apply stronger selection, but can be useful for cutflow
     if (!Electron_mvaFall17V2Iso_WP80[iele]) failReason.LeptonID = true;
     if (fabs(Electron_dxy[iele]) > 0.045 || fabs(Electron_dz[iele]) > 0.2) failReason.Vertex = true;
     if (fabs(Electron_eta[iele]) >= 2.5
