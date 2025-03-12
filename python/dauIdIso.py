@@ -185,10 +185,10 @@ class boostedTauEnergyScaleRDFProducer(JetLepMetSyst):
             return df, []
         # applying unly uncert, no nominal. Not differentiaing on tau genmatch 
         boostedTau_tes_factor_up, boostedTau_tes_factor_down = 1.03, 0.97
-        df = df.Alias("boostedTau_pt_corr", f"boostedTau_pt") # 
-        df = df.Alias("boostedTau_mass_corr", f"boostedTau_mass")
+        df = df.Define("boostedTau_pt_corr", f"boostedTau_pt") # somehow using Alias gives problems when reading back with rdataframe the result
+        df = df.Define("boostedTau_mass_corr", f"boostedTau_mass")
         branches = ["boostedTau_pt_corr", "boostedTau_mass_corr"]
-        if self.systematic_is_central:
+        if self.tau_syst != self.tau_central:
             df = df.Define("boostedTau_pt_corr_up", f"boostedTau_pt * {boostedTau_tes_factor_up}")
             df = df.Define("boostedTau_pt_corr_down", f"boostedTau_pt * {boostedTau_tes_factor_down}")
 
