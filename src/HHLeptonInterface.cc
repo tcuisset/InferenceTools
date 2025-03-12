@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <cassert>
 
+// CMSSW
+#include "DataFormats/Math/interface/deltaPhi.h"
+#include "DataFormats/Math/interface/deltaR.h"
+
 
 // Checking electron ID using Electron_vidNestedWPBitmap
 // Electron_vidNestedWPBitmap is split in 10 groups of 3bits (see https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2)
@@ -852,10 +856,11 @@ bool HHLeptonInterface::match_trigger_object(float off_eta, float off_phi, int o
   for (size_t iobj = 0; iobj < TrigObj_id.size(); iobj++) {
     if (TrigObj_id[iobj] != obj_id) continue;
     if (TrigObj_pt[iobj] <= trig_pt_threshold) continue;
-    auto const dPhi(std::abs(reco::deltaPhi(off_phi, TrigObj_phi[iobj])));
-    auto const dEta(std::abs(off_eta - TrigObj_eta[iobj]));
-    auto const delR2(dPhi * dPhi + dEta * dEta);
-    if (delR2 > 0.5 * 0.5)
+    // auto const dPhi(std::abs(reco::deltaPhi(off_phi, TrigObj_phi[iobj])));
+    // auto const dEta(std::abs(off_eta - TrigObj_eta[iobj]));
+    // auto const delR2(dPhi * dPhi + dEta * dEta);
+    auto const delR2 = reco::deltaR2(off_eta, off_phi, TrigObj_eta[iobj], TrigObj_phi[iobj]);
+    if (delR2 > 0.4 * 0.4) // reduced deltaR to 0.4
       continue;
     bool matched_bits = true;
     for (auto & bit : bits) {

@@ -16,8 +16,6 @@
 #include <TLorentzVector.h>
 #include <ROOT/RVec.hxx>
 
-// CMSSW
-#include "DataFormats/Math/interface/deltaPhi.h"
 
 typedef ROOT::VecOps::RVec<float> fRVec;
 typedef ROOT::VecOps::RVec<bool> bRVec;
