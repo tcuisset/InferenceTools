@@ -522,8 +522,6 @@ def Htt_trigSF(**kwargs):
 
 class Htt_trigSFRDFProducer(JetLepMetSyst):
     def __init__(self, *args, **kwargs):
-        self.isMC = kwargs["isMC"]
-        self.year = kwargs.pop("year")
         self.isUL = kwargs.pop("isUL")
         self.ispreVFP = kwargs.pop("ispreVFP")
         self.computeSystematics = kwargs.pop("computeSystematics", True)
