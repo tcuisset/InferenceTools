@@ -247,7 +247,6 @@ fatjet_bb_tagging_branch = "fRVec(FatJet_particleNetLegacy_Xbb)/(fRVec(FatJet_pa
 class HHJetsRDFProducer(JetLepMetSyst):
     def __init__(self, df_filter, model_version, *args, **kwargs):
         isUL = "true" if kwargs.pop("isUL") else "false"
-        self.year = kwargs.pop("year")
         self.met_smear_tag_data = kwargs.pop("met_smear_tag_data")
         self.doGenCutFlow = kwargs.pop("doGenCutFlow", False)
         super(HHJetsRDFProducer, self).__init__(self, *args, **kwargs)
@@ -287,7 +286,7 @@ class HHJetsRDFProducer(JetLepMetSyst):
     def run(self, df):
         branches = ["Jet_HHbtag", "bjet1_JetIdx", "bjet2_JetIdx",
             "VBFjet1_JetIdx", "VBFjet2_JetIdx", "ctjet_indexes", "fwjet_indexes", 
-            "fatjet_JetIdx"]
+            "fatjet_JetIdx", "fatjet_pnet"]
 
         if self.doGenCutFlow:
             gen_branches = (
@@ -400,6 +399,7 @@ class HHJetsVarRDFProducer(JetLepMetSyst):
         self.index = kwargs.pop("index") 
         self.variables_withSyst = kwargs.pop("variables_withSyst", [])
         self.variables_withoutSyst = kwargs.pop("variables_withoutSyst", [])
+        self.variables_MConly = kwargs.pop("variables_MConly", [])
 
     def run(self, df):
         branches = []
@@ -410,7 +410,7 @@ class HHJetsVarRDFProducer(JetLepMetSyst):
                 df = df.Define(branch_name, f"{self.index} >= 0 ? {self.input_prefix}_{var}{self.jet_syst}.at({self.index}) : -99")
                 branches.append(branch_name)
         
-        for var in self.variables_withoutSyst:
+        for var in self.variables_withoutSyst + (self.variables_MConly if self.isMC else []):
             branch_name = f"{self.output_prefix}_{var}"
             if branch_name not in existing_branches:
                 df = df.Define(f"{self.output_prefix}_{var}", f"{self.index} >= 0 ? {self.input_prefix}_{var}.at({self.index}) : -99")
@@ -452,14 +452,16 @@ class ExtraJetInformationRDFProducer(JetLepMetSyst):
 
     def run(self, df):
         df = df.Define("jet_btag_count_total", f"Jet_pt[Jet_btagDeepFlavB>={self.btag_wp}].size()")
-        return df, ["jet_btag_count_total"]
+
+        df = df.Define("jet_btagcand_count", "Jet_pt[(Jet_jetId>=6) && (Jet_pt>=20) && (Jet_pt>=50 || Jet_puId>=1) && (Jet_eta<2.5)].size()")
+        return df, ["jet_btag_count_total", "jet_btagcand_count"]
 
 def ExtraJetInformationRDF(**kwargs):
     """
     Produce flattened information about extra jets in the event.
     Output branches : 
-     - jet_btag_count_total
-     - jet_btag_
+     - jet_btag_count_total (ie nb of b jets in event)
+     - jet_btagcand_count (total nb of jets that pass basic analysis selection ie jetId pt etc)
     """
     return lambda: ExtraJetInformationRDFProducer(**kwargs)
 
