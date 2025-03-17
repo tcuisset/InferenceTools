@@ -279,8 +279,13 @@ class HHJetsRDFProducer(JetLepMetSyst):
                 os.getenv("CMT_CMSSW_BASE"), os.getenv("CMT_CMSSW_VERSION"))
             ROOT.gROOT.ProcessLine(".L {}/interface/HHJetsInterface.h".format(base))
 
+            if self.year == 2016:
+                max_bjet_eta = 2.4
+            else:
+                max_bjet_eta = 2.5
+
             ROOT.gInterpreter.Declare(f"""
-                auto HHJets = HHJetsInterface("{models[0]}", "{models[1]}", {int(self.year)}, {isUL}, {kwargs["btag_wp"]}, {kwargs["fatjet_bbtag_wp"]});
+                auto HHJets = HHJetsInterface("{models[0]}", "{models[1]}", {int(self.year)}, {max_bjet_eta}, {kwargs["btag_wp"]}, {kwargs["fatjet_bbtag_wp"]});
             """)
 
     def run(self, df):

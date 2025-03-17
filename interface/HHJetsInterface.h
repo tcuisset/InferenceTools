@@ -115,7 +115,7 @@ bool jetPairSort (const jet_pair_mass& jA, const jet_pair_mass& jB)
 class HHJetsInterface {
 
   public:
-    HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp, float fatjet_bbtag_wp);
+    HHJetsInterface (std::string model_0, std::string model_1, int year, float isUL, float max_bjet_eta_, float fatjet_bbtag_wp);
     
   output GetHHJets(unsigned long long int event, int pairType,
     rfRVec Jet_pt, rfRVec Jet_eta, rfRVec Jet_phi, rfRVec Jet_mass,
@@ -140,7 +140,7 @@ class HHJetsInterface {
   private:
     hh_btag::HH_BTag HHbtagger_;
     int year_;
-    float max_bjet_eta = 2.4;
+    float max_bjet_eta; // max_bjet_eta should be 2.4 for 2016, 2.5 for 2017-18
     float btag_wp_; // Working point for b-tagging score, used when giving priority to resolved category
     float fatjet_bbtag_wp_; // Working point for FatJet bb-tagging score, used when giving priority to boosted
 };

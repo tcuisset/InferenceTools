@@ -3,11 +3,11 @@
 #include <stdexcept>
 
 // Constructor
-HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, bool isUL, float btag_wp, float fatjet_bbtag_wp):
+HHJetsInterface::HHJetsInterface (std::string model_0, std::string model_1, int year, float max_bjet_eta_, float btag_wp, float fatjet_bbtag_wp):
   HHbtagger_(std::array<std::string, 2> { {model_0, model_1} }), btag_wp_(btag_wp), fatjet_bbtag_wp_(fatjet_bbtag_wp)
 {
   year_ = year;
-  if (isUL) max_bjet_eta = 2.5;
+  max_bjet_eta = max_bjet_eta_;
 }
 
 
