@@ -612,7 +612,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // Filter bits are difference nanoV9 vs v12
                             // Electron leg : bit 6 (->64) : 1e-1tau hlt*OverlapFilterIsoEle*PFTau*
                             // Tau leg : bit 0 (->1) : *LooseChargedIso*, bit 8 (->256) e-tau (hlt*OverlapFilterIsoEle*WPTightGsf*PFTau*) 
-                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                                              
+                            // Electron trigger objects are bugged for e-tau trigger in nanoAOD (up to v14 at least)
+                            // So don't do any matching of the electron leg
+                            //trigger_reqs.push_back(trig_req({triggers[4], 26, 2.1, 35, 2.1, 0, 0, {{64}, {1, 256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                            trigger_reqs.push_back(trig_req({triggers[4], 26, 2.1, 35, 2.1, 0, 0, {{}, {1, 256}}}));
                             return trigger_reqs;
                         }
                         std::vector<trig_req> get_tautau_triggers(
@@ -750,10 +754,15 @@ class HHLeptonRDFProducer(JetLepMetSyst):
                             // trigger_reqs.push_back(trig_req({triggers[3], 36, 2.1, 20, 2.3, {{2}, {}}})); // HLT_Ele35_WPTight_Gsf
                             // gg->tautau analysis does OR with HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_TightID_CrossL1 but extremly few events pass this and not our trigger (<0.01% in ttbar)
                             if (!isMC && run < 317509) {
-                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                                //trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
+                                // Electron trigger objects are bugged for e-tau trigger in nanoAOD (up to v14 at least)
+                                // So don't do any matching of the electron leg
+                                trigger_reqs.push_back(trig_req({triggers[4], 25, 2.1, 35, 2.1, 0, 0, {{}, {256}}}));
                             }
                             else {
-                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+                                //trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{64}, {256}}})); // HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+                                // same as above : no electron leg matching
+                                trigger_reqs.push_back(trig_req({triggers[5], 25, 2.1, 35, 2.1, 0, 0, {{}, {256}}}));
                             }
                             return trigger_reqs;
                         }
