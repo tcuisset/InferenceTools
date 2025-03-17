@@ -30,13 +30,11 @@ static bool checkElectronIdWithoutIsolationCut(int vidNestedWPBitmap)
 // Constructors
 
 HHLeptonInterface::HHLeptonInterface (
-    int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu,
+  std::array<int, 3> deeptau_vsjet_qcd_thresholds, std::array<int, 3> deeptau_vsele_thresholds, std::array<int, 3> deeptau_vsmu_thresholds,
     double BT_VsMu_threshold, double BT_VsE_threshold, double BT_VsJet_threshold) {
-  vvvl_vsjet_ = vvvl_vsjet;
-  vl_vse_ = vl_vse;
-  vvl_vse_ = vvl_vse;
-  t_vsmu_ = t_vsmu;
-  vl_vsmu_ = vl_vsmu;
+  deeptau_vsjet_qcd_thresholds_ = deeptau_vsjet_qcd_thresholds;
+  deeptau_vsele_thresholds_ = deeptau_vsele_thresholds;
+  deeptau_vsmu_thresholds_ = deeptau_vsmu_thresholds;
   BT_VsMu_threshold_ = BT_VsMu_threshold;
   BT_VsE_threshold_ = BT_VsE_threshold;
   BT_VsJet_threshold_ = BT_VsJet_threshold;
@@ -499,9 +497,9 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
     std::vector<int> goodtaus;
     for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
       FailReason tau_failReason;
-      if (Tau_idDeepTauVSmu[itau] < t_vsmu_) tau_failReason.TauIdVsMu = true;
-      if (Tau_idDeepTauVSe[itau] < vl_vse_) tau_failReason.TauIdVsE = true;
-      if (Tau_idDeepTauVSjet[itau] < vvvl_vsjet_) tau_failReason.TauIdVsJet = true;
+      if (Tau_idDeepTauVSmu[itau] < deeptau_vsmu_thresholds_[0]) tau_failReason.TauIdVsMu = true;
+      if (Tau_idDeepTauVSe[itau] < deeptau_vsele_thresholds_[0]) tau_failReason.TauIdVsE = true;
+      if (Tau_idDeepTauVSjet[itau] < deeptau_vsjet_qcd_thresholds_[0]) tau_failReason.TauIdVsJet = true;
       if (fabs(Tau_dz[itau]) > 0.2) tau_failReason.Vertex = true;
       if (Tau_decayMode[itau] != 0 && Tau_decayMode[itau] != 1
           && Tau_decayMode[itau] != 10 && Tau_decayMode[itau] != 11)
@@ -601,9 +599,9 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
     std::vector<int> goodtaus;
     for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
       FailReason tau_failReason;
-      if (Tau_idDeepTauVSmu[itau] < t_vsmu_) tau_failReason.TauIdVsMu = true;
-      if (Tau_idDeepTauVSe[itau] < vl_vse_) tau_failReason.TauIdVsE = true;
-      if (Tau_idDeepTauVSjet[itau] < vvvl_vsjet_) tau_failReason.TauIdVsJet = true;
+      if (Tau_idDeepTauVSmu[itau] < deeptau_vsmu_thresholds_[1]) tau_failReason.TauIdVsMu = true;
+      if (Tau_idDeepTauVSe[itau] < deeptau_vsele_thresholds_[1]) tau_failReason.TauIdVsE = true;
+      if (Tau_idDeepTauVSjet[itau] < deeptau_vsjet_qcd_thresholds_[1]) tau_failReason.TauIdVsJet = true;
       if (fabs(Tau_dz[itau]) > 0.2) tau_failReason.Vertex = true;
       if (Tau_decayMode[itau] != 0 && Tau_decayMode[itau] != 1
           && Tau_decayMode[itau] != 10 && Tau_decayMode[itau] != 11)
@@ -685,9 +683,9 @@ std::pair<lepton_output, cutflow_output>  HHLeptonInterface::get_dau_indexes(
   std::vector<int> goodtaus;
   for (size_t itau = 0; itau < Tau_pt.size(); itau ++) {
     FailReason tau_failReason;
-    if (Tau_idDeepTauVSmu[itau] < vl_vsmu_) tau_failReason.TauIdVsMu = true;
-    if (Tau_idDeepTauVSe[itau] < vvl_vse_) tau_failReason.TauIdVsE = true;
-    if (Tau_idDeepTauVSjet[itau] < vvvl_vsjet_) tau_failReason.TauIdVsJet = true;
+    if (Tau_idDeepTauVSmu[itau] < deeptau_vsmu_thresholds_[2]) tau_failReason.TauIdVsMu = true;
+    if (Tau_idDeepTauVSe[itau] < deeptau_vsele_thresholds_[2]) tau_failReason.TauIdVsE = true;
+    if (Tau_idDeepTauVSjet[itau] < deeptau_vsjet_qcd_thresholds_[2]) tau_failReason.TauIdVsJet = true;
     if (fabs(Tau_dz[itau]) > 0.2) tau_failReason.Vertex = true;
     if (Tau_decayMode[itau] != 0 && Tau_decayMode[itau] != 1
         && Tau_decayMode[itau] != 10 && Tau_decayMode[itau] != 11)

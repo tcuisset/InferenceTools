@@ -441,11 +441,11 @@ class HHLeptonRDFProducer(JetLepMetSyst):
         self.useBoostedTaus = kwargs.pop("useBoostedTaus")
         self.tau_priority = kwargs.pop("tau_priority")
         # HPS tau deepTau working points
-        vvvl_vsjet = kwargs.pop("vvvl_vsjet")
-        vl_vse = kwargs.pop("vl_vse")
-        vvl_vse = kwargs.pop("vvl_vse")
-        t_vsmu = kwargs.pop("t_vsmu")
-        vl_vsmu = kwargs.pop("vl_vsmu")
+        # converting python list to C++ initializer list
+        deeptau_vsjet_qcd_thresholds = "{" + ", ".join(map(str, kwargs.pop("deeptau_vsjet_qcd_thresholds"))) + "}"
+        deeptau_vsele_thresholds = "{" + ", ".join(map(str, kwargs.pop("deeptau_vsele_thresholds"))) + "}"
+        deeptau_vsmu_thresholds = "{" + ", ".join(map(str, kwargs.pop("deeptau_vsmu_thresholds"))) + "}"
+        print(f"HHLepton DeepTau thresholds : VsJet={deeptau_vsjet_qcd_thresholds}, VsEle={deeptau_vsele_thresholds}, VsMu={deeptau_vsmu_thresholds}")
         # deepBoostedTau WPs
         if self.useBoostedTaus:
             # VsMu & VsE are not used
@@ -517,7 +517,7 @@ class HHLeptonRDFProducer(JetLepMetSyst):
             ROOT.gROOT.ProcessLine(".L {}/interface/HHLeptonInterface.h".format(base))
             ROOT.gInterpreter.Declare(f"""
                 auto HHLepton = HHLeptonInterface(
-                    {vvvl_vsjet}, {vl_vse}, {vvl_vse}, {t_vsmu}, {vl_vsmu},
+                    {deeptau_vsjet_qcd_thresholds}, {deeptau_vsele_thresholds}, {deeptau_vsmu_thresholds},
                     {boostedTau_VsMu_threshold}, {boostedTau_VsE_threshold}, {boostedTau_VsJet_threshold});
             """)
 

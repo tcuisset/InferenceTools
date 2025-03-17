@@ -171,7 +171,7 @@ class HHLeptonInterface {
 
   public:
     HHLeptonInterface (
-      int vvvl_vsjet, int vl_vse, int vvl_vse, int t_vsmu, int vl_vsmu, // HPS DeepTau thresholds
+      std::array<int, 3> deeptau_vsjet_qcd_thresholds, std::array<int, 3> deeptau_vsele_thresholds, std::array<int, 3> deeptau_vsmu_thresholds, // HPS DeepTau thresholds
       double BT_VsMu_threshold, double BT_VsE_threshold, double BT_VsJet_threshold // DeepBoostedTau thresholds
       );
     ~HHLeptonInterface ();
@@ -240,12 +240,16 @@ class HHLeptonInterface {
       std::vector<int> bits);
 
   private:
-    // HPS taus DeepTau thresholds
-    int vvvl_vsjet_;
-    int vl_vse_;
-    int vvl_vse_;
-    int t_vsmu_;
-    int vl_vsmu_;
+    // HPS taus DeepTau thresholds. Values are indexed by pair type, ie [threshold_mutau, threshold_etau, threshold_tautau]
+    //std::array<int, 3> deeptau_vsjet_thresholds_; // For SR. Not used currently
+    std::array<int, 3> deeptau_vsjet_qcd_thresholds_; // VVVLoose WP for QCD estimation
+    std::array<int, 3> deeptau_vsele_thresholds_;
+    std::array<int, 3> deeptau_vsmu_thresholds_;
+    // int vvvl_vsjet_;
+    // int vl_vse_;
+    // int vvl_vse_;
+    // int t_vsmu_;
+    // int vl_vsmu_;
 
     // boostedTaus DeepBoostedTaus threhols
     double BT_VsMu_threshold_;
