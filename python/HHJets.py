@@ -8,6 +8,10 @@ from Base.Modules.baseModules import JetLepMetModule, JetLepMetSyst
 
 ROOT = import_root()
 
+import correctionlib
+correctionlib.register_pyroot_binding()
+
+
 class HHJetsProducer(JetLepMetModule):
     def __init__(self, *args, **kwargs):
         isUL = kwargs.pop("isUL")
@@ -569,3 +573,41 @@ def JetCategoryCheckRDF(**kwargs):
 
 
 
+class BtagReshapeExtrapFactorRDFProducer():
+    def __init__(self, year, runPeriod, **kwargs):
+        self.isMC = kwargs.pop("isMC")
+        if not self.isMC: return
+        self.isSignal = kwargs.pop("isSignal")
+        json_input = os.environ['CMSSW_BASE'] + f"/src/Tools/Tools/data/btagReshape/{year}{runPeriod if runPeriod else ''}.json"
+        json_input = "/grid_mnt/data__data.polcms/cms/cuisset/ZHbbtautau/framework/studies/SFs/btag-extrap-2018-v3.json"
+        if not os.getenv("_corr"):
+            os.environ["_corr"] = "_corr"
+
+            if "/libBaseModules.so" not in ROOT.gSystem.GetLibraries():
+                ROOT.gInterpreter.Load("libBaseModules.so")
+            ROOT.gInterpreter.Declare(os.path.expandvars(
+                '#include "$CMSSW_BASE/src/Base/Modules/interface/correctionWrapper.h"'))
+
+        if not os.getenv("_BtagReshapeExtrapFactorRDFProducer"):
+            os.environ["_BtagReshapeExtrapFactorRDFProducer"] = "_BtagReshapeExtrapFactorRDFProducer"
+            ROOT.gInterpreter.Declare(
+                'auto corr_btagExtrapFactor_signal = MyCorrections("%s", "extrap_factor_resonant_signal");' % json_input
+            )
+            ROOT.gInterpreter.Declare(
+                'auto corr_btagExtrapFactor_background = MyCorrections("%s", "extrap_factor_background");' % json_input
+            )
+
+    def run(self, df):
+        if not self.isMC: return df, []
+        if self.isSignal:
+            df = df.Define("bTagweightReshapeExtrapFactor", "corr_btagExtrapFactor_signal.eval({(float)nJet, LHE_HT})")
+        else:
+            df = df.Define("bTagweightReshapeExtrapFactor", "corr_btagExtrapFactor_background.eval({(float)nJet, LHE_HT})")
+        return df, ["bTagweightReshapeExtrapFactor"]
+
+
+def BtagReshapeExtrapFactorRDF(*args, **kwargs):
+    year = kwargs.pop("year")
+    runPeriod = kwargs.pop("runPeriod")
+
+    return lambda: BtagReshapeExtrapFactorRDFProducer(year=year, runPeriod=runPeriod, *args, **kwargs)
