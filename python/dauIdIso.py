@@ -98,9 +98,9 @@ class dauIdIsoSFRDFProducer(JetLepMetSyst):
             df = df.Define("idAndIsoAndFakeSF%s" % branch_name,
                 "get_dauIdIso_sf(pairType, isBoostedTau, dau1_index, dau2_index, Tau_pt{0}, "
                     "musf_tight_id{1[0]}, musf_tight_reliso{1[1]}, "
-                    "elesf_RecoAbove20{1[2]}, isBoostedTau ? elesf_Loose{1[3]} : elesf_wp80iso{1[3]}, Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium{1[4]}, "
-                    "Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium{1[5]}, "
-                    "Tau_sfDeepTau2017v2p1VSe_VVLoose{1[6]},"
+                    "elesf_RecoAbove20{1[2]}, isBoostedTau ? elesf_Loose{1[3]} : elesf_wp80iso{1[3]}, pairType == 1 ? Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium_VSeTight{1[4]} : Tau_sfDeepTau2017v2p1VSjet_pt_binned_Medium_VSeVVLoose{1[4]}, "
+                    "pairType == 1 ? Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium_VSeTight{1[5]} : Tau_sfDeepTau2017v2p1VSjet_dm_binned_Medium_VSeVVLoose{1[5]}, "
+                    "pairType == 1 ? Tau_sfDeepTau2017v2p1VSe_Tight{1[6]} : Tau_sfDeepTau2017v2p1VSe_VVLoose{1[6]},"
                     "Tau_sfDeepTau2017v2p1VSmu_VLoose{1[7]}, Tau_sfDeepTau2017v2p1VSmu_Tight{1[7]})".format(self.tau_syst, branch_template))
             branches.append("idAndIsoAndFakeSF%s" % branch_name)
 
